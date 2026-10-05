@@ -25,9 +25,11 @@ The normal `metal_infer/infer` build remains:
 ```text
 FLASH_PREFILL_NROW_PRODUCTION
 FLASH_PREFILL_NROW_ASYNC
+FLASH_PREFILL_NROW_GATEUP_M4_8ROW_BITSPLIT
 N=128
 1024 routed assignments/slab
-gate+up: grouped_tiered_gate_up_m4_8row
+gate+up Q4: grouped_tiered_gate_up_m4_8row_q4
+gate+up Q2: grouped_tiered_gate_up_m4_8row_q2
 routed down: grouped_tiered_projection_m4_2row
 expert staging slots: 256
 ```
@@ -61,7 +63,7 @@ N128 production     296.349 s, 19.892 tok/s
 
 - batched N128 full-attention preparation and causal attention
 - batched 30-layer linear post-processing (o_proj/residual/post-attn RMSNorm/router/shared gate+up/gate-score)
-- grouped routed MoE with accepted gate+up M4-8row and down M4-2row kernels
+- grouped routed MoE with accepted gate+up M4-8row fixed-bit Q4/Q2 (bitsplit) and down M4-2row kernels
 - parallel expert staging through the existing 8-thread I/O pool
 - persistent N-row workspace and production serving integration
 
@@ -74,7 +76,7 @@ Representative later serving measurements reached about 134.98 s / 30.37 tok/s a
 - M4-8row cooperative input cache (`xcache`): correctness clean but gate+up about 5.642 s on the 1K test versus roughly 4.33 s for accepted M4-8row
 - streaming Zstd checkpoint restore/save: deferred; live compressed restore measured about +314 MiB transient peak RSS, not enough to justify persistence-path complexity now
 
-## Fixed-bit Q4/Q2 gate+up candidate (`bitsplit`)
+## Fixed-bit Q4/Q2 gate+up production kernel (`bitsplit`)
 
 Bitsplit keeps accepted M4-8row geometry but selects dedicated fixed-Q4 and fixed-Q2 pipelines, removing dynamic unpack width/mask/shift arithmetic from the inner loop.
 
@@ -104,7 +106,21 @@ bitsplit spread              0.19%
 bitsplit average          4270.800 ms
 ```
 
-That is about a 1.97% gate+up improvement versus the bracketed baseline midpoint. Bitsplit is accepted for production-style 4K serving validation but is **not yet the production default**.
+That is about a 1.97% gate+up improvement versus the bracketed baseline midpoint.
+
+The subsequent 4K production-style A/B on port 11437 also passed. The final bracket measured:
+
+```text
+bitsplit prefill mean      123.818 s
+ordinary M4-8row mean      124.914 s
+end-to-end improvement        0.88%
+
+bitsplit linear_expert      786.410 / 787.590 ms (final measured pair; mean 787.000 ms)
+ordinary linear_expert      799.051 / 803.342 / 816.776 ms (mean 806.390 ms)
+linear_expert improvement      2.40% versus the ordinary three-run mean
+```
+
+Staging remained I/O/cache-sensitive, but the routed-expert timing stayed directionally consistent with the 1K microbenchmark. **Bitsplit is therefore promoted to the production default** for N128 gate+up. The ordinary M4-8row kernel remains available as an explicit fallback/benchmark candidate.
 
 Build targets:
 
@@ -113,7 +129,7 @@ make n128gateup8bits
 make n128serve8bits
 ```
 
-The serving candidate must stay isolated from production `./infer` and production port 11436; serving A/B validation uses port 11437.
+The separate serving target remains isolated from production `./infer` and is useful for regression/A/B testing on port 11437. Normal production `./infer` now uses bitsplit and continues to serve on port 11436. The normal Makefile selects bitsplit explicitly in `INFER_CFLAGS`; benchmark/diagnostic targets can still select ordinary M4-8row or other candidates without changing the production binary.
 
 ## Warm state
 
@@ -131,8 +147,21 @@ compressed restore     ~0.44 s benchmark class
 
 Do not promote a microbenchmark result alone. For state-producing changes use the applicable hidden/logit comparison, exact next-token match, state equality, deterministic continuation, direct GPU phase timing, and an end-to-end serving comparison.
 
+## Production smoke after promotion
+
+The rebuilt normal production `./infer` passed a 4099-token serving smoke test on port 11437 after the bitsplit promotion:
+
+```text
+prefill=132.452 s
+prefill throughput=30.947 tok/s
+linear_expert=808.317 ms
+linear_stage=622.779 ms
+generated=1 token at 10.47 tok/s
+```
+
+The smoke was staging-heavy, but completed normally through 32 N-row chunks with no correctness/runtime failure.
+
 ## Pending
 
-1. 4K serving A/B: ordinary M4-8row vs bitsplit on port 11437.
-2. Promote bitsplit only if that end-to-end gate passes; otherwise document/reject it.
-3. Physical-iPhone model loading/generation remains separately unvalidated for the current iOS snapshot.
+1. Physical-iPhone model loading/generation remains separately unvalidated for the current iOS snapshot.
+2. Continue profiling the next material N128 bottleneck after the gate+up promotion.

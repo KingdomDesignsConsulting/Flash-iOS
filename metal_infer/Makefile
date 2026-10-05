@@ -34,9 +34,9 @@ SHADER_LIB = shaders.metallib
 # Inference engine (complete forward pass)
 INFER_TARGET = infer
 INFER_SRC = infer.m
-# Accepted production prefill: N128 + M4-8row gate/up + M4-2row down.
+# Accepted production prefill: N128 + M4-8row fixed-bit Q4/Q2 gate/up (bitsplit) + M4-2row down.
 # --no-prefill-nrow keeps the established scalar prefill available at runtime.
-INFER_CFLAGS = $(CFLAGS) -DFLASH_PREFILL_NROW_PRODUCTION -DFLASH_PREFILL_NROW_ASYNC
+INFER_CFLAGS = $(CFLAGS) -DFLASH_PREFILL_NROW_PRODUCTION -DFLASH_PREFILL_NROW_ASYNC -DFLASH_PREFILL_NROW_GATEUP_M4_8ROW_BITSPLIT
 
 # Chat TUI (interactive multi-turn)
 CHAT_TARGET = chat
@@ -70,7 +70,7 @@ $(INFER_TARGET): $(INFER_SRC) $(INFER_DEPS)
 
 # Experimental N128 prefill benchmark. This does NOT replace or rebuild the
 # production infer binary. It widens only the benchmark slab while retaining
-# the former M4-2row gate+up/down control. Production is N128 with M4-8row gate+up and M4-2row down.
+# the former M4-2row gate+up/down control. Production is N128 with M4-8row bitsplit gate+up and M4-2row down.
 N128_BENCH_TARGET = ../Testing/Temporary Testing Files/Apps/infer-n128-bench
 N128_BENCH_CFLAGS = $(CFLAGS) \
 	-DFLASH_PREFILL_NROW_BENCH \
@@ -198,8 +198,8 @@ n128serve8row: $(INFER_SRC) $(INFER_DEPS)
 	$(CC) $(N128_SERVE8ROW_CFLAGS) $(FRAMEWORKS) $(LDFLAGS) $(INFER_SRC) -o "$(N128_SERVE8ROW_TARGET)"
 	@echo "Built serving candidate $(N128_SERVE8ROW_TARGET); production ./$(INFER_TARGET) was not replaced."
 
-# Production-style N128 serving candidate using the validated fixed-bit gate+up
-# specialization. This is isolated from ./infer for 4K end-to-end A/B testing.
+# Retained production-style N128 serving target for the fixed-bit gate+up
+# specialization. Bitsplit is now the production default; this separate binary remains useful for isolated A/B/regression testing.
 N128_SERVE8BITS_TARGET = ../Testing/Temporary Testing Files/Apps/infer-n128-m4-8row-bitsplit-serving-candidate
 N128_SERVE8BITS_CFLAGS = $(CFLAGS) \
 	-DFLASH_PREFILL_NROW_PRODUCTION \
