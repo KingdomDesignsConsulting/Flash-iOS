@@ -21,6 +21,7 @@
 #include <arpa/inet.h>
 #include <getopt.h>
 #include <dirent.h>
+#include <errno.h>
 #include "linenoise.h"
 
 #define MAX_INPUT_LINE 4096
@@ -67,14 +68,29 @@ static void init_sessions_dir(void) {
     mkdir(g_sessions_dir, 0755);
 }
 
-static void session_path(const char *session_id, char *path, size_t pathsize) {
-    snprintf(path, pathsize, "%s/%s.jsonl", g_sessions_dir, session_id);
+static int session_id_valid(const char *session_id) {
+    if (!session_id) return 0;
+    size_t n = strlen(session_id);
+    if (n == 0 || n > 64) return 0;
+    for (size_t i = 0; i < n; i++) {
+        unsigned char c = (unsigned char)session_id[i];
+        if (!((c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') ||
+              (c >= '0' && c <= '9') || c == '_' || c == '-'))
+            return 0;
+    }
+    return 1;
+}
+
+static int session_path(const char *session_id, char *path, size_t pathsize) {
+    if (!session_id_valid(session_id)) return 0;
+    int n = snprintf(path, pathsize, "%s/%s.jsonl", g_sessions_dir, session_id);
+    return n >= 0 && (size_t)n < pathsize;
 }
 
 // Append a turn to the session JSONL file
 static void session_save_turn(const char *session_id, const char *role, const char *content) {
     char path[1024];
-    session_path(session_id, path, sizeof(path));
+    if (!session_path(session_id, path, sizeof(path))) return;
     FILE *f = fopen(path, "a");
     if (!f) return;
     char escaped[MAX_RESPONSE * 2];
@@ -86,7 +102,7 @@ static void session_save_turn(const char *session_id, const char *role, const ch
 // Load session history and replay to screen
 static int session_load(const char *session_id) {
     char path[1024];
-    session_path(session_id, path, sizeof(path));
+    if (!session_path(session_id, path, sizeof(path))) return 0;
     FILE *f = fopen(path, "r");
     if (!f) return 0;
 
@@ -184,6 +200,21 @@ static void generate_session_id(char *buf, size_t bufsize) {
              (int)getpid(), (long)tv.tv_sec, (int)tv.tv_usec);
 }
 
+static int write_all(int fd, const void *buf, size_t len) {
+    const uint8_t *p = (const uint8_t *)buf;
+    size_t off = 0;
+    while (off < len) {
+        ssize_t n = write(fd, p + off, len - off);
+        if (n > 0) {
+            off += (size_t)n;
+            continue;
+        }
+        if (n < 0 && errno == EINTR) continue;
+        return -1;
+    }
+    return 0;
+}
+
 static int send_chat_request(int port, const char *user_message, int max_tokens, const char *session_id) {
     int sock = socket(AF_INET, SOCK_STREAM, 0);
     if (sock < 0) { perror("socket"); return -1; }
@@ -202,11 +233,22 @@ static int send_chat_request(int port, const char *user_message, int max_tokens,
     char escaped[MAX_INPUT_LINE * 2];
     json_escape(user_message, escaped, sizeof(escaped));
 
+    if (!session_id_valid(session_id)) {
+        fprintf(stderr, "\n[error] Invalid session ID.\n");
+        close(sock);
+        return -1;
+    }
+
     char body[MAX_INPUT_LINE * 3];
     int body_len = snprintf(body, sizeof(body),
         "{\"messages\":[{\"role\":\"user\",\"content\":\"%s\"}],"
         "\"max_tokens\":%d,\"stream\":true,\"session_id\":\"%s\"}",
         escaped, max_tokens, session_id);
+    if (body_len < 0 || (size_t)body_len >= sizeof(body)) {
+        fprintf(stderr, "\n[error] Request body is too large.\n");
+        close(sock);
+        return -1;
+    }
 
     char request[MAX_INPUT_LINE * 4];
     int req_len = snprintf(request, sizeof(request),
@@ -218,8 +260,16 @@ static int send_chat_request(int port, const char *user_message, int max_tokens,
         "\r\n"
         "%s",
         port, body_len, body);
-
-    write(sock, request, req_len);
+    if (req_len < 0 || (size_t)req_len >= sizeof(request)) {
+        fprintf(stderr, "\n[error] HTTP request is too large.\n");
+        close(sock);
+        return -1;
+    }
+    if (write_all(sock, request, (size_t)req_len) != 0) {
+        perror("write");
+        close(sock);
+        return -1;
+    }
     return sock;
 }
 
@@ -527,8 +577,12 @@ int main(int argc, char **argv) {
         }
     }
 
-    char session_id[64];
+    char session_id[65];
     if (resume_id) {
+        if (!session_id_valid(resume_id)) {
+            fprintf(stderr, "Invalid session ID: use 1-64 letters, digits, '_' or '-'.\n");
+            return 1;
+        }
         strncpy(session_id, resume_id, sizeof(session_id) - 1);
         session_id[sizeof(session_id) - 1] = 0;
     } else {

@@ -27,6 +27,20 @@
 
 #include <metal_stdlib>
 using namespace metal;
+
+kernel void argmax_logits(const device float *logits [[buffer(0)]],
+                          device uint *result [[buffer(1)]],
+                          constant uint &count [[buffer(2)]],
+                          uint tid [[thread_position_in_grid]]) {
+	if (tid != 0) return;
+	float best = -INFINITY;
+	uint best_index = 0;
+	for (uint i = 0; i < count; i++) {
+		float value = logits[i];
+		if (value > best) { best = value; best_index = i; }
+	}
+	result[0] = best_index;
+}
 #include "gguf_iq_shared.h"
 
 // ============================================================================
