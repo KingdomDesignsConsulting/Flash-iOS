@@ -1,5 +1,15 @@
 # Changelog
 
+## 2026-10-05 — N128 production baseline, grouped MoE follow-on, and Git workflow
+
+- Current production prefill is N128 with 1,024 routed assignments/slab, M4-8row routed gate+up, M4-2row routed down, and 256 expert staging slots. `--no-prefill-nrow` remains the scalar fallback.
+- Accepted N128 work now includes batched full attention, batched linear-post processing across the 30 GDN layers, grouped MoE execution, and parallel expert staging. Representative later 4K serving results reached about 134.98 s / 30.37 tok/s after linear-post batching and about 130.47 s / 31.42 tok/s after parallel staging.
+- Rejected M8-2row and M4-16row gate+up variants. Rejected the M4-8row cooperative-input-cache (`xcache`) variant: correctness passed but gate+up regressed to about 5.642 s on the 1K test.
+- Added fixed-Q4/Q2 M4-8row gate+up (`bitsplit`) benchmark and isolated serving candidates. Repeated bitsplit phase timings were 4266.738 and 4274.861 ms versus bracketed ordinary M4-8row baselines of 4339.669 and 4373.211 ms, about a 1.97% average gate+up improvement. Correctness remained `hidden_max=1.0490417e-05`, `logits_max=1.3828278e-05`, `next=1752/1752`, `state_equal=1`. Bitsplit awaits 4K serving validation and is not production yet.
+- Established a real Git development workflow: writable fork `KingdomDesignsConsulting/Flash-iOS`, active branch `flash-moe-production`, `origin` on the fork and `upstream` on `Anemll/Flash-iOS`. Meaningful changes should be tested/documented and committed as focused changes rather than living only in Drive.
+- Added `CURRENT_STATUS.md` as the canonical current-state summary; older dated architecture/benchmark sections remain historical evidence.
+
+
 
 ## 2026-10-01/02 — N64 production prefill
 

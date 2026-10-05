@@ -1,5 +1,8 @@
 # Flash-iOS Development History
 
+> **Current-status note (2026-10-05):** This is a historical/long-form document. For the authoritative active production configuration, Git workflow, accepted N128 optimizations, rejected experiments, and current bitsplit candidate measurements, see [CURRENT_STATUS.md](../CURRENT_STATUS.md). Production is N128 with M4-8row gate+up and M4-2row down. Bitsplit is a correctness-clean ~1.97% gate+up candidate awaiting 4K serving validation and is not yet the production default.
+
+
 ## Scope and evidence
 
 This document reconstructs the development of the current Flash-iOS inference runtime from two kinds of evidence: the surviving source snapshots/current source, and a contemporaneous chat record that documents the project's selection and initial setup on September 16, 2026.

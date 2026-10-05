@@ -1,12 +1,16 @@
 # Flash-iOS development baseline
 
 Status recorded 2026-10-05 from the local source tree. The local tree is the
-authority for this baseline. `Anemll/Flash-iOS` is the upstream ancestry, not a
-source to copy over newer work. The long-form runtime design is in
+authority for this baseline. [CURRENT_STATUS.md](CURRENT_STATUS.md) is the
+authoritative summary of the active production configuration, accepted and
+rejected experiments, and pending validation. `Anemll/Flash-iOS` is the upstream
+ancestry, not a source to copy over newer work. The long-form runtime design is in
 [kevin/ARCHITECTURE.md](kevin/ARCHITECTURE.md), the optimization history is in
 [kevin/DEVELOPMENT_HISTORY.md](kevin/DEVELOPMENT_HISTORY.md), and the N-row
 prefill evidence is in
 [prefill-nrow-architecture-2026-09-28.md](prefill-nrow-architecture-2026-09-28.md).
+The historical measurement method is documented in
+[benchmark-writeup.md](benchmark-writeup.md).
 
 ## Code and deployment
 
@@ -26,6 +30,7 @@ FLASH_PREFILL_NROW_PRODUCTION + FLASH_PREFILL_NROW_ASYNC
 N=128; 1024 routed assignments per slab
 gate+up: grouped_tiered_gate_up_m4_8row
 routed down: grouped_tiered_projection_m4_2row
+expert staging slots: 256
 ```
 
 This is selected by the normal `metal_infer/Makefile` `infer` target. Full
@@ -62,8 +67,10 @@ or expert files to the Xcode target.
 
 N128 prefill with M4-8row gate+up and M4-2row down passed scalar-state,
 continuation, serving, and DSH-scale gates and is the accepted macOS source
-configuration. The controlled 1024-token N128 result before the M4-8row
-selection reported 25.232 tok/s; M4-8row selection reported 25.659 tok/s in
+configuration. Accepted N128 work also includes batched full attention,
+batched linear-post processing, and parallel expert staging. The controlled
+1024-token N128 result before the M4-8row selection reported 25.232 tok/s;
+M4-8row selection reported 25.659 tok/s in
 its controlled comparison. A 4099-token serving comparison reported N64
 202.424 s versus N128 185.576 s; the larger DSH-scale comparison is recorded
 in the N-row architecture note. These are historical measurements on the M4,
@@ -72,16 +79,19 @@ not portable promises for iOS.
 The newer fixed-Q4/Q2 **bitsplit** M4-8row gate+up is still a candidate. Its
 benchmark target defines `FLASH_PREFILL_NROW_GATEUP_M4_8ROW_BITSPLIT`; the
 separate `n128serve8bits` target exists for a production-style 4K comparison.
-Two available 1024-token logs show scalar/state agreement: hidden maximum
+Repeated 1024-token checks show scalar/state agreement: hidden maximum
 `1.0490417e-05`, logits maximum `1.3828278e-05`, next token `1752/1752`,
-and `state_equal=1`. The bitsplit runs reported 25.351 and 24.176 tok/s,
-respectively. They do not establish a completed 4K serving gate or promotion
-to the default production build. The prior M4-8row kernel remains the default
-in `infer.m` and the Makefile.
+and `state_equal=1`. Repeated bitsplit gate+up phase timings averaged
+4270.800 ms against a bracketed ordinary M4-8row baseline midpoint of
+4356.440 ms, about 1.97% faster. Bitsplit is accepted for production-style
+4K serving validation, but that gate has not yet passed and bitsplit is not
+production. The ordinary M4-8row kernel remains the default in `infer.m` and
+the Makefile.
 
 Rejected or deferred paths, with measurements and reasons, are in the N-row
 architecture and verifier notes. Examples include M8-2row and M4-16row
-gate+up packing, which regressed against M4-8row; the LM-head-only batched
+gate+up packing and the M4-8row cooperative input cache (`xcache`), which
+regressed against ordinary M4-8row; the LM-head-only batched
 verifier, which left serial attention/MoE cost dominant; and the earlier V5
 expert accumulator change, which slowed the full 1K path. Keep the results in
 Markdown; raw logs and benchmark executables belong under ignored `Testing/`
@@ -131,8 +141,10 @@ access and should be run only when explicitly in scope.
 ## Git workflow and exclusions
 
 Develop on `flash-moe-production`, with `upstream` pointing to
-`Anemll/Flash-iOS` and `origin` pointing to the writable fork. Inspect diffs,
-build or test the relevant target, and make focused commits. Use separate
+`Anemll/Flash-iOS` and `origin` pointing to the writable
+`KingdomDesignsConsulting/Flash-iOS` fork. Meaningful development changes are
+now committed as focused commits. Inspect diffs, build or test the relevant
+target, and make focused commits. Use separate
 `experiment:`, `bench:`, `perf:`, `fix:`, and `docs:` commits as appropriate.
 Never force-push or silently rewrite published history. Before pulling from
 upstream, compare refs and review the merge; the local source contains newer

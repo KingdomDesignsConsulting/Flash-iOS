@@ -1,5 +1,8 @@
 # N-row prefill architecture map — 2026-09-28
 
+> **Current-status note (2026-10-05):** This is a historical/long-form document. For the authoritative active production configuration, Git workflow, accepted N128 optimizations, rejected experiments, and current bitsplit candidate measurements, see [CURRENT_STATUS.md](CURRENT_STATUS.md). Production is N128 with M4-8row gate+up and M4-2row down. Bitsplit is a correctness-clean ~1.97% gate+up candidate awaiting 4K serving validation and is not yet the production default.
+
+
 Target: the loaded Qwen3.5-35B-A3B model, `N=16`, 40 layers, K=8, 32 value heads and 16 key heads. This note describes a benchmark-only path. It does not change the serving path or persistent state.
 
 | Subsystem | Current one-row assumption | Minimum N-row treatment |

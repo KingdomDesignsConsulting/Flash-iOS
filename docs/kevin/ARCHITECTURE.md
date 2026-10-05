@@ -1,5 +1,8 @@
 # Flash-iOS Runtime Architecture
 
+> **Current-status note (2026-10-05):** This is a historical/long-form document. For the authoritative active production configuration, Git workflow, accepted N128 optimizations, rejected experiments, and current bitsplit candidate measurements, see [CURRENT_STATUS.md](../CURRENT_STATUS.md). Production is N128 with M4-8row gate+up and M4-2row down. Bitsplit is a correctness-clean ~1.97% gate+up candidate awaiting 4K serving validation and is not yet the production default.
+
+
 ## Overview
 
 The current Flash-iOS `infer` runtime is a model-specific Qwen3.5 inference engine and local agent-serving backend for Apple Silicon. It combines Metal compute, CPU-side orchestration and expert I/O, OpenAI-compatible HTTP serving, native Qwen tool calling, resident conversation state, reusable static-prefix snapshots, and persistent named warm profiles.
