@@ -12,7 +12,7 @@
 
 // Unity build — include the entire inference engine
 // This gives us access to all static functions and globals
-#include "../../metal_infer/infer.m"
+#include "../EngineSources/infer.m"
 
 #include "FlashMoEEngine.h"
 #include <stdatomic.h>
@@ -1166,4 +1166,3 @@ const char *flashmoe_last_error(FlashMoEContext *ctx) {
     if (!ctx) return "NULL context";
     return ctx->last_error;
 }
-

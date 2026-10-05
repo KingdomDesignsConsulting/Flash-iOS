@@ -2,14 +2,14 @@ name: FlashMoE
 options:
   bundleIdPrefix: com.flashmoe
   deploymentTarget:
-    iOS: "18.0"
+    iOS: "26.6"
   xcodeVersion: "26.0"
   generateEmptyDirectories: true
 
 settings:
   base:
     SWIFT_VERSION: "6.0"
-    IPHONEOS_DEPLOYMENT_TARGET: "18.0"
+    IPHONEOS_DEPLOYMENT_TARGET: "26.6"
     TARGETED_DEVICE_FAMILY: "1"  # iPhone only
     INFOPLIST_KEY_LSSupportsOpeningDocumentsInPlace: YES
     INFOPLIST_KEY_UIFileSharingEnabled: YES
@@ -31,12 +31,16 @@ targets:
         type: group
       - path: Resources
         type: group
-      # Metal shaders — copied as resource (compiled at runtime via newLibraryWithSource)
-      - path: ../metal_infer/shaders.metal
+      # iOS engine snapshot: infer.m is included by FlashMoEEngine.m (unity build).
+      # Compile the shader into default.metallib; keep NAX source for runtime fallback.
+      - path: EngineSources/shaders.metal
+        type: file
+        buildPhase: sources
+      - path: EngineSources/nax_gemm.metal
         type: file
         buildPhase: resources
       # Tokenizer header — needed by infer.m
-      - path: ../metal_infer/tokenizer.h
+      - path: EngineSources/tokenizer.h
         type: file
         buildPhase: headers
     settings:
@@ -49,7 +53,7 @@ targets:
         # Header search paths
         HEADER_SEARCH_PATHS:
           - $(SRCROOT)/FlashMoEEngine
-          - $(SRCROOT)/../metal_infer
+          - $(SRCROOT)/EngineSources
         # Needed for the engine
         CLANG_ENABLE_OBJC_ARC: YES
         GCC_OPTIMIZATION_LEVEL: "2"
