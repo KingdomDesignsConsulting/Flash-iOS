@@ -661,7 +661,11 @@ static int flashmoe_commit_emitted_token(FlashMoEContext *ctx, int token_id, int
                  "Forward failure while committing final emitted token at position %d", pos);
         return -1;
     }
-    complete_deferred_experts();
+    if (!complete_deferred_experts()) {
+        snprintf(ctx->last_error, sizeof(ctx->last_error),
+                 "Metal failure while committing final emitted token at position %d", pos);
+        return -1;
+    }
     return pos + 1;
 }
 
@@ -743,7 +747,12 @@ int flashmoe_generate(
                     flashmoe_abort_partial_generation(ctx, "Forward failure during prefill");
                     return -1;
                 }
-                discard_deferred_experts();
+                if (!discard_deferred_experts()) {
+                    free(embed_batch);
+                    free(pt->ids); free(pt);
+                    flashmoe_abort_partial_generation(ctx, "Metal failure during prefill");
+                    return -1;
+                }
                 pos++;
 
                 // Report prefill progress via callback
@@ -779,7 +788,12 @@ int flashmoe_generate(
                 flashmoe_abort_partial_generation(ctx, "Forward failure during generation");
                 return -1;
             }
-            complete_deferred_experts();
+            if (!complete_deferred_experts()) {
+                if (embed_batch) free(embed_batch);
+                free(pt->ids); free(pt);
+                flashmoe_abort_partial_generation(ctx, "Metal failure during generation");
+                return -1;
+            }
             pos++;
         }
 
@@ -852,7 +866,12 @@ int flashmoe_generate(
                 flashmoe_abort_partial_generation(ctx, "Forward failure during generation");
                 return -1;
             }
-            complete_deferred_experts();
+            if (!complete_deferred_experts()) {
+                if (embed_batch) free(embed_batch);
+                free(pt->ids); free(pt);
+                flashmoe_abort_partial_generation(ctx, "Metal failure during generation");
+                return -1;
+            }
             pos++;
 
             // Final norm + LM head
@@ -1002,7 +1021,12 @@ int flashmoe_generate_continuation(
                     flashmoe_abort_partial_generation(ctx, "Forward failure during prefill");
                     return -1;
                 }
-                discard_deferred_experts();
+                if (!discard_deferred_experts()) {
+                    free(embed_batch);
+                    free(pt->ids); free(pt);
+                    flashmoe_abort_partial_generation(ctx, "Metal failure during prefill");
+                    return -1;
+                }
                 pos++;
             }
         }
@@ -1022,7 +1046,12 @@ int flashmoe_generate_continuation(
                 flashmoe_abort_partial_generation(ctx, "Forward failure during generation");
                 return -1;
             }
-            complete_deferred_experts();
+            if (!complete_deferred_experts()) {
+                if (embed_batch) free(embed_batch);
+                free(pt->ids); free(pt);
+                flashmoe_abort_partial_generation(ctx, "Metal failure during generation");
+                return -1;
+            }
             pos++;
         }
 
@@ -1085,7 +1114,12 @@ int flashmoe_generate_continuation(
                 flashmoe_abort_partial_generation(ctx, "Forward failure during generation");
                 return -1;
             }
-            complete_deferred_experts();
+            if (!complete_deferred_experts()) {
+                if (embed_batch) free(embed_batch);
+                free(pt->ids); free(pt);
+                flashmoe_abort_partial_generation(ctx, "Metal failure during generation");
+                return -1;
+            }
             pos++;
 
             if (ctx->final_norm_w) {
