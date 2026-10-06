@@ -248,6 +248,24 @@ n128serve8bits: $(INFER_SRC) $(INFER_DEPS)
 	$(CC) $(N128_SERVE8BITS_CFLAGS) $(FRAMEWORKS) $(LDFLAGS) $(INFER_SRC) -o "$(N128_SERVE8BITS_TARGET)"
 	@echo "Built serving candidate $(N128_SERVE8BITS_TARGET); production ./$(INFER_TARGET) was not replaced."
 
+# Benchmark-only adaptive singleton gate+up candidate from the Qwen3.6 kernel.
+# The accepted M4-8row Q4/Q2 bitsplit path remains the fallback for every group
+# except count==1 Q4, which uses the 64-thread / four-output-rows-per-SIMD kernel.
+N128_GATEUP_M1Q4X4_TARGET = ../Testing/Temporary Testing Files/Apps/infer-n128-gateup-m1-q4x4-bench
+N128_GATEUP_M1Q4X4_CFLAGS = $(CFLAGS) \
+	-DFLASH_PREFILL_NROW_BENCH \
+	-DFLASH_PREFILL_NROW_ASYNC \
+	-DFLASH_PREFILL_NROW_N128 \
+	-DFLASH_PREFILL_NROW_1K_1024 \
+	-DFLASH_PREFILL_NROW_DOWN_M4_2ROW \
+	-DFLASH_PREFILL_NROW_GATEUP_M4_8ROW_BITSPLIT \
+	-DFLASH_PREFILL_NROW_GATEUP_M1_Q4X4 \
+	-DFLASH_PREFILL_NROW_EXPERT_PHASE_TIMING
+
+n128gateupm1q4x4: $(INFER_SRC) $(INFER_DEPS)
+	$(CC) $(N128_GATEUP_M1Q4X4_CFLAGS) $(FRAMEWORKS) $(LDFLAGS) $(INFER_SRC) -o "$(N128_GATEUP_M1Q4X4_TARGET)"
+	@echo "Built benchmark-only $(N128_GATEUP_M1Q4X4_TARGET); production ./$(INFER_TARGET) was not replaced."
+
 # Benchmark-only exact-small-M dense verifier transfer from MLX-VLM PR #2430.
 # Keeps the accepted N128 routed-MoE geometry fixed and changes only ordinary
 # resident MLX4 dense projections from repeated M1 dispatches to pairwise M2.
