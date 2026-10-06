@@ -14447,6 +14447,7 @@ static void freq_print_analysis(int K) {
 // ============================================================================
 #ifdef FLASH_PREFILL_NROW_PRODUCTION
 typedef int (*PrefillNRowPollFn)(void *ctx);
+static int prefill_nrow_runtime_cache_range_eligible(KVCache **kv_caches);
 static int prefill_nrow_runtime_prepare(int K);
 static int prefill_nrow_runtime_chunk(
     WeightFile *wf, KVCache **kv_caches, void **layer_states,
@@ -19514,8 +19515,9 @@ printf("[serve] Tool API revision 9.4 — bounded cache + malformed-tool recover
 					break;
 				}
 #ifdef FLASH_PREFILL_NROW_PRODUCTION
-				if (g_prefill_nrow_runtime_enabled && tool_prefix_capture_at == 0 &&
-					(pos + PREFILL_NROW_CAPTURE_ROWS) <= GPU_KV_SEQ &&
+				if (g_prefill_nrow_runtime_enabled &&
+					prefill_nrow_runtime_cache_range_eligible(kv_caches) &&
+					tool_prefix_capture_at == 0 &&
 					(pt->count - 1 - i) >= PREFILL_NROW_CAPTURE_ROWS) {
 					if (!serve_nrow_prepare_attempted) {
 						serve_nrow_ready = prefill_nrow_runtime_prepare(K);
@@ -21952,7 +21954,7 @@ if (g_temperature <= 0.0f) {
 				double t_tok = now_ms();
 #ifdef FLASH_PREFILL_NROW_PRODUCTION
 				if (g_prefill_nrow_runtime_enabled &&
-					(pos + PREFILL_NROW_CAPTURE_ROWS) <= GPU_KV_SEQ &&
+					prefill_nrow_runtime_cache_range_eligible(kv_caches) &&
 					(pt->count - 1 - token_idx) >= PREFILL_NROW_CAPTURE_ROWS) {
 					if (!cli_nrow_prepare_attempted) {
 						cli_nrow_ready = prefill_nrow_runtime_prepare(K);
