@@ -1882,6 +1882,34 @@ static PrefillNRowCapture *g_prefill_nrow_runtime_capture = NULL;
 static float *g_prefill_nrow_runtime_slab = NULL;
 static int g_prefill_nrow_runtime_state = 0; // 0=untried, 1=ready, -1=failed
 
+// N-row full attention publishes each slab into the fixed GPU KV mirror.
+// Once the next complete slab would cross that mirror, N-row is ineligible
+// and the caller continues through the established scalar path.
+//
+// Use actual full-attention KV lengths rather than the prompt-relative loop
+// position. Serving may already have a cached system/tool prefix, so the two
+// positions can legitimately differ.
+static int prefill_nrow_runtime_cache_range_eligible(KVCache **kv_caches) {
+    if (!kv_caches) return 0;
+
+    for (int layer = 0; layer < NUM_LAYERS; layer++) {
+        if ((layer + 1) % FULL_ATTN_INTERVAL != 0)
+            continue;
+
+        KVCache *kv = kv_caches[layer];
+        if (!kv || kv->len < 0)
+            return 0;
+
+        if (kv->len > g_kv_seq_len - PREFILL_NROW_ROWS)
+            return 0;
+
+        if (kv->len > GPU_KV_SEQ - PREFILL_NROW_ROWS)
+            return 0;
+    }
+
+    return 1;
+}
+
 static int prefill_nrow_runtime_prepare(int K) {
     if (g_prefill_nrow_runtime_state != 0)
         return g_prefill_nrow_runtime_state > 0;
