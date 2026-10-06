@@ -4504,6 +4504,101 @@ typedef struct {
 	id<MTLBuffer> buf_conv_output;    // [12288] float
 } MetalCtx;
 
+static void metal_ctx_destroy(MetalCtx *ctx) {
+	if (!ctx) return;
+	// MetalCtx is calloc'd but contains ARC strong references. Clear every
+	// Objective-C field before free() so both successful teardown and partial
+	// setup failures release resources deterministically.
+	ctx->device = nil;
+	ctx->queue = nil;
+	ctx->library = nil;
+	ctx->matvec_v3 = nil;
+	ctx->matvec_v5 = nil;
+	ctx->matvec_fast = nil;
+	ctx->matvec_2bit = nil;
+	ctx->matvec_iq3_xxs = nil;
+	ctx->matvec_iq4_xs = nil;
+	ctx->matvec_q5_k = nil;
+	ctx->matvec_q8_0 = nil;
+	ctx->matvec_q6_k = nil;
+	ctx->argmax = nil;
+	ctx->argmax_result = nil;
+	ctx->nax_library = nil;
+	ctx->nax_dequant = nil;
+	ctx->nax_f32_to_half = nil;
+	ctx->nax_gemm = nil;
+	ctx->nax_extract = nil;
+	ctx->nax_w_half = nil;
+	ctx->nax_x_half = nil;
+	ctx->nax_c_buf = nil;
+	ctx->rms_norm_sum = nil;
+	ctx->rms_norm_apply = nil;
+	ctx->rms_norm_apply_bf16 = nil;
+	ctx->residual_add = nil;
+	ctx->swiglu = nil;
+	ctx->attn_scores_pipe = nil;
+	ctx->attn_softmax_pipe = nil;
+	ctx->attn_values_pipe = nil;
+	ctx->sigmoid_gate_pipe = nil;
+	ctx->full_attn_prepare_pipe = nil;
+	ctx->buf_input = nil;
+	ctx->buf_output = nil;
+	ctx->wf_buf = nil;
+	ctx->gguf_qkv_buf = nil;
+	ctx->gguf_full_attn_buf = nil;
+	ctx->gguf_linear_buf = nil;
+	ctx->gguf_shared_buf = nil;
+	ctx->gguf_lm_head_buf = nil;
+	ctx->buf_expert_data = nil;
+	ctx->buf_expert_input = nil;
+	ctx->buf_expert_gate = nil;
+	ctx->buf_expert_up = nil;
+	ctx->buf_expert_act = nil;
+	ctx->buf_expert_out = nil;
+	ctx->buf_multi_expert_input = nil;
+	ctx->buf_shared_gate = nil;
+	ctx->buf_shared_up = nil;
+	ctx->buf_shared_act = nil;
+	ctx->buf_shared_out = nil;
+	ctx->buf_residual = nil;
+	ctx->buf_h_mid = nil;
+	ctx->buf_sum_sq = nil;
+	ctx->buf_attn_q = nil;
+	ctx->buf_attn_scores = nil;
+	ctx->buf_attn_out = nil;
+	ctx->buf_attn_gate = nil;
+	ctx->moe_combine_residual = nil;
+	ctx->buf_moe_hidden = nil;
+	ctx->buf_combine_params = nil;
+	ctx->buf_cmd3_sum_sq = nil;
+	ctx->pipeline_event = nil;
+	ctx->delta_net_step = nil;
+	ctx->conv1d_step = nil;
+	ctx->rms_norm_qk = nil;
+	ctx->compute_decay_beta = nil;
+	ctx->gated_rms_norm = nil;
+	ctx->buf_delta_q = nil;
+	ctx->buf_delta_k = nil;
+	ctx->buf_delta_v = nil;
+	ctx->buf_delta_g_decay = nil;
+	ctx->buf_delta_beta = nil;
+	ctx->buf_delta_output = nil;
+	ctx->buf_conv_input = nil;
+	ctx->buf_conv_output = nil;
+	for (int i = 0; i < MAX_BATCH_SLOTS; i++) ctx->batch_out[i] = nil;
+	for (int k = 0; k < MAX_K; k++) {
+		ctx->buf_multi_expert_data[k] = nil;
+		ctx->buf_multi_expert_data_B[k] = nil;
+		ctx->buf_multi_expert_gate[k] = nil;
+		ctx->buf_multi_expert_up[k] = nil;
+		ctx->buf_multi_expert_act[k] = nil;
+		ctx->buf_multi_expert_out[k] = nil;
+	}
+	for (int i = 0; i < 16; i++) { ctx->buf_kv_k[i] = nil; ctx->buf_kv_v[i] = nil; }
+	for (int i = 0; i < 48; i++) { ctx->buf_delta_state[i] = nil; ctx->buf_conv_state[i] = nil; }
+	free(ctx);
+}
+
 static MetalCtx *g_metal = NULL;
 static int linear_attn_bypass = 0;  // set to 1 to skip linear attention (identity)
 static int gpu_linear_attn_enabled = 1;  // fused GPU delta-net path (can disable via --cpu-linear)
@@ -4531,14 +4626,14 @@ static MetalCtx *metal_setup(void) {
 	ctx->device = MTLCreateSystemDefaultDevice();
 	if (!ctx->device) {
 		fprintf(stderr, "ERROR: No Metal device\n");
-		free(ctx); return NULL;
+		metal_ctx_destroy(ctx); return NULL;
 	}
 	if (!g_stream_mode) printf("[metal] Device: %s\n", [[ctx->device name] UTF8String]);
 
 	ctx->queue = [ctx->device newCommandQueue];
 	if (!ctx->queue) {
 		fprintf(stderr, "ERROR: No command queue\n");
-		free(ctx); return NULL;
+		metal_ctx_destroy(ctx); return NULL;
 	}
 
 	// Load shaders — try precompiled default.metallib first (iOS app bundle),
@@ -4578,7 +4673,7 @@ static MetalCtx *metal_setup(void) {
 #endif
 		if (!src) {
 			fprintf(stderr, "ERROR: Cannot find shaders.metal\n");
-			free(ctx); return NULL;
+			metal_ctx_destroy(ctx); return NULL;
 		}
 
 		// newLibraryWithSource: compiles an in-memory source string and does not
@@ -4605,7 +4700,7 @@ static MetalCtx *metal_setup(void) {
 			}
 			if (!iq_header) {
 				fprintf(stderr, "ERROR: Cannot find gguf_iq_shared.h for shaders.metal\n");
-				free(ctx); return NULL;
+				metal_ctx_destroy(ctx); return NULL;
 			}
 			src = [src stringByReplacingOccurrencesOfString:iq_include withString:iq_header];
 		}
@@ -4617,7 +4712,7 @@ static MetalCtx *metal_setup(void) {
 		if (!ctx->library) {
 			fprintf(stderr, "ERROR: Shader compile failed: %s\n",
 					[[error localizedDescription] UTF8String]);
-			free(ctx); return NULL;
+			metal_ctx_destroy(ctx); return NULL;
 		}
 		if (!g_stream_mode) printf("[metal] Shader compile: %.0f ms\n", now_ms() - t0);
 	}
@@ -4725,7 +4820,7 @@ static MetalCtx *metal_setup(void) {
 		if (!prepLib) {
 			fprintf(stderr, "ERROR: full-attn prepare shader compile failed: %s\n",
 					[[prepErr localizedDescription] UTF8String]);
-			free(ctx); return NULL;
+			metal_ctx_destroy(ctx); return NULL;
 		}
 		id<MTLFunction> prepFn = [prepLib newFunctionWithName:@"full_attn_prepare"];
 		ctx->full_attn_prepare_pipe = prepFn ?
@@ -4733,7 +4828,7 @@ static MetalCtx *metal_setup(void) {
 		if (!ctx->full_attn_prepare_pipe) {
 			fprintf(stderr, "ERROR: full-attn prepare pipeline failed: %s\n",
 					prepErr ? [[prepErr localizedDescription] UTF8String] : "function not found");
-			free(ctx); return NULL;
+			metal_ctx_destroy(ctx); return NULL;
 		}
 		if (!g_stream_mode) printf("[cmd12-full] full-attention prepare kernel ready\n");
 	}
@@ -4813,7 +4908,7 @@ static MetalCtx *metal_setup(void) {
 
 	if (!ctx->matvec_v3 || !ctx->matvec_fast) {
 		fprintf(stderr, "ERROR: Required Metal pipeline missing\n");
-		free(ctx); return NULL;
+		metal_ctx_destroy(ctx); return NULL;
 	}
 
 	// Allocate reusable buffers (large enough for biggest projection)
@@ -4830,8 +4925,7 @@ static MetalCtx *metal_setup(void) {
 
 	if (!ctx->buf_input || !ctx->buf_output || !ctx->argmax_result) {
 		fprintf(stderr, "ERROR: Metal core-buffer allocation failed\n");
-		free(ctx);
-		return NULL;
+		metal_ctx_destroy(ctx); return NULL;
 	}
 
 	// Batched matmul output slots — each large enough for the biggest projection
@@ -4846,8 +4940,7 @@ static MetalCtx *metal_setup(void) {
 														 options:MTLResourceStorageModeShared];
 			if (!ctx->batch_out[i]) {
 				fprintf(stderr, "ERROR: Metal batch output buffer %d allocation failed\n", i);
-				free(ctx);
-				return NULL;
+				metal_ctx_destroy(ctx); return NULL;
 			}
 		}
 	}
@@ -4869,8 +4962,7 @@ static MetalCtx *metal_setup(void) {
 	if (!ctx->buf_expert_data || !ctx->buf_expert_input || !ctx->buf_expert_gate ||
 		!ctx->buf_expert_up || !ctx->buf_expert_act || !ctx->buf_expert_out) {
 		fprintf(stderr, "ERROR: Metal expert scratch-buffer allocation failed\n");
-		free(ctx);
-		return NULL;
+		metal_ctx_destroy(ctx); return NULL;
 	}
 
 	// Multi-expert buffers: K independent slots (double-buffered data)
@@ -4880,8 +4972,7 @@ static MetalCtx *metal_setup(void) {
 														   options:MTLResourceStorageModeShared];
 	if (!ctx->buf_multi_expert_input) {
 		fprintf(stderr, "ERROR: Metal multi-expert input allocation failed\n");
-		free(ctx);
-		return NULL;
+		metal_ctx_destroy(ctx); return NULL;
 	}
 	size_t expert_alloc_size = (max_expert_size + 2*1024*1024 - 1) & ~(2*1024*1024 - 1);  // round up to 2MB
 	for (int k = 0; k < MAX_K; k++) {
@@ -4896,6 +4987,7 @@ static MetalCtx *metal_setup(void) {
 					k, align_rc_a, align_rc_b, expert_alloc_size / 1048576.0);
 			free(aligned_data);
 			free(aligned_data_b);
+			metal_ctx_destroy(ctx);
 			return NULL;
 		}
 		memset(aligned_data, 0, expert_alloc_size);
@@ -4903,16 +4995,22 @@ static MetalCtx *metal_setup(void) {
 		ctx->buf_multi_expert_data[k] = [ctx->device newBufferWithBytesNoCopy:aligned_data
 																	   length:expert_alloc_size
 																	  options:MTLResourceStorageModeShared
-																  deallocator:nil];
+																  deallocator:^(void *pointer, NSUInteger length) {
+			(void)length;
+			free(pointer);
+		}];
 		ctx->buf_multi_expert_data_B[k] = [ctx->device newBufferWithBytesNoCopy:aligned_data_b
 																		 length:expert_alloc_size
 																		options:MTLResourceStorageModeShared
-																	deallocator:nil];
+																	deallocator:^(void *pointer, NSUInteger length) {
+			(void)length;
+			free(pointer);
+		}];
 		if (!ctx->buf_multi_expert_data[k] || !ctx->buf_multi_expert_data_B[k]) {
 			fprintf(stderr, "ERROR: Metal zero-copy expert wrapper failed at slot %d\n", k);
-			free(aligned_data);
-			free(aligned_data_b);
-			free(ctx);
+			if (!ctx->buf_multi_expert_data[k]) free(aligned_data);
+			if (!ctx->buf_multi_expert_data_B[k]) free(aligned_data_b);
+			metal_ctx_destroy(ctx);
 			return NULL;
 		}
 		ctx->buf_multi_expert_gate[k] = [ctx->device newBufferWithLength:MOE_INTERMEDIATE * sizeof(float)
@@ -4926,8 +5024,7 @@ static MetalCtx *metal_setup(void) {
 		if (!ctx->buf_multi_expert_gate[k] || !ctx->buf_multi_expert_up[k] ||
 			!ctx->buf_multi_expert_act[k] || !ctx->buf_multi_expert_out[k]) {
 			fprintf(stderr, "ERROR: Metal expert slot %d scratch-buffer allocation failed\n", k);
-			free(ctx);
-			return NULL;
+			metal_ctx_destroy(ctx); return NULL;
 		}
 	}
 
@@ -4961,8 +5058,7 @@ static MetalCtx *metal_setup(void) {
 		!ctx->buf_sum_sq || !ctx->buf_moe_hidden || !ctx->buf_combine_params ||
 		!ctx->buf_cmd3_sum_sq) {
 		fprintf(stderr, "ERROR: Metal fused-MoE buffer allocation failed\n");
-		free(ctx);
-		return NULL;
+		metal_ctx_destroy(ctx); return NULL;
 	}
 
 	// GPU attention buffers — sized to g_kv_seq_len (runtime-adaptive, not MAX_SEQ_LEN)
@@ -4977,8 +5073,7 @@ static MetalCtx *metal_setup(void) {
 														options:MTLResourceStorageModeShared];
 			if (!ctx->buf_kv_k[i] || !ctx->buf_kv_v[i]) {
 				fprintf(stderr, "ERROR: Metal GPU KV allocation failed at full-attn slot %d\n", i);
-				free(ctx);
-				return NULL;
+				metal_ctx_destroy(ctx); return NULL;
 			}
 		}
 		ctx->buf_attn_q      = [ctx->device newBufferWithLength:NUM_ATTN_HEADS * HEAD_DIM * sizeof(float)
@@ -4992,8 +5087,7 @@ static MetalCtx *metal_setup(void) {
 		if (!ctx->buf_attn_q || !ctx->buf_attn_scores ||
 			!ctx->buf_attn_out || !ctx->buf_attn_gate) {
 			fprintf(stderr, "ERROR: Metal attention scratch-buffer allocation failed\n");
-			free(ctx);
-			return NULL;
+			metal_ctx_destroy(ctx); return NULL;
 		}
 		printf("[metal] GPU_KV_SEQ = %d\n", gpu_kv);
 		printf("[metal] GPU attention buffers: %d KV caches (%.1f MB each), scores buf %.1f MB\n",
@@ -5010,8 +5104,7 @@ static MetalCtx *metal_setup(void) {
 															  options:MTLResourceStorageModeShared];
 			if (!ctx->buf_delta_state[i] || !ctx->buf_conv_state[i]) {
 				fprintf(stderr, "ERROR: Metal DeltaNet state allocation failed at slot %d\n", i);
-				free(ctx);
-				return NULL;
+				metal_ctx_destroy(ctx); return NULL;
 			}
 			memset([ctx->buf_delta_state[i] contents], 0, 64*128*128*sizeof(float));
 			memset([ctx->buf_conv_state[i] contents], 0, 3*12288*sizeof(float));
@@ -5029,8 +5122,7 @@ static MetalCtx *metal_setup(void) {
 			!ctx->buf_delta_g_decay || !ctx->buf_delta_beta ||
 			!ctx->buf_delta_output || !ctx->buf_conv_input || !ctx->buf_conv_output) {
 			fprintf(stderr, "ERROR: Metal DeltaNet scratch-buffer allocation failed\n");
-			free(ctx);
-			return NULL;
+			metal_ctx_destroy(ctx); return NULL;
 		}
 		printf("[metal] Delta-net GPU buffers: %d layers (%.1f MB state + %.1f MB scratch)\n",
 			   g_cfg.num_linear_layers,
