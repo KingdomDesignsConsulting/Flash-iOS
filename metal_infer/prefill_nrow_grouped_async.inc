@@ -1627,7 +1627,10 @@ static int prefill_nrow_grouped_layer(PrefillNRowGrouped *p,
         id<MTLCommandBuffer> selected_down_cmd = down_cmd;
 #endif
 #if defined(FLASH_PREFILL_NROW_DOWN_M4_2ROW_BITSPLIT)
-        prefill_nrow_encode_down_m4_2row_bitsplit(
+        prefill_nrow_encode_down_m4_2row_bitsplit(selected_down_cmd, p, data, data_base,
+            layout.down_w_off, layout.down_s_off, layout.down_b_off,
+            p->act, mid_off, p->output, hidden_off,
+            MOE_INTERMEDIATE, HIDDEN_DIM, count, bits);
 #elif defined(FLASH_PREFILL_NROW_DOWN_M4_2ROW)
         prefill_nrow_encode_down_m4_2row(selected_down_cmd, p, data, data_base,
             layout.down_w_off, layout.down_s_off, layout.down_b_off,
@@ -1753,7 +1756,10 @@ static int prefill_nrow_grouped_layer(PrefillNRowGrouped *p,
         [enc endEncoding];
 
 #if defined(FLASH_PREFILL_NROW_DOWN_M4_2ROW_BITSPLIT)
-        prefill_nrow_encode_down_m4_2row_bitsplit(
+        prefill_nrow_encode_down_m4_2row_bitsplit(cmd, p, data, data_base,
+            layout.down_w_off, layout.down_s_off, layout.down_b_off,
+            p->act, mid_off, p->output, hidden_off,
+            MOE_INTERMEDIATE, HIDDEN_DIM, count, bits);
 #elif defined(FLASH_PREFILL_NROW_DOWN_M4_2ROW)
         prefill_nrow_encode_down_m4_2row(cmd, p, data, data_base,
             layout.down_w_off, layout.down_s_off, layout.down_b_off,
