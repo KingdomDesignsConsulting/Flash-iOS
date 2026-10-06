@@ -105,6 +105,63 @@ static PromptTokens *flashmoe_tokenize_continuation_turn(const char *user_conten
 }
 
 // ============================================================================
+// Load validation / cleanup helpers
+// ============================================================================
+
+static int flashmoe_readable_nonempty_file(const char *path) {
+    struct stat st;
+    return path && access(path, R_OK) == 0 &&
+           stat(path, &st) == 0 && S_ISREG(st.st_mode) && st.st_size > 0;
+}
+
+static int flashmoe_validate_selected_package(const char *model_path,
+                                              const char *expert_dir,
+                                              int require_tiered_manifest,
+                                              char *error_buf,
+                                              size_t error_buf_size) {
+    const char *required_files[] = {
+        "config.json", "model_weights.json", "model_weights.bin",
+        "vocab.bin", "tokenizer.bin", NULL
+    };
+    char path[1024];
+    for (int i = 0; required_files[i]; i++) {
+        snprintf(path, sizeof(path), "%s/%s", model_path, required_files[i]);
+        if (!flashmoe_readable_nonempty_file(path)) {
+            snprintf(error_buf, error_buf_size, "Missing or empty required model file: %s",
+                     required_files[i]);
+            return 0;
+        }
+    }
+    if (require_tiered_manifest) {
+        snprintf(path, sizeof(path), "%s/%s/tiered_manifest.json", model_path, expert_dir);
+        if (!flashmoe_readable_nonempty_file(path)) {
+            snprintf(error_buf, error_buf_size,
+                     "Missing or empty tiered manifest: %s/tiered_manifest.json", expert_dir);
+            return 0;
+        }
+    }
+    for (int layer = 0; layer < g_cfg.num_layers; layer++) {
+        snprintf(path, sizeof(path), "%s/%s/layer_%02d.bin",
+                 model_path, expert_dir, layer);
+        if (!flashmoe_readable_nonempty_file(path)) {
+            snprintf(error_buf, error_buf_size,
+                     "Missing or empty expert layer %d: %s/layer_%02d.bin",
+                     layer, expert_dir, layer);
+            return 0;
+        }
+    }
+    return 1;
+}
+
+static int flashmoe_load_fail(FlashMoEContext *ctx, const char *message) {
+    if (ctx && message && message[0]) {
+        snprintf(ctx->last_error, sizeof(ctx->last_error), "%s", message);
+    }
+    if (ctx) flashmoe_unload(ctx);
+    return -1;
+}
+
+// ============================================================================
 // Public API Implementation
 // ============================================================================
 
@@ -123,16 +180,18 @@ int flashmoe_load(FlashMoEContext *ctx, const FlashMoEConfig *config) {
         return -1;
     }
 
-    // Unload any previously loaded model
+    // This wrapper currently chooses the "clean unloaded on failure" form of
+    // transactional replacement. The previous model is released first; every
+    // subsequent failure path unwinds all resources acquired by the new load.
     if (ctx->loaded) {
         flashmoe_unload(ctx);
     }
+    ctx->last_error[0] = '\0';
 
     @autoreleasepool {
         if (strlcpy(g_flashmoe_model_path, config->model_path,
                     sizeof(g_flashmoe_model_path)) >= sizeof(g_flashmoe_model_path)) {
-            snprintf(ctx->last_error, sizeof(ctx->last_error), "Model path is too long");
-            return -1;
+            return flashmoe_load_fail(ctx, "Model path is too long");
         }
         const char *model_path = g_flashmoe_model_path;
 
@@ -151,9 +210,8 @@ int flashmoe_load(FlashMoEContext *ctx, const FlashMoEConfig *config) {
             load_config_from_manifest(manifest_path_buf);
         }
         if (!validate_target_architecture()) {
-            snprintf(ctx->last_error, sizeof(ctx->last_error),
-                     "Unsupported model architecture or configuration");
-            return -1;
+            return flashmoe_load_fail(ctx,
+                                      "Unsupported model architecture or configuration");
         }
 
         // Note: MAX_SEQ_LEN is a compile-time constant in infer.m.
@@ -215,26 +273,53 @@ int flashmoe_load(FlashMoEContext *ctx, const FlashMoEConfig *config) {
             }
         }
 
+        // ---- Resolve expert package before allocating Metal resources ----
+        if (!g_use_2bit && !g_use_tiered) {
+            char probe[1024];
+            snprintf(probe, sizeof(probe),
+                     "%s/packed_experts_tiered/tiered_manifest.json", model_path);
+            if (access(probe, R_OK) == 0 && load_tiered_manifest(model_path)) {
+                g_use_tiered = 1;
+            }
+        }
+        if (g_use_tiered && !g_tiered_manifest) {
+            if (!load_tiered_manifest(model_path)) {
+                return flashmoe_load_fail(ctx,
+                                          "Tiered mode requested but no valid manifest found");
+            }
+        }
+
+        const char *expert_dir = g_use_tiered ? "packed_experts_tiered" :
+                                 g_use_2bit ? "packed_experts_2bit" :
+                                             "packed_experts";
+        char package_error[512] = {0};
+        if (!flashmoe_validate_selected_package(model_path, expert_dir,
+                                                g_use_tiered,
+                                                package_error,
+                                                sizeof(package_error))) {
+            return flashmoe_load_fail(ctx, package_error);
+        }
+
         // ---- Initialize Metal ----
         g_metal = metal_setup();
         if (!g_metal) {
-            snprintf(ctx->last_error, sizeof(ctx->last_error), "Metal initialization failed");
-            return -1;
+            return flashmoe_load_fail(ctx, "Metal initialization failed");
         }
 
         // ---- Initialize I/O thread pool ----
-        io_pool_init();
+        if (!io_pool_init()) {
+            return flashmoe_load_fail(ctx, "I/O thread pool initialization failed");
+        }
 
         // ---- Load weights ----
         ctx->wf = open_weights(weights_path, manifest_path);
         if (!ctx->wf) {
-            snprintf(ctx->last_error, sizeof(ctx->last_error), "Failed to load weights from %s", weights_path);
-            return -1;
+            char error[512];
+            snprintf(error, sizeof(error), "Failed to load weights from %s", weights_path);
+            return flashmoe_load_fail(ctx, error);
         }
         if (!validate_native_tensor_layout(ctx->wf)) {
-            snprintf(ctx->last_error, sizeof(ctx->last_error),
-                     "Model tensor layout/dtype validation failed");
-            return -1;
+            return flashmoe_load_fail(ctx, "Model tensor layout/dtype validation failed");
         }
 
         // Wrap weight file for Metal GPU access
@@ -243,36 +328,28 @@ int flashmoe_load(FlashMoEContext *ctx, const FlashMoEConfig *config) {
         // ---- Load vocabulary ----
         ctx->vocab = load_vocab(vocab_path);
         if (!ctx->vocab) {
-            snprintf(ctx->last_error, sizeof(ctx->last_error), "Failed to load vocabulary from %s", vocab_path);
-            return -1;
+            char error[512];
+            snprintf(error, sizeof(error), "Failed to load vocabulary from %s", vocab_path);
+            return flashmoe_load_fail(ctx, error);
         }
 
         // ---- Initialize tokenizer ----
         init_tokenizer();
 
-        // ---- Auto-detect/load tiered manifest ----
-        if (!g_use_2bit && !g_use_tiered) {
-            char probe[1024];
-            snprintf(probe, sizeof(probe), "%s/packed_experts_tiered/tiered_manifest.json", model_path);
-            if (access(probe, F_OK) == 0) {
-                if (load_tiered_manifest(model_path)) {
-                    g_use_tiered = 1;
-                }
-            }
-        }
-        if (g_use_tiered && !g_tiered_manifest) {
-            if (!load_tiered_manifest(model_path)) {
-                snprintf(ctx->last_error, sizeof(ctx->last_error),
-                         "Tiered mode requested but no manifest found");
-                return -1;
-            }
-        }
-
         // ---- Open packed expert files ----
-        ctx->layer_fds = calloc(g_cfg.num_layers, sizeof(int));
-        ctx->layer_fds_cold_local = calloc(g_cfg.num_layers, sizeof(int));
-        ctx->layer_mmaps = calloc(g_cfg.num_layers, sizeof(void *));
-        ctx->layer_mmap_sizes = calloc(g_cfg.num_layers, sizeof(size_t));
+        ctx->layer_fds = malloc((size_t)g_cfg.num_layers * sizeof(int));
+        ctx->layer_fds_cold_local = malloc((size_t)g_cfg.num_layers * sizeof(int));
+        ctx->layer_mmaps = malloc((size_t)g_cfg.num_layers * sizeof(void *));
+        ctx->layer_mmap_sizes = calloc((size_t)g_cfg.num_layers, sizeof(size_t));
+        if (!ctx->layer_fds || !ctx->layer_fds_cold_local ||
+            !ctx->layer_mmaps || !ctx->layer_mmap_sizes) {
+            return flashmoe_load_fail(ctx, "Expert file table allocation failed");
+        }
+        for (int i = 0; i < g_cfg.num_layers; i++) {
+            ctx->layer_fds[i] = -1;
+            ctx->layer_fds_cold_local[i] = -1;
+            ctx->layer_mmaps[i] = MAP_FAILED;
+        }
 
         memset(g_expert_seen, 0, sizeof(g_expert_seen));
         // Initialize per-layer quant arrays to match the global mode
@@ -283,22 +360,24 @@ int flashmoe_load(FlashMoEContext *ctx, const FlashMoEConfig *config) {
 
         for (int i = 0; i < g_cfg.num_layers; i++) {
             char path[1024];
-            snprintf(path, sizeof(path), "%s/%s/layer_%02d.bin", model_path,
-                     g_use_tiered ? "packed_experts_tiered" :
-                     g_use_2bit ? "packed_experts_2bit" : "packed_experts", i);
+            snprintf(path, sizeof(path), "%s/%s/layer_%02d.bin",
+                     model_path, expert_dir, i);
             ctx->layer_fds[i] = open(path, O_RDONLY);
-            // Set per-layer quant flag so fused_layer_forward uses correct expert size
-            if (ctx->layer_fds[i] >= 0) {
-                if (g_use_2bit) g_layer_is_2bit[i] = 1;
+            if (ctx->layer_fds[i] < 0) {
+                char error[512];
+                snprintf(error, sizeof(error), "Failed to open expert layer %d: %s", i, path);
+                return flashmoe_load_fail(ctx, error);
             }
-            ctx->layer_fds_cold_local[i] = -1;
-            ctx->layer_mmaps[i] = MAP_FAILED;
-            ctx->layer_mmap_sizes[i] = 0;
-            if (ctx->layer_fds[i] >= 0) {
-                fcntl(ctx->layer_fds[i], F_RDAHEAD, 0);
-                struct stat st;
-                if (fstat(ctx->layer_fds[i], &st) == 0 && st.st_size > 0) {
-                    ctx->layer_mmap_sizes[i] = st.st_size;
+            // Set per-layer quant flag so fused_layer_forward uses correct expert size
+            if (g_use_2bit) g_layer_is_2bit[i] = 1;
+            fcntl(ctx->layer_fds[i], F_RDAHEAD, 0);
+            struct stat st;
+            if (fstat(ctx->layer_fds[i], &st) != 0 || st.st_size <= 0) {
+                char error[512];
+                snprintf(error, sizeof(error), "Invalid expert layer %d: %s", i, path);
+                return flashmoe_load_fail(ctx, error);
+            }
+            ctx->layer_mmap_sizes[i] = st.st_size;
                     // Skip mmap on real iOS devices — 60 × 1.9 GB = 112 GB
                     // of mmap'd expert data causes jetsam kills.
                     // macOS (including "Designed for iPad") has plenty of address space.
@@ -308,14 +387,10 @@ int flashmoe_load(FlashMoEContext *ctx, const FlashMoEConfig *config) {
                     // on real iOS devices but true on Mac running iPad app
                     is_real_ios = ![[NSProcessInfo processInfo] isMacCatalystApp];
 #endif
-                    if (!is_real_ios) {
-                        ctx->layer_mmaps[i] = mmap(NULL, st.st_size, PROT_READ, MAP_PRIVATE,
-                                                    ctx->layer_fds[i], 0);
-                        if (ctx->layer_mmaps[i] == MAP_FAILED) {
-                            ctx->layer_mmaps[i] = MAP_FAILED;
-                        }
-                    }
-                }
+            if (!is_real_ios) {
+                ctx->layer_mmaps[i] = mmap(NULL, st.st_size, PROT_READ, MAP_PRIVATE,
+                                           ctx->layer_fds[i], 0);
+                // mmap is an optimization only; pread remains the safe fallback.
             }
         }
 
@@ -337,8 +412,11 @@ int flashmoe_load(FlashMoEContext *ctx, const FlashMoEConfig *config) {
         memset(g_deferred.h_mid, 0, sizeof(g_deferred.h_mid));
 
         // ---- Allocate per-layer state ----
-        ctx->layer_states = calloc(g_cfg.num_layers, sizeof(void *));
-        ctx->kv_caches = calloc(g_cfg.num_layers, sizeof(KVCache *));
+        ctx->layer_states = calloc((size_t)g_cfg.num_layers, sizeof(void *));
+        ctx->kv_caches = calloc((size_t)g_cfg.num_layers, sizeof(KVCache *));
+        if (!ctx->layer_states || !ctx->kv_caches) {
+            return flashmoe_load_fail(ctx, "Per-layer state table allocation failed");
+        }
 
         for (int i = 0; i < g_cfg.num_layers; i++) {
             if (((i + 1) % FULL_ATTN_INTERVAL == 0)) {
@@ -350,17 +428,28 @@ int flashmoe_load(FlashMoEContext *ctx, const FlashMoEConfig *config) {
                              i, g_kv_seq_len,
                              (double)g_kv_seq_len * NUM_KV_HEADS * HEAD_DIM * sizeof(float) / 1e6);
                     NSLog(@"[FlashMoE] %s", ctx->last_error);
-                    return -1;
+                    char error[512];
+                    strlcpy(error, ctx->last_error, sizeof(error));
+                    return flashmoe_load_fail(ctx, error);
                 }
             } else {
                 ctx->layer_states[i] = linear_attn_state_new();
+                if (!ctx->layer_states[i]) {
+                    char error[256];
+                    snprintf(error, sizeof(error),
+                             "Linear attention state allocation failed at layer %d", i);
+                    return flashmoe_load_fail(ctx, error);
+                }
             }
         }
 
         // ---- Allocate working buffers ----
-        ctx->hidden = calloc(HIDDEN_DIM, sizeof(float));
-        ctx->logits = calloc(VOCAB_SIZE, sizeof(float));
+        ctx->hidden = calloc((size_t)HIDDEN_DIM, sizeof(float));
+        ctx->logits = calloc((size_t)VOCAB_SIZE, sizeof(float));
         ctx->final_norm_w = get_tensor_ptr(ctx->wf, "model.norm.weight");
+        if (!ctx->hidden || !ctx->logits || !ctx->final_norm_w) {
+            return flashmoe_load_fail(ctx, "Working-buffer or final-norm allocation failed");
+        }
 
         // ---- Build layer cache (precomputes weight pointers) ----
         build_layer_cache(ctx->wf);
@@ -376,7 +465,7 @@ int flashmoe_load(FlashMoEContext *ctx, const FlashMoEConfig *config) {
 }
 
 void flashmoe_unload(FlashMoEContext *ctx) {
-    if (!ctx || !ctx->loaded) return;
+    if (!ctx) return;
 
     @autoreleasepool {
         // Wait for any in-flight GPU work
@@ -408,16 +497,19 @@ void flashmoe_unload(FlashMoEContext *ctx) {
             free(ctx->layer_mmap_sizes); ctx->layer_mmap_sizes = NULL;
         }
 
-        // Free per-layer state
+        // Free per-layer state. These tables may be only partially allocated
+        // when a load fails, so clean them independently.
+        if (ctx->kv_caches) {
+            for (int i = 0; i < g_cfg.num_layers; i++) {
+                if (ctx->kv_caches[i]) kv_cache_free(ctx->kv_caches[i]);
+            }
+            free(ctx->kv_caches); ctx->kv_caches = NULL;
+        }
         if (ctx->layer_states) {
             for (int i = 0; i < g_cfg.num_layers; i++) {
-                if (ctx->kv_caches && ctx->kv_caches[i])
-                    kv_cache_free(ctx->kv_caches[i]);
-                if (ctx->layer_states[i])
-                    linear_attn_state_free(ctx->layer_states[i]);
+                if (ctx->layer_states[i]) linear_attn_state_free(ctx->layer_states[i]);
             }
             free(ctx->layer_states); ctx->layer_states = NULL;
-            free(ctx->kv_caches); ctx->kv_caches = NULL;
         }
 
         // Free working buffers
@@ -1241,17 +1333,33 @@ int flashmoe_validate_model(const char *model_path) {
     snprintf(path, sizeof(path), "%s/model_weights.json", model_path);
     if (access(path, R_OK) != 0) return -1;
 
-    // Check for at least one expert layer file
-    snprintf(path, sizeof(path), "%s/packed_experts/layer_00.bin", model_path);
-    int has_4bit = (access(path, R_OK) == 0);
+    // This iOS target is architecture-locked to the 40-layer 35B model.
+    // A package is not valid merely because layer_00 exists: require every
+    // expert layer for at least one supported quantization layout.
+    const char *dirs[] = {
+        "packed_experts", "packed_experts_tiered", "packed_experts_2bit"
+    };
+    int complete_package = 0;
+    for (int d = 0; d < 3 && !complete_package; d++) {
+        int complete = 1;
+        if (d == 1) {
+            snprintf(path, sizeof(path), "%s/%s/tiered_manifest.json",
+                     model_path, dirs[d]);
+            if (!flashmoe_readable_nonempty_file(path)) complete = 0;
+        }
+        for (int layer = 0; layer < 40 && complete; layer++) {
+            snprintf(path, sizeof(path), "%s/%s/layer_%02d.bin",
+                     model_path, dirs[d], layer);
+            if (!flashmoe_readable_nonempty_file(path)) complete = 0;
+        }
+        if (complete) complete_package = 1;
+    }
+    if (!complete_package) return -1;
 
-    snprintf(path, sizeof(path), "%s/packed_experts_tiered/layer_00.bin", model_path);
-    int has_tiered = (access(path, R_OK) == 0);
-
-    snprintf(path, sizeof(path), "%s/packed_experts_2bit/layer_00.bin", model_path);
-    int has_2bit = (access(path, R_OK) == 0);
-
-    if (!has_4bit && !has_tiered && !has_2bit) return -1;
+    snprintf(path, sizeof(path), "%s/vocab.bin", model_path);
+    if (!flashmoe_readable_nonempty_file(path)) return -1;
+    snprintf(path, sizeof(path), "%s/tokenizer.bin", model_path);
+    if (!flashmoe_readable_nonempty_file(path)) return -1;
 
     return 0;
 }
