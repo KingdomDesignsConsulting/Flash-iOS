@@ -61,6 +61,9 @@ typedef struct {
     id<MTLComputePipelineState> down_coop_2row_projection;
 #endif
     id<MTLComputePipelineState> gate_up_projection;
+#ifdef FLASH_PREFILL_NROW_GATEUP_M1_Q4X4
+    id<MTLComputePipelineState> gate_up_projection_m1_q4x4;
+#endif
 #ifdef FLASH_PREFILL_NROW_GATEUP_M4_2ROW
     id<MTLComputePipelineState> gate_up_projection_m4_2row;
 #endif
@@ -164,6 +167,9 @@ static __attribute__((unused)) void prefill_nrow_grouped_release(PrefillNRowGrou
     p->down_coop_2row_projection = nil;
 #endif
     p->gate_up_projection = nil;
+#ifdef FLASH_PREFILL_NROW_GATEUP_M1_Q4X4
+    p->gate_up_projection_m1_q4x4 = nil;
+#endif
 #ifdef FLASH_PREFILL_NROW_GATEUP_M4_2ROW
     p->gate_up_projection_m4_2row = nil;
 #endif
@@ -333,6 +339,17 @@ fprintf(stderr, "[prefill-nrow] slab_rows=%d assignments=%d\n",
 #endif
     fn = [library newFunctionWithName:@"grouped_tiered_gate_up"];
     p->gate_up_projection = [g_metal->device newComputePipelineStateWithFunction:fn error:&error];
+#ifdef FLASH_PREFILL_NROW_GATEUP_M1_Q4X4
+    fn = [library newFunctionWithName:@"grouped_tiered_gate_up_m1_q4x4"];
+    p->gate_up_projection_m1_q4x4 =
+        [g_metal->device newComputePipelineStateWithFunction:fn error:&error];
+    if (!p->gate_up_projection_m1_q4x4) {
+        fprintf(stderr, "[prefill-nrow] M1 Q4x4 gate+up pipeline: %s\n",
+                error.localizedDescription.UTF8String);
+        return 0;
+    }
+    fprintf(stderr, "[prefill-nrow] routed gate+up adaptive candidate=M1-Q4x4 for singleton groups\n");
+#endif
 #ifdef FLASH_PREFILL_NROW_GATEUP_M4_2ROW
     fn = [library newFunctionWithName:@"grouped_tiered_gate_up_m4_2row"];
     p->gate_up_projection_m4_2row =
@@ -508,6 +525,9 @@ fprintf(stderr, "[prefill-nrow] slab_rows=%d assignments=%d\n",
         p->down_coop_2row_projection &&
 #endif
         p->gate_up_projection &&
+#ifdef FLASH_PREFILL_NROW_GATEUP_M1_Q4X4
+        p->gate_up_projection_m1_q4x4 &&
+#endif
 #ifdef FLASH_PREFILL_NROW_GATEUP_M4_2ROW
         p->gate_up_projection_m4_2row &&
 #endif
@@ -1234,6 +1254,13 @@ static void prefill_nrow_encode_gate_up(id<MTLCommandBuffer> cmd,
     id<MTLBuffer> up_output, NSUInteger up_output_offset,
     uint32_t in_dim, uint32_t out_dim, uint32_t count, uint32_t bits) {
     id<MTLComputeCommandEncoder> enc = [cmd computeCommandEncoder];
+#ifdef FLASH_PREFILL_NROW_GATEUP_M1_Q4X4
+    const int use_m1_q4x4 =
+        (count == 1u && bits == 4u && p->gate_up_projection_m1_q4x4 != nil);
+    if (use_m1_q4x4) {
+        [enc setComputePipelineState:p->gate_up_projection_m1_q4x4];
+    } else
+#endif
 #ifdef FLASH_PREFILL_NROW_GATEUP_M8_2ROW
     [enc setComputePipelineState:p->gate_up_projection_m8_2row];
 #elif defined(FLASH_PREFILL_NROW_GATEUP_M4_16ROW)
@@ -1266,6 +1293,13 @@ static void prefill_nrow_encode_gate_up(id<MTLCommandBuffer> cmd,
     [enc setBytes:&out_dim length:4 atIndex:10];
     [enc setBytes:&count length:4 atIndex:11];
     [enc setBytes:&bits length:4 atIndex:12];
+#ifdef FLASH_PREFILL_NROW_GATEUP_M1_Q4X4
+    if (use_m1_q4x4) {
+        [enc dispatchThreadgroups:
+            MTLSizeMake((out_dim + 7u) / 8u, 1u, 1u)
+            threadsPerThreadgroup:MTLSizeMake(64, 1, 1)];
+    } else
+#endif
 #ifdef FLASH_PREFILL_NROW_GATEUP_M8_2ROW
     [enc dispatchThreadgroups:
         MTLSizeMake((out_dim + 1u) / 2u, (count + 7u) / 8u, 1)
