@@ -1743,6 +1743,16 @@ typedef struct {
 	int capacity;
 } TensorManifest;
 
+static void free_tensor_manifest(TensorManifest *m) {
+	if (!m) return;
+	if (m->tensors) {
+		for (int i = 0; i < m->capacity; i++)
+			free((void *)m->tensors[i].name);
+		free(m->tensors);
+	}
+	free(m);
+}
+
 static TensorManifest *load_manifest(const char *json_path) {
 	@autoreleasepool {
 		NSData *data = [NSData dataWithContentsOfFile:
@@ -1838,11 +1848,7 @@ static TensorManifest *load_manifest(const char *json_path) {
 		return m;
 
 manifest_fail:
-		for (int i = 0; i < m->capacity; i++) {
-			free((void *)m->tensors[i].name);
-		}
-		free(m->tensors);
-		free(m);
+		free_tensor_manifest(m);
 		return NULL;
 	}
 }
@@ -2244,6 +2250,7 @@ static WeightFile *open_weights(const char *bin_path, const char *json_path) {
 
 	TensorManifest *manifest = load_manifest(json_path);
 	if (!manifest || !validate_manifest_bounds(manifest, size)) {
+		free_tensor_manifest(manifest);
 		munmap(data, size);
 		return NULL;
 	}
@@ -2251,6 +2258,7 @@ static WeightFile *open_weights(const char *bin_path, const char *json_path) {
 	WeightFile *wf = calloc(1, sizeof(WeightFile));
 	if (!wf) {
 		fprintf(stderr, "ERROR: Cannot allocate WeightFile\n");
+		free_tensor_manifest(manifest);
 		munmap(data, size);
 		return NULL;
 	}
