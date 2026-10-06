@@ -542,10 +542,8 @@ void flashmoe_unload(FlashMoEContext *ctx) {
         // Free weight file (munmap + manifest)
         if (ctx->wf) {
             if (ctx->wf->data) munmap(ctx->wf->data, ctx->wf->size);
-            if (ctx->wf->manifest) {
-                free(ctx->wf->manifest->tensors);
-                free(ctx->wf->manifest);
-            }
+            free_tensor_manifest(ctx->wf->manifest);
+            ctx->wf->manifest = NULL;
             free(ctx->wf);
             ctx->wf = NULL;
         }
