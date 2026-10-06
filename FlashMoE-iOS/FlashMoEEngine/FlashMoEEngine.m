@@ -55,6 +55,11 @@ struct FlashMoEContext {
     char last_error[512];
 };
 
+// Stable storage for the model path. Swift passes a borrowed UTF-8 pointer into
+// flashmoe_load(); copy it immediately so tokenizer/stats globals never retain
+// a pointer whose Swift/NSString lifetime has ended.
+static char g_flashmoe_model_path[1024];
+
 // ============================================================================
 // Shader loading for iOS — find shaders.metal in the app bundle
 // ============================================================================
@@ -124,7 +129,12 @@ int flashmoe_load(FlashMoEContext *ctx, const FlashMoEConfig *config) {
     }
 
     @autoreleasepool {
-        const char *model_path = config->model_path;
+        if (strlcpy(g_flashmoe_model_path, config->model_path,
+                    sizeof(g_flashmoe_model_path)) >= sizeof(g_flashmoe_model_path)) {
+            snprintf(ctx->last_error, sizeof(ctx->last_error), "Model path is too long");
+            return -1;
+        }
+        const char *model_path = g_flashmoe_model_path;
 
         // ---- Load model configuration ----
         config_init_defaults();
@@ -139,6 +149,11 @@ int flashmoe_load(FlashMoEContext *ctx, const FlashMoEConfig *config) {
         load_config_from_config_json(model_path);
         if (access(manifest_path_buf, R_OK) == 0) {
             load_config_from_manifest(manifest_path_buf);
+        }
+        if (!validate_target_architecture()) {
+            snprintf(ctx->last_error, sizeof(ctx->last_error),
+                     "Unsupported model architecture or configuration");
+            return -1;
         }
 
         // Note: MAX_SEQ_LEN is a compile-time constant in infer.m.
@@ -214,6 +229,11 @@ int flashmoe_load(FlashMoEContext *ctx, const FlashMoEConfig *config) {
         ctx->wf = open_weights(weights_path, manifest_path);
         if (!ctx->wf) {
             snprintf(ctx->last_error, sizeof(ctx->last_error), "Failed to load weights from %s", weights_path);
+            return -1;
+        }
+        if (!validate_native_tensor_layout(ctx->wf)) {
+            snprintf(ctx->last_error, sizeof(ctx->last_error),
+                     "Model tensor layout/dtype validation failed");
             return -1;
         }
 
@@ -582,6 +602,8 @@ void flashmoe_unload(FlashMoEContext *ctx) {
         }
 
         ctx->loaded = 0;
+        g_model_path_for_tokenizer = NULL;
+        g_flashmoe_model_path[0] = '\0';
     }
 }
 
@@ -594,6 +616,26 @@ void flashmoe_destroy(FlashMoEContext *ctx) {
 // ============================================================================
 // Generation — the core inference loop adapted for callback-based streaming
 // ============================================================================
+
+// A sampled token is visible to the caller before it becomes an input to the
+// next decode step. Before persisting conversation state, run that final emitted
+// token through the transformer once so KV/delta state and current_pos describe
+// exactly the transcript the user saw. Without this, continuation state trails
+// the assistant output by one token.
+static int flashmoe_commit_emitted_token(FlashMoEContext *ctx, int token_id, int pos) {
+    embed_lookup(ctx->wf, token_id, ctx->hidden);
+    for (int layer = 0; layer < g_cfg.num_layers; layer++) {
+        int is_full = ((layer + 1) % FULL_ATTN_INTERVAL == 0);
+        fused_layer_forward(ctx->wf, layer, ctx->hidden,
+                            is_full ? ctx->kv_caches[layer] : NULL,
+                            is_full ? NULL : ctx->layer_states[layer],
+                            pos,
+                            ctx->layer_mmaps[layer] != MAP_FAILED ? ctx->layer_mmaps[layer] : NULL,
+                            ctx->K, ctx->layer_fds[layer]);
+    }
+    complete_deferred_experts();
+    return pos + 1;
+}
 
 int flashmoe_generate(
     FlashMoEContext *ctx,
@@ -733,6 +775,9 @@ int flashmoe_generate(
             double tps = gen_time > 0 ? 1000.0 / gen_time : 0;
             int stop = callback(token_text, next_token, ctx->tokens_generated, tps, user_data);
             if (stop) {
+                pos = flashmoe_commit_emitted_token(ctx, next_token, pos);
+                ctx->current_pos = pos;
+                ctx->turn_count++;
                 free(pt->ids); free(pt);
                 ctx->total_time_ms = now_ms() - t0;
                 return ctx->tokens_generated;
@@ -817,7 +862,9 @@ int flashmoe_generate(
             ctx->tokens_per_second = (ctx->tokens_generated - 1) * 1000.0 / gen_elapsed;
         }
 
-        // Persist state for KV cache reuse in next turn
+        // Persist state for KV cache reuse in next turn. The final emitted
+        // token has not yet been used as model input, so commit it first.
+        pos = flashmoe_commit_emitted_token(ctx, next_token, pos);
         ctx->current_pos = pos;
         ctx->turn_count++;
 
@@ -956,8 +1003,10 @@ int flashmoe_generate_continuation(
             double tps = gen_time > 0 ? 1000.0 / gen_time : 0;
             int stop = callback(token_text, next_token, ctx->tokens_generated, tps, user_data);
             if (stop) {
+                pos = flashmoe_commit_emitted_token(ctx, next_token, pos);
                 free(pt->ids); free(pt);
                 ctx->current_pos = pos;
+                ctx->turn_count++;
                 ctx->total_time_ms = now_ms() - t0;
                 return ctx->tokens_generated;
             }
@@ -1025,6 +1074,7 @@ int flashmoe_generate_continuation(
             ctx->tokens_per_second = (ctx->tokens_generated - 1) * 1000.0 / gen_elapsed;
         }
 
+        pos = flashmoe_commit_emitted_token(ctx, next_token, pos);
         ctx->current_pos = pos;
         ctx->turn_count++;
 

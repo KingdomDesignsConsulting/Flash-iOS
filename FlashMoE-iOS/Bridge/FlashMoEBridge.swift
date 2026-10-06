@@ -145,8 +145,6 @@ final class FlashMoEEngine: @unchecked Sendable {
 
                 // Configure
                 var config = FlashMoEConfig()
-                let pathCStr = (path as NSString).utf8String
-                config.model_path = pathCStr
                 config.max_context = Int32(maxContext)
                 config.think_budget = Int32(thinkBudget)
                 config.use_tiered = useTiered ? 1 : 0
@@ -154,8 +152,14 @@ final class FlashMoEEngine: @unchecked Sendable {
                 config.cache_io_split = Int32(cacheIOSplit)
                 config.verbose = verbose ? 1 : 0
 
-                // Load
-                let result = flashmoe_load(ctx, &config)
+                // model_path is a borrowed pointer at the Swift/C boundary.
+                // Keep it valid for the complete synchronous load call; the C
+                // engine copies it immediately into stable engine-owned storage.
+                let result = path.withCString { pathCStr in
+                    config.model_path = pathCStr
+                    return flashmoe_load(ctx, &config)
+                }
+                config.model_path = nil
                 if result != 0 {
                     let error = String(cString: flashmoe_last_error(ctx))
                     DispatchQueue.main.async { self.state = .error(error) }
