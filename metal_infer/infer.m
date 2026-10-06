@@ -5324,356 +5324,356 @@ static void matvec_bench_compare(const float *a, const float *b, uint32_t n,
 // matvecs against one M2 kernel that reuses each packed Q4 weight/dequant for
 // two independent FP32 activation rows. This code is absent from normal builds.
 static id<MTLComputePipelineState> target_verify_affine_m2_pipeline(MetalCtx *ctx) {
-\tif (!ctx || !ctx->device) return nil;
+	if (!ctx || !ctx->device) return nil;
 
-\tNSString *executable_dir = infer_executable_directory();
-\tNSMutableArray<NSString *> *paths = [NSMutableArray array];
-\tif (executable_dir.length > 0) {
-\t\t[paths addObject:[executable_dir
-\t\t\tstringByAppendingPathComponent:@"prefill_probe/chunk_kernels.metal"]];
+	NSString *executable_dir = infer_executable_directory();
+	NSMutableArray<NSString *> *paths = [NSMutableArray array];
+	if (executable_dir.length > 0) {
+		[paths addObject:[executable_dir
+			stringByAppendingPathComponent:@"prefill_probe/chunk_kernels.metal"]];
 
-\t\t// Benchmark binaries normally live under
-\t\t// Testing/Temporary Testing Files/Apps. Climb back to the repo root.
-\t\tNSString *repo_root = executable_dir;
-\t\tfor (int i = 0; i < 3 && repo_root.length > 1; i++)
-\t\t\trepo_root = [repo_root stringByDeletingLastPathComponent];
-\t\t[paths addObject:[repo_root
-\t\t\tstringByAppendingPathComponent:@"metal_infer/prefill_probe/chunk_kernels.metal"]];
-\t}
-\t[paths addObject:@"prefill_probe/chunk_kernels.metal"];
-\t[paths addObject:@"metal_infer/prefill_probe/chunk_kernels.metal"];
+		// Benchmark binaries normally live under
+		// Testing/Temporary Testing Files/Apps. Climb back to the repo root.
+		NSString *repo_root = executable_dir;
+		for (int i = 0; i < 3 && repo_root.length > 1; i++)
+			repo_root = [repo_root stringByDeletingLastPathComponent];
+		[paths addObject:[repo_root
+			stringByAppendingPathComponent:@"metal_infer/prefill_probe/chunk_kernels.metal"]];
+	}
+	[paths addObject:@"prefill_probe/chunk_kernels.metal"];
+	[paths addObject:@"metal_infer/prefill_probe/chunk_kernels.metal"];
 
-\tNSString *source = nil;
-\tNSString *source_path = nil;
-\tfor (NSString *candidate in paths) {
-\t\tsource = [NSString stringWithContentsOfFile:candidate
-\t\t\tencoding:NSUTF8StringEncoding error:NULL];
-\t\tif (source) {
-\t\t\tsource_path = candidate;
-\t\t\tbreak;
-\t\t}
-\t}
-\tif (!source) {
-\t\tfprintf(stderr,
-\t\t\t"ERROR: target verifier affine benchmark cannot find "
-\t\t\t"prefill_probe/chunk_kernels.metal\\n");
-\t\treturn nil;
-\t}
+	NSString *source = nil;
+	NSString *source_path = nil;
+	for (NSString *candidate in paths) {
+		source = [NSString stringWithContentsOfFile:candidate
+			encoding:NSUTF8StringEncoding error:NULL];
+		if (source) {
+			source_path = candidate;
+			break;
+		}
+	}
+	if (!source) {
+		fprintf(stderr,
+			"ERROR: target verifier affine benchmark cannot find "
+			"prefill_probe/chunk_kernels.metal\n");
+		return nil;
+	}
 
-\tNSError *error = nil;
-\tid<MTLLibrary> library = [ctx->device newLibraryWithSource:source
-\t\toptions:nil error:&error];
-\tif (!library) {
-\t\tfprintf(stderr, "ERROR: target verifier M2 shader compile failed (%s): %s\\n",
-\t\t\tsource_path.UTF8String,
-\t\t\terror.localizedDescription.UTF8String ?: "unknown error");
-\t\treturn nil;
-\t}
-\tid<MTLFunction> fn = [library newFunctionWithName:@"dense_affine_q4_m2"];
-\tif (!fn) {
-\t\tfprintf(stderr,
-\t\t\t"ERROR: target verifier M2 shader source has no dense_affine_q4_m2\\n");
-\t\treturn nil;
-\t}
-\tid<MTLComputePipelineState> pipeline =
-\t\t[ctx->device newComputePipelineStateWithFunction:fn error:&error];
-\tif (!pipeline) {
-\t\tfprintf(stderr, "ERROR: target verifier M2 pipeline creation failed: %s\\n",
-\t\t\terror.localizedDescription.UTF8String ?: "unknown error");
-\t\treturn nil;
-\t}
-\tprintf("[target-verify-affine] shader source=%s\\n", source_path.UTF8String);
-\treturn pipeline;
+	NSError *error = nil;
+	id<MTLLibrary> library = [ctx->device newLibraryWithSource:source
+		options:nil error:&error];
+	if (!library) {
+		fprintf(stderr, "ERROR: target verifier M2 shader compile failed (%s): %s\n",
+			source_path.UTF8String,
+			error.localizedDescription.UTF8String ?: "unknown error");
+		return nil;
+	}
+	id<MTLFunction> fn = [library newFunctionWithName:@"dense_affine_q4_m2"];
+	if (!fn) {
+		fprintf(stderr,
+			"ERROR: target verifier M2 shader source has no dense_affine_q4_m2\n");
+		return nil;
+	}
+	id<MTLComputePipelineState> pipeline =
+		[ctx->device newComputePipelineStateWithFunction:fn error:&error];
+	if (!pipeline) {
+		fprintf(stderr, "ERROR: target verifier M2 pipeline creation failed: %s\n",
+			error.localizedDescription.UTF8String ?: "unknown error");
+		return nil;
+	}
+	printf("[target-verify-affine] shader source=%s\n", source_path.UTF8String);
+	return pipeline;
 }
 
 static void target_verify_affine_encode_m1_pair(
-\tMetalCtx *ctx,
-\tid<MTLComputeCommandEncoder> enc,
-\tconst MatvecBenchShape *shape,
-\tconst MatvecBenchTensor *tensor,
-\tid<MTLBuffer> input,
-\tid<MTLBuffer> output
+	MetalCtx *ctx,
+	id<MTLComputeCommandEncoder> enc,
+	const MatvecBenchShape *shape,
+	const MatvecBenchTensor *tensor,
+	id<MTLBuffer> input,
+	id<MTLBuffer> output
 ) {
-\tuint32_t group_size = GROUP_SIZE;
-\tuint32_t num_tgs = (shape->out_dim + 7u) / 8u;
-\t[enc setComputePipelineState:ctx->matvec_v3];
-\t[enc setBuffer:tensor->weight_buf offset:tensor->weight_off atIndex:0];
-\t[enc setBuffer:tensor->weight_buf offset:tensor->scale_off atIndex:1];
-\t[enc setBuffer:tensor->weight_buf offset:tensor->bias_off atIndex:2];
-\t[enc setBytes:&shape->out_dim length:4 atIndex:5];
-\t[enc setBytes:&shape->in_dim length:4 atIndex:6];
-\t[enc setBytes:&group_size length:4 atIndex:7];
+	uint32_t group_size = GROUP_SIZE;
+	uint32_t num_tgs = (shape->out_dim + 7u) / 8u;
+	[enc setComputePipelineState:ctx->matvec_v3];
+	[enc setBuffer:tensor->weight_buf offset:tensor->weight_off atIndex:0];
+	[enc setBuffer:tensor->weight_buf offset:tensor->scale_off atIndex:1];
+	[enc setBuffer:tensor->weight_buf offset:tensor->bias_off atIndex:2];
+	[enc setBytes:&shape->out_dim length:4 atIndex:5];
+	[enc setBytes:&shape->in_dim length:4 atIndex:6];
+	[enc setBytes:&group_size length:4 atIndex:7];
 
-\tfor (uint32_t row = 0; row < 2; row++) {
-\t\t[enc setBuffer:input
-\t\t\toffset:(NSUInteger)row * shape->in_dim * sizeof(float) atIndex:3];
-\t\t[enc setBuffer:output
-\t\t\toffset:(NSUInteger)row * shape->out_dim * sizeof(float) atIndex:4];
-\t\t[enc dispatchThreadgroups:MTLSizeMake(num_tgs, 1, 1)
-\t\t\tthreadsPerThreadgroup:MTLSizeMake(256, 1, 1)];
-\t}
+	for (uint32_t row = 0; row < 2; row++) {
+		[enc setBuffer:input
+			offset:(NSUInteger)row * shape->in_dim * sizeof(float) atIndex:3];
+		[enc setBuffer:output
+			offset:(NSUInteger)row * shape->out_dim * sizeof(float) atIndex:4];
+		[enc dispatchThreadgroups:MTLSizeMake(num_tgs, 1, 1)
+			threadsPerThreadgroup:MTLSizeMake(256, 1, 1)];
+	}
 }
 
 static void target_verify_affine_encode_m2(
-\tid<MTLComputePipelineState> pipeline,
-\tid<MTLComputeCommandEncoder> enc,
-\tconst MatvecBenchShape *shape,
-\tconst MatvecBenchTensor *tensor,
-\tid<MTLBuffer> input,
-\tid<MTLBuffer> output
+	id<MTLComputePipelineState> pipeline,
+	id<MTLComputeCommandEncoder> enc,
+	const MatvecBenchShape *shape,
+	const MatvecBenchTensor *tensor,
+	id<MTLBuffer> input,
+	id<MTLBuffer> output
 ) {
-\tuint32_t group_size = GROUP_SIZE;
-\tuint32_t input_stride = shape->in_dim;
-\tuint32_t output_stride = shape->out_dim;
-\tuint32_t num_tgs = (shape->out_dim + 7u) / 8u;
+	uint32_t group_size = GROUP_SIZE;
+	uint32_t input_stride = shape->in_dim;
+	uint32_t output_stride = shape->out_dim;
+	uint32_t num_tgs = (shape->out_dim + 7u) / 8u;
 
-\t[enc setComputePipelineState:pipeline];
-\t[enc setBuffer:tensor->weight_buf offset:tensor->weight_off atIndex:0];
-\t[enc setBuffer:tensor->weight_buf offset:tensor->scale_off atIndex:1];
-\t[enc setBuffer:tensor->weight_buf offset:tensor->bias_off atIndex:2];
-\t[enc setBuffer:input offset:0 atIndex:3];
-\t[enc setBuffer:output offset:0 atIndex:4];
-\t[enc setBytes:&shape->out_dim length:4 atIndex:5];
-\t[enc setBytes:&shape->in_dim length:4 atIndex:6];
-\t[enc setBytes:&group_size length:4 atIndex:7];
-\t[enc setBytes:&input_stride length:4 atIndex:8];
-\t[enc setBytes:&output_stride length:4 atIndex:9];
-\t[enc dispatchThreadgroups:MTLSizeMake(num_tgs, 1, 1)
-\t\tthreadsPerThreadgroup:MTLSizeMake(256, 1, 1)];
+	[enc setComputePipelineState:pipeline];
+	[enc setBuffer:tensor->weight_buf offset:tensor->weight_off atIndex:0];
+	[enc setBuffer:tensor->weight_buf offset:tensor->scale_off atIndex:1];
+	[enc setBuffer:tensor->weight_buf offset:tensor->bias_off atIndex:2];
+	[enc setBuffer:input offset:0 atIndex:3];
+	[enc setBuffer:output offset:0 atIndex:4];
+	[enc setBytes:&shape->out_dim length:4 atIndex:5];
+	[enc setBytes:&shape->in_dim length:4 atIndex:6];
+	[enc setBytes:&group_size length:4 atIndex:7];
+	[enc setBytes:&input_stride length:4 atIndex:8];
+	[enc setBytes:&output_stride length:4 atIndex:9];
+	[enc dispatchThreadgroups:MTLSizeMake(num_tgs, 1, 1)
+		threadsPerThreadgroup:MTLSizeMake(256, 1, 1)];
 }
 
 static int target_verify_affine_run_block(
-\tMetalCtx *ctx,
-\tid<MTLComputePipelineState> m2_pipeline,
-\tconst MatvecBenchShape *shape,
-\tid<MTLBuffer> input,
-\tid<MTLBuffer> output,
-\tint use_m2,
-\tint pairs,
-\tdouble *wall_ms_per_pair,
-\tdouble *gpu_ms_per_pair
+	MetalCtx *ctx,
+	id<MTLComputePipelineState> m2_pipeline,
+	const MatvecBenchShape *shape,
+	id<MTLBuffer> input,
+	id<MTLBuffer> output,
+	int use_m2,
+	int pairs,
+	double *wall_ms_per_pair,
+	double *gpu_ms_per_pair
 ) {
-\tif (!ctx || !shape || shape->tensor_count <= 0 || !input || !output ||
-\t\tpairs <= 0 || (use_m2 && !m2_pipeline)) return 0;
+	if (!ctx || !shape || shape->tensor_count <= 0 || !input || !output ||
+		pairs <= 0 || (use_m2 && !m2_pipeline)) return 0;
 
-\tdouble wall_start = now_ms();
-\tid<MTLCommandBuffer> cmd = [ctx->queue commandBuffer];
-\tid<MTLComputeCommandEncoder> enc = [cmd computeCommandEncoder];
-\tif (!cmd || !enc) return 0;
+	double wall_start = now_ms();
+	id<MTLCommandBuffer> cmd = [ctx->queue commandBuffer];
+	id<MTLComputeCommandEncoder> enc = [cmd computeCommandEncoder];
+	if (!cmd || !enc) return 0;
 
-\tfor (int i = 0; i < pairs; i++) {
-\t\tconst MatvecBenchTensor *tensor =
-\t\t\t&shape->tensors[i % shape->tensor_count];
-\t\tif (use_m2)
-\t\t\ttarget_verify_affine_encode_m2(
-\t\t\t\tm2_pipeline, enc, shape, tensor, input, output);
-\t\telse
-\t\t\ttarget_verify_affine_encode_m1_pair(
-\t\t\t\tctx, enc, shape, tensor, input, output);
-\t}
-\t[enc endEncoding];
-\t[cmd commit];
-\t[cmd waitUntilCompleted];
-\tdouble wall_ms = now_ms() - wall_start;
+	for (int i = 0; i < pairs; i++) {
+		const MatvecBenchTensor *tensor =
+			&shape->tensors[i % shape->tensor_count];
+		if (use_m2)
+			target_verify_affine_encode_m2(
+				m2_pipeline, enc, shape, tensor, input, output);
+		else
+			target_verify_affine_encode_m1_pair(
+				ctx, enc, shape, tensor, input, output);
+	}
+	[enc endEncoding];
+	[cmd commit];
+	[cmd waitUntilCompleted];
+	double wall_ms = now_ms() - wall_start;
 
-\tif (cmd.status != MTLCommandBufferStatusCompleted) {
-\t\tNSString *detail = cmd.error.localizedDescription;
-\t\tfprintf(stderr,
-\t\t\t"ERROR: target verifier affine %s command failed: status=%ld%s%s\\n",
-\t\t\tuse_m2 ? "M2" : "2xM1", (long)cmd.status,
-\t\t\tdetail.length ? " error=" : "",
-\t\t\tdetail.length ? detail.UTF8String : "");
-\t\treturn 0;
-\t}
+	if (cmd.status != MTLCommandBufferStatusCompleted) {
+		NSString *detail = cmd.error.localizedDescription;
+		fprintf(stderr,
+			"ERROR: target verifier affine %s command failed: status=%ld%s%s\n",
+			use_m2 ? "M2" : "2xM1", (long)cmd.status,
+			detail.length ? " error=" : "",
+			detail.length ? detail.UTF8String : "");
+		return 0;
+	}
 
-\tif (wall_ms_per_pair) *wall_ms_per_pair = wall_ms / (double)pairs;
-\tif (gpu_ms_per_pair) {
-\t\tdouble start = cmd.GPUStartTime, end = cmd.GPUEndTime;
-\t\t*gpu_ms_per_pair =
-\t\t\t(start > 0.0 && end >= start) ? ((end - start) * 1000.0 / pairs) : 0.0;
-\t}
-\treturn 1;
+	if (wall_ms_per_pair) *wall_ms_per_pair = wall_ms / (double)pairs;
+	if (gpu_ms_per_pair) {
+		double start = cmd.GPUStartTime, end = cmd.GPUEndTime;
+		*gpu_ms_per_pair =
+			(start > 0.0 && end >= start) ? ((end - start) * 1000.0 / pairs) : 0.0;
+	}
+	return 1;
 }
 
 static uint64_t target_verify_affine_exact_count(
-\tconst float *a, const float *b, size_t n
+	const float *a, const float *b, size_t n
 ) {
-\tuint64_t exact = 0;
-\tfor (size_t i = 0; i < n; i++) {
-\t\tuint32_t ua = 0, ub = 0;
-\t\tmemcpy(&ua, &a[i], sizeof(ua));
-\t\tmemcpy(&ub, &b[i], sizeof(ub));
-\t\tif (ua == ub) exact++;
-\t}
-\treturn exact;
+	uint64_t exact = 0;
+	for (size_t i = 0; i < n; i++) {
+		uint32_t ua = 0, ub = 0;
+		memcpy(&ua, &a[i], sizeof(ua));
+		memcpy(&ub, &b[i], sizeof(ub));
+		if (ua == ub) exact++;
+	}
+	return exact;
 }
 
 static int run_target_verify_affine_m2_benchmark(
-\tMetalCtx *ctx,
-\tMatvecBenchShape *shapes,
-\tint shape_count,
-\tint samples
+	MetalCtx *ctx,
+	MatvecBenchShape *shapes,
+	int shape_count,
+	int samples
 ) {
-\tif (!ctx || !ctx->matvec_v3 || samples <= 0) return 1;
+	if (!ctx || !ctx->matvec_v3 || samples <= 0) return 1;
 
-\tid<MTLComputePipelineState> m2_pipeline =
-\t\ttarget_verify_affine_m2_pipeline(ctx);
-\tif (!m2_pipeline) return 1;
+	id<MTLComputePipelineState> m2_pipeline =
+		target_verify_affine_m2_pipeline(ctx);
+	if (!m2_pipeline) return 1;
 
-\tconst int block_pairs = 32;
-\tconst int warmup_blocks = 6;
-\tid<MTLBuffer> input = [ctx->device
-\t\tnewBufferWithLength:2u * 2048u * sizeof(float)
-\t\toptions:MTLResourceStorageModeShared];
-\tid<MTLBuffer> ref_output = [ctx->device
-\t\tnewBufferWithLength:2u * 8192u * sizeof(float)
-\t\toptions:MTLResourceStorageModeShared];
-\tid<MTLBuffer> m2_output = [ctx->device
-\t\tnewBufferWithLength:2u * 8192u * sizeof(float)
-\t\toptions:MTLResourceStorageModeShared];
-\tif (!input || !ref_output || !m2_output) {
-\t\tfprintf(stderr, "ERROR: target verifier affine benchmark buffer allocation failed\\n");
-\t\treturn 1;
-\t}
+	const int block_pairs = 32;
+	const int warmup_blocks = 6;
+	id<MTLBuffer> input = [ctx->device
+		newBufferWithLength:2u * 2048u * sizeof(float)
+		options:MTLResourceStorageModeShared];
+	id<MTLBuffer> ref_output = [ctx->device
+		newBufferWithLength:2u * 8192u * sizeof(float)
+		options:MTLResourceStorageModeShared];
+	id<MTLBuffer> m2_output = [ctx->device
+		newBufferWithLength:2u * 8192u * sizeof(float)
+		options:MTLResourceStorageModeShared];
+	if (!input || !ref_output || !m2_output) {
+		fprintf(stderr, "ERROR: target verifier affine benchmark buffer allocation failed\n");
+		return 1;
+	}
 
-\tprintf("=== Exact M2 Target-Verifier Affine Benchmark ===\\n");
-\tprintf("Device: %s\\n", ctx->device.name.UTF8String);
-\tprintf("Reference: 2 x production dequant_matvec_4bit_v3, GPU-ordered in one command buffer\\n");
-\tprintf("Candidate: dense_affine_q4_m2, one packed-weight traversal for two FP32 rows\\n");
-\tprintf("Format gate: resident MLX4 Q4, group_size=64, in_dim<=2048 only\\n");
-\tprintf("Measured block: %d verification pairs; samples=%d; warmup blocks=%d\\n\\n",
-\t\tblock_pairs, samples, warmup_blocks);
+	printf("=== Exact M2 Target-Verifier Affine Benchmark ===\n");
+	printf("Device: %s\n", ctx->device.name.UTF8String);
+	printf("Reference: 2 x production dequant_matvec_4bit_v3, GPU-ordered in one command buffer\n");
+	printf("Candidate: dense_affine_q4_m2, one packed-weight traversal for two FP32 rows\n");
+	printf("Format gate: resident MLX4 Q4, group_size=64, in_dim<=2048 only\n");
+	printf("Measured block: %d verification pairs; samples=%d; warmup blocks=%d\n\n",
+		block_pairs, samples, warmup_blocks);
 
-\tint tested_shapes = 0;
-\tfor (int si = 0; si < shape_count; si++) {
-\t\tMatvecBenchShape *shape = &shapes[si];
-\t\tif (shape->tensor_count == 0) {
-\t\t\tprintf("%-11s SKIPPED — no real resident MLX4 tensor resolved\\n",
-\t\t\t\tshape->label);
-\t\t\tcontinue;
-\t\t}
-\t\tif (shape->in_dim > 2048u || GROUP_SIZE != 64) {
-\t\t\tprintf("%-11s SKIPPED — M2 phase-1 kernel supports in_dim<=2048/group64\\n",
-\t\t\t\tshape->label);
-\t\t\tcontinue;
-\t\t}
-\t\tif (shape->out_dim > 8192u) {
-\t\t\tprintf("%-11s SKIPPED — benchmark scratch output capacity\\n",
-\t\t\t\tshape->label);
-\t\t\tcontinue;
-\t\t}
+	int tested_shapes = 0;
+	for (int si = 0; si < shape_count; si++) {
+		MatvecBenchShape *shape = &shapes[si];
+		if (shape->tensor_count == 0) {
+			printf("%-11s SKIPPED — no real resident MLX4 tensor resolved\n",
+				shape->label);
+			continue;
+		}
+		if (shape->in_dim > 2048u || GROUP_SIZE != 64) {
+			printf("%-11s SKIPPED — M2 phase-1 kernel supports in_dim<=2048/group64\n",
+				shape->label);
+			continue;
+		}
+		if (shape->out_dim > 8192u) {
+			printf("%-11s SKIPPED — benchmark scratch output capacity\n",
+				shape->label);
+			continue;
+		}
 
-\t\tfloat *rows = (float *)input.contents;
-\t\tfor (uint32_t i = 0; i < shape->in_dim; i++) {
-\t\t\trows[i] = sinf((float)i * 0.017f) * 0.25f;
-\t\t\trows[shape->in_dim + i] =
-\t\t\t\tcosf((float)i * 0.013f + 0.37f) * 0.20f +
-\t\t\t\tsinf((float)i * 0.003f) * 0.05f;
-\t\t}
+		float *rows = (float *)input.contents;
+		for (uint32_t i = 0; i < shape->in_dim; i++) {
+			rows[i] = sinf((float)i * 0.017f) * 0.25f;
+			rows[shape->in_dim + i] =
+				cosf((float)i * 0.013f + 0.37f) * 0.20f +
+				sinf((float)i * 0.003f) * 0.05f;
+		}
 
-\t\tdouble ignored_wall = 0.0, ignored_gpu = 0.0;
-\t\tif (!target_verify_affine_run_block(
-\t\t\t\tctx, m2_pipeline, shape, input, ref_output, 0, 1,
-\t\t\t\t&ignored_wall, &ignored_gpu) ||
-\t\t\t!target_verify_affine_run_block(
-\t\t\t\tctx, m2_pipeline, shape, input, m2_output, 1, 1,
-\t\t\t\t&ignored_wall, &ignored_gpu)) {
-\t\t\treturn 1;
-\t\t}
+		double ignored_wall = 0.0, ignored_gpu = 0.0;
+		if (!target_verify_affine_run_block(
+				ctx, m2_pipeline, shape, input, ref_output, 0, 1,
+				&ignored_wall, &ignored_gpu) ||
+			!target_verify_affine_run_block(
+				ctx, m2_pipeline, shape, input, m2_output, 1, 1,
+				&ignored_wall, &ignored_gpu)) {
+			return 1;
+		}
 
-\t\tconst size_t values = 2u * (size_t)shape->out_dim;
-\t\tdouble max_abs = 0.0, rms = 0.0;
-\t\tmatvec_bench_compare(
-\t\t\t(const float *)ref_output.contents,
-\t\t\t(const float *)m2_output.contents,
-\t\t\t(uint32_t)values, &max_abs, &rms);
-\t\tuint64_t exact = target_verify_affine_exact_count(
-\t\t\t(const float *)ref_output.contents,
-\t\t\t(const float *)m2_output.contents, values);
+		const size_t values = 2u * (size_t)shape->out_dim;
+		double max_abs = 0.0, rms = 0.0;
+		matvec_bench_compare(
+			(const float *)ref_output.contents,
+			(const float *)m2_output.contents,
+			(uint32_t)values, &max_abs, &rms);
+		uint64_t exact = target_verify_affine_exact_count(
+			(const float *)ref_output.contents,
+			(const float *)m2_output.contents, values);
 
-\t\tfor (int w = 0; w < warmup_blocks; w++) {
-\t\t\tif (!target_verify_affine_run_block(
-\t\t\t\t\tctx, m2_pipeline, shape, input, ref_output, 0, block_pairs,
-\t\t\t\t\tNULL, NULL) ||
-\t\t\t\t!target_verify_affine_run_block(
-\t\t\t\t\tctx, m2_pipeline, shape, input, m2_output, 1, block_pairs,
-\t\t\t\t\tNULL, NULL)) {
-\t\t\t\treturn 1;
-\t\t\t}
-\t\t}
+		for (int w = 0; w < warmup_blocks; w++) {
+			if (!target_verify_affine_run_block(
+					ctx, m2_pipeline, shape, input, ref_output, 0, block_pairs,
+					NULL, NULL) ||
+				!target_verify_affine_run_block(
+					ctx, m2_pipeline, shape, input, m2_output, 1, block_pairs,
+					NULL, NULL)) {
+				return 1;
+			}
+		}
 
-\t\tdouble *m1_wall = calloc((size_t)samples, sizeof(double));
-\t\tdouble *m2_wall = calloc((size_t)samples, sizeof(double));
-\t\tdouble *m1_gpu = calloc((size_t)samples, sizeof(double));
-\t\tdouble *m2_gpu = calloc((size_t)samples, sizeof(double));
-\t\tdouble *wall_ratio = calloc((size_t)samples, sizeof(double));
-\t\tdouble *gpu_ratio = calloc((size_t)samples, sizeof(double));
-\t\tif (!m1_wall || !m2_wall || !m1_gpu || !m2_gpu ||
-\t\t\t!wall_ratio || !gpu_ratio) {
-\t\t\tfree(m1_wall); free(m2_wall); free(m1_gpu); free(m2_gpu);
-\t\t\tfree(wall_ratio); free(gpu_ratio);
-\t\t\treturn 1;
-\t\t}
+		double *m1_wall = calloc((size_t)samples, sizeof(double));
+		double *m2_wall = calloc((size_t)samples, sizeof(double));
+		double *m1_gpu = calloc((size_t)samples, sizeof(double));
+		double *m2_gpu = calloc((size_t)samples, sizeof(double));
+		double *wall_ratio = calloc((size_t)samples, sizeof(double));
+		double *gpu_ratio = calloc((size_t)samples, sizeof(double));
+		if (!m1_wall || !m2_wall || !m1_gpu || !m2_gpu ||
+			!wall_ratio || !gpu_ratio) {
+			free(m1_wall); free(m2_wall); free(m1_gpu); free(m2_gpu);
+			free(wall_ratio); free(gpu_ratio);
+			return 1;
+		}
 
-\t\tint gpu_valid = 1;
-\t\tfor (int sample = 0; sample < samples; sample++) {
-\t\t\tint m2_first = sample & 1;
-\t\t\tfor (int order = 0; order < 2; order++) {
-\t\t\t\tint use_m2 = m2_first ? (order == 0) : (order == 1);
-\t\t\t\tdouble *wall = use_m2 ? &m2_wall[sample] : &m1_wall[sample];
-\t\t\t\tdouble *gpu = use_m2 ? &m2_gpu[sample] : &m1_gpu[sample];
-\t\t\t\tid<MTLBuffer> output = use_m2 ? m2_output : ref_output;
-\t\t\t\tif (!target_verify_affine_run_block(
-\t\t\t\t\t\tctx, m2_pipeline, shape, input, output, use_m2,
-\t\t\t\t\t\tblock_pairs, wall, gpu)) {
-\t\t\t\t\tfree(m1_wall); free(m2_wall); free(m1_gpu); free(m2_gpu);
-\t\t\t\t\tfree(wall_ratio); free(gpu_ratio);
-\t\t\t\t\treturn 1;
-\t\t\t\t}
-\t\t\t}
-\t\t\twall_ratio[sample] =
-\t\t\t\tm1_wall[sample] > 0.0 ? m2_wall[sample] / m1_wall[sample] : 0.0;
-\t\t\tif (m1_gpu[sample] > 0.0 && m2_gpu[sample] > 0.0) {
-\t\t\t\tgpu_ratio[sample] = m2_gpu[sample] / m1_gpu[sample];
-\t\t\t} else {
-\t\t\t\tgpu_valid = 0;
-\t\t\t\tgpu_ratio[sample] = 0.0;
-\t\t\t}
-\t\t}
+		int gpu_valid = 1;
+		for (int sample = 0; sample < samples; sample++) {
+			int m2_first = sample & 1;
+			for (int order = 0; order < 2; order++) {
+				int use_m2 = m2_first ? (order == 0) : (order == 1);
+				double *wall = use_m2 ? &m2_wall[sample] : &m1_wall[sample];
+				double *gpu = use_m2 ? &m2_gpu[sample] : &m1_gpu[sample];
+				id<MTLBuffer> output = use_m2 ? m2_output : ref_output;
+				if (!target_verify_affine_run_block(
+						ctx, m2_pipeline, shape, input, output, use_m2,
+						block_pairs, wall, gpu)) {
+					free(m1_wall); free(m2_wall); free(m1_gpu); free(m2_gpu);
+					free(wall_ratio); free(gpu_ratio);
+					return 1;
+				}
+			}
+			wall_ratio[sample] =
+				m1_wall[sample] > 0.0 ? m2_wall[sample] / m1_wall[sample] : 0.0;
+			if (m1_gpu[sample] > 0.0 && m2_gpu[sample] > 0.0) {
+				gpu_ratio[sample] = m2_gpu[sample] / m1_gpu[sample];
+			} else {
+				gpu_valid = 0;
+				gpu_ratio[sample] = 0.0;
+			}
+		}
 
-\t\tqsort(m1_wall, (size_t)samples, sizeof(double), matvec_bench_double_cmp);
-\t\tqsort(m2_wall, (size_t)samples, sizeof(double), matvec_bench_double_cmp);
-\t\tqsort(wall_ratio, (size_t)samples, sizeof(double), matvec_bench_double_cmp);
-\t\tqsort(m1_gpu, (size_t)samples, sizeof(double), matvec_bench_double_cmp);
-\t\tqsort(m2_gpu, (size_t)samples, sizeof(double), matvec_bench_double_cmp);
-\t\tqsort(gpu_ratio, (size_t)samples, sizeof(double), matvec_bench_double_cmp);
+		qsort(m1_wall, (size_t)samples, sizeof(double), matvec_bench_double_cmp);
+		qsort(m2_wall, (size_t)samples, sizeof(double), matvec_bench_double_cmp);
+		qsort(wall_ratio, (size_t)samples, sizeof(double), matvec_bench_double_cmp);
+		qsort(m1_gpu, (size_t)samples, sizeof(double), matvec_bench_double_cmp);
+		qsort(m2_gpu, (size_t)samples, sizeof(double), matvec_bench_double_cmp);
+		qsort(gpu_ratio, (size_t)samples, sizeof(double), matvec_bench_double_cmp);
 
-\t\tconst int mid = samples / 2;
-\t\tprintf("%-11s real tensors=%d\\n", shape->label, shape->tensor_count);
-\t\tprintf("  correctness: max_abs=%.9g rms=%.9g bitwise_equal=%llu/%llu\\n",
-\t\t\tmax_abs, rms,
-\t\t\t(unsigned long long)exact,
-\t\t\t(unsigned long long)values);
-\t\tif (gpu_valid) {
-\t\t\tprintf("  GPU median: 2xM1=%.6f ms M2=%.6f ms ratio=%.4f\\n",
-\t\t\t\tm1_gpu[mid], m2_gpu[mid], gpu_ratio[mid]);
-\t\t} else {
-\t\t\tprintf("  GPU median: unavailable (invalid Metal timestamps in sample set)\\n");
-\t\t}
-\t\tprintf("  wall median: 2xM1=%.6f ms M2=%.6f ms ratio=%.4f\\n",
-\t\t\tm1_wall[mid], m2_wall[mid], wall_ratio[mid]);
+		const int mid = samples / 2;
+		printf("%-11s real tensors=%d\n", shape->label, shape->tensor_count);
+		printf("  correctness: max_abs=%.9g rms=%.9g bitwise_equal=%llu/%llu\n",
+			max_abs, rms,
+			(unsigned long long)exact,
+			(unsigned long long)values);
+		if (gpu_valid) {
+			printf("  GPU median: 2xM1=%.6f ms M2=%.6f ms ratio=%.4f\n",
+				m1_gpu[mid], m2_gpu[mid], gpu_ratio[mid]);
+		} else {
+			printf("  GPU median: unavailable (invalid Metal timestamps in sample set)\n");
+		}
+		printf("  wall median: 2xM1=%.6f ms M2=%.6f ms ratio=%.4f\n",
+			m1_wall[mid], m2_wall[mid], wall_ratio[mid]);
 
-\t\tfree(m1_wall); free(m2_wall); free(m1_gpu); free(m2_gpu);
-\t\tfree(wall_ratio); free(gpu_ratio);
-\t\ttested_shapes++;
-\t}
+		free(m1_wall); free(m2_wall); free(m1_gpu); free(m2_gpu);
+		free(wall_ratio); free(gpu_ratio);
+		tested_shapes++;
+	}
 
-\tif (tested_shapes == 0) {
-\t\tfprintf(stderr,
-\t\t\t"ERROR: target verifier affine benchmark found no compatible real MLX4 tensors\\n");
-\t\treturn 1;
-\t}
-\treturn 0;
+	if (tested_shapes == 0) {
+		fprintf(stderr,
+			"ERROR: target verifier affine benchmark found no compatible real MLX4 tensors\n");
+		return 1;
+	}
+	return 0;
 }
 #endif
 
