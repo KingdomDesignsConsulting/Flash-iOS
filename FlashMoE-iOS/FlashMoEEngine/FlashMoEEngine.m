@@ -335,6 +335,9 @@ int flashmoe_load(FlashMoEContext *ctx, const FlashMoEConfig *config) {
 
         // ---- Initialize tokenizer ----
         init_tokenizer();
+        if (!g_tokenizer_loaded) {
+            return flashmoe_load_fail(ctx, "Failed to initialize tokenizer");
+        }
 
         // ---- Open packed expert files ----
         // Initialize each table immediately after allocation so partial-load
@@ -542,10 +545,15 @@ void flashmoe_unload(FlashMoEContext *ctx) {
         memset(tensor_ht, 0, sizeof(tensor_ht));
         tensor_ht_built = 0;
 
-        // Free vocabulary
+        // Free vocabulary/tokenizer. Vocabulary owns per-token strings and
+        // lookup tables, so the struct itself must not be freed directly.
         if (ctx->vocab) {
-            free(ctx->vocab);
+            free_vocabulary(ctx->vocab);
             ctx->vocab = NULL;
+        }
+        if (g_tokenizer_loaded) {
+            bpe_free(&g_tokenizer);
+            g_tokenizer_loaded = 0;
         }
 
         // Reset static tracking arrays (no longer dynamically allocated)
@@ -701,6 +709,7 @@ void flashmoe_unload(FlashMoEContext *ctx) {
         }
 
         ctx->loaded = 0;
+        if (!g_tokenizer_loaded) memset(&g_tokenizer, 0, sizeof(g_tokenizer));
         g_model_path_for_tokenizer = NULL;
         g_flashmoe_model_path[0] = '\0';
     }
