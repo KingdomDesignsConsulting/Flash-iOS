@@ -337,19 +337,26 @@ int flashmoe_load(FlashMoEContext *ctx, const FlashMoEConfig *config) {
         init_tokenizer();
 
         // ---- Open packed expert files ----
+        // Initialize each table immediately after allocation so partial-load
+        // cleanup never interprets uninitialized descriptor/map entries.
         ctx->layer_fds = malloc((size_t)g_cfg.num_layers * sizeof(int));
+        if (!ctx->layer_fds)
+            return flashmoe_load_fail(ctx, "Expert fd table allocation failed");
+        for (int i = 0; i < g_cfg.num_layers; i++) ctx->layer_fds[i] = -1;
+
         ctx->layer_fds_cold_local = malloc((size_t)g_cfg.num_layers * sizeof(int));
+        if (!ctx->layer_fds_cold_local)
+            return flashmoe_load_fail(ctx, "Cold expert fd table allocation failed");
+        for (int i = 0; i < g_cfg.num_layers; i++) ctx->layer_fds_cold_local[i] = -1;
+
         ctx->layer_mmaps = malloc((size_t)g_cfg.num_layers * sizeof(void *));
+        if (!ctx->layer_mmaps)
+            return flashmoe_load_fail(ctx, "Expert mmap table allocation failed");
+        for (int i = 0; i < g_cfg.num_layers; i++) ctx->layer_mmaps[i] = MAP_FAILED;
+
         ctx->layer_mmap_sizes = calloc((size_t)g_cfg.num_layers, sizeof(size_t));
-        if (!ctx->layer_fds || !ctx->layer_fds_cold_local ||
-            !ctx->layer_mmaps || !ctx->layer_mmap_sizes) {
-            return flashmoe_load_fail(ctx, "Expert file table allocation failed");
-        }
-        for (int i = 0; i < g_cfg.num_layers; i++) {
-            ctx->layer_fds[i] = -1;
-            ctx->layer_fds_cold_local[i] = -1;
-            ctx->layer_mmaps[i] = MAP_FAILED;
-        }
+        if (!ctx->layer_mmap_sizes)
+            return flashmoe_load_fail(ctx, "Expert mmap-size table allocation failed");
 
         memset(g_expert_seen, 0, sizeof(g_expert_seen));
         // Initialize per-layer quant arrays to match the global mode
