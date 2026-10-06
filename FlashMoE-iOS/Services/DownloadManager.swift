@@ -21,6 +21,7 @@ enum DownloadStatus: String, Codable, Sendable {
 struct DownloadState: Codable {
     let catalogId: String
     let repoId: String
+    var generationID: String?
     var completedFiles: [String]
     var completedBytes: UInt64
     var currentFile: String?
@@ -71,9 +72,11 @@ final class DownloadManager: NSObject, @unchecked Sendable {
 
         // Reconnect to any in-flight background tasks
         backgroundSession.getTasksWithCompletionHandler { [weak self] _, _, downloadTasks in
-            guard let task = downloadTasks.first else { return }
             DispatchQueue.main.async {
-                self?.currentTask = task
+                guard let self else { return }
+                self.currentTask = downloadTasks.first {
+                    self.taskMatchesActiveDownload($0)
+                }
             }
         }
     }
@@ -118,6 +121,7 @@ final class DownloadManager: NSObject, @unchecked Sendable {
         activeDownload = DownloadState(
             catalogId: entry.id,
             repoId: entry.repoId,
+            generationID: UUID().uuidString,
             completedFiles: [],
             completedBytes: 0,
             currentFile: nil,
@@ -161,6 +165,9 @@ final class DownloadManager: NSObject, @unchecked Sendable {
 
         if let resumeData {
             let task = backgroundSession.downloadTask(withResumeData: resumeData)
+            if let state = activeDownload, let filename = state.currentFile {
+                task.taskDescription = taskDescription(for: state, filename: filename)
+            }
             task.resume()
             currentTask = task
             self.resumeData = nil
@@ -243,6 +250,52 @@ final class DownloadManager: NSObject, @unchecked Sendable {
             return body()
         }
         return DispatchQueue.main.sync(execute: body)
+    }
+
+    private struct DownloadTaskIdentity {
+        let catalogId: String?
+        let generationID: String?
+        let filename: String
+    }
+
+    private func taskDescription(for state: DownloadState, filename: String) -> String {
+        guard let generationID = state.generationID else {
+            // Legacy persisted downloads used the filename alone.
+            return filename
+        }
+        return "v1|\(generationID)|\(state.catalogId)|\(filename)"
+    }
+
+    private func taskIdentity(from task: URLSessionTask) -> DownloadTaskIdentity? {
+        guard let description = task.taskDescription, !description.isEmpty else { return nil }
+        let parts = description.split(separator: "|", maxSplits: 3,
+                                      omittingEmptySubsequences: false)
+        if parts.count == 4, parts[0] == "v1" {
+            return DownloadTaskIdentity(
+                catalogId: String(parts[2]),
+                generationID: String(parts[1]),
+                filename: String(parts[3])
+            )
+        }
+        // Backward compatibility for a task created before generation IDs existed.
+        return DownloadTaskIdentity(catalogId: nil, generationID: nil,
+                                    filename: description)
+    }
+
+    private func taskMatchesActiveDownload(_ task: URLSessionTask) -> Bool {
+        guard let state = activeDownload,
+              let identity = taskIdentity(from: task) else { return false }
+
+        if let generationID = state.generationID {
+            return identity.catalogId == state.catalogId &&
+                   identity.generationID == generationID &&
+                   identity.filename == state.currentFile
+        }
+
+        // A legacy persisted operation has no generation ID; constrain it to
+        // the current filename so a later new-generation task cannot match it.
+        return identity.generationID == nil &&
+               identity.filename == state.currentFile
     }
 
     private func exactFileSize(at url: URL) -> UInt64? {
@@ -329,7 +382,7 @@ final class DownloadManager: NSObject, @unchecked Sendable {
 
         let url = entry.downloadURL(for: file)
         let task = backgroundSession.downloadTask(with: url)
-        task.taskDescription = file.filename
+        task.taskDescription = taskDescription(for: state, filename: file.filename)
         task.resume()
         currentTask = task
         currentFileProgress = 0
@@ -411,16 +464,21 @@ extension DownloadManager: URLSessionDownloadDelegate {
         downloadTask: URLSessionDownloadTask,
         didFinishDownloadingTo location: URL
     ) {
-        guard let filename = downloadTask.taskDescription else { return }
-        let entry = mainThreadSnapshot { currentEntry }
-        guard let entry else { return }
+        let snapshot = mainThreadSnapshot { () -> (CatalogEntry, String)? in
+            guard taskMatchesActiveDownload(downloadTask),
+                  let entry = currentEntry,
+                  let identity = taskIdentity(from: downloadTask) else { return nil }
+            return (entry, identity.filename)
+        }
+        guard let (entry, filename) = snapshot else { return }
 
         // Check HTTP status code — HuggingFace returns 200 HTML pages for 404s
         if let httpResponse = downloadTask.response as? HTTPURLResponse,
            httpResponse.statusCode != 200 {
             let statusCode = httpResponse.statusCode
             DispatchQueue.main.async { [weak self] in
-                guard let self, var state = self.activeDownload else { return }
+                guard let self, self.taskMatchesActiveDownload(downloadTask),
+                      var state = self.activeDownload else { return }
                 self.error = "HTTP \(statusCode) downloading \(filename)"
                 state.status = .failed
                 state.errorMessage = self.error
@@ -459,7 +517,8 @@ extension DownloadManager: URLSessionDownloadDelegate {
             // Downloaded file is suspiciously small — likely an error page
             try? fm.removeItem(at: dest)
             DispatchQueue.main.async { [weak self] in
-                guard let self, var state = self.activeDownload else { return }
+                guard let self, self.taskMatchesActiveDownload(downloadTask),
+                      var state = self.activeDownload else { return }
                 self.error = "File \(filename) not found on server (got \(actualSize) bytes, expected \(self.formatBytes(expectedSize)))"
                 state.status = .failed
                 state.errorMessage = self.error
@@ -471,7 +530,13 @@ extension DownloadManager: URLSessionDownloadDelegate {
 
         // All @Observable mutations on main thread
         DispatchQueue.main.async { [weak self] in
-            guard let self, var state = self.activeDownload else { return }
+            guard let self, self.taskMatchesActiveDownload(downloadTask),
+                  var state = self.activeDownload else {
+                // A stale completion may already have moved its temp file.
+                // Remove only that stale operation's destination.
+                try? fm.removeItem(at: dest)
+                return
+            }
 
             if let moveError {
                 self.error = "Failed to save \(filename): \(moveError.localizedDescription)"
@@ -517,7 +582,7 @@ extension DownloadManager: URLSessionDownloadDelegate {
         let expected = max(totalBytesExpectedToWrite, 0)
 
         DispatchQueue.main.async { [weak self] in
-            guard let self else { return }
+            guard let self, self.taskMatchesActiveDownload(downloadTask) else { return }
 
             let fileProgress = expected > 0
                 ? Double(written) / Double(expected) : 0
@@ -559,7 +624,7 @@ extension DownloadManager: URLSessionDownloadDelegate {
         let errorMsg = error.localizedDescription
 
         DispatchQueue.main.async { [weak self] in
-            guard let self else { return }
+            guard let self, self.taskMatchesActiveDownload(task) else { return }
             if let newResumeData {
                 self.resumeData = newResumeData
             }
