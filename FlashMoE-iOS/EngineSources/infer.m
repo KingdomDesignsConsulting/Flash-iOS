@@ -11493,12 +11493,37 @@ static void cmd3_production_timing_print(void) {
 	}
 }
 
+static int metal_wait_command_buffer_checked(id<MTLCommandBuffer> cmd, const char *label) {
+	if (!cmd) {
+		fprintf(stderr, "ERROR: Metal command buffer is nil (%s)\n", label ? label : "unknown");
+		g_forward_error = 1;
+		return 0;
+	}
+	[cmd waitUntilCompleted];
+	if (cmd.status != MTLCommandBufferStatusCompleted) {
+		NSString *detail = cmd.error.localizedDescription;
+		fprintf(stderr, "ERROR: Metal command buffer failed (%s): status=%ld%s%s\n",
+				label ? label : "unknown", (long)cmd.status,
+				detail.length ? " error=" : "",
+				detail.length ? detail.UTF8String : "");
+		g_forward_error = 1;
+		return 0;
+	}
+	return 1;
+}
+
 // Wait for the deferred GPU expert command buffer to complete.
 // Split from finalize so timing can be measured independently.
-static void wait_deferred_experts_gpu(void) {
-	if (!g_deferred.active) return;
-	[g_deferred.cmd_experts waitUntilCompleted];
+static int wait_deferred_experts_gpu(void) {
+	if (!g_deferred.active) return 1;
+	if (!metal_wait_command_buffer_checked(g_deferred.cmd_experts, "CMD3 experts")) {
+		g_deferred.active = 0;
+		g_deferred.gpu_combined = 0;
+		g_deferred.cmd_experts = nil;
+		return 0;
+	}
 	cmd3_production_timing_note_completed();
+	return 1;
 }
 
 // CPU readback + accumulate + combine after GPU is done.
@@ -11548,23 +11573,25 @@ static void finalize_deferred_experts(void) {
 
 // Complete the deferred GPU expert compute: wait for GPU, read back, accumulate, combine.
 // Must be called before the next layer modifies static scratch buffers.
-static void complete_deferred_experts(void) {
-	wait_deferred_experts_gpu();
+static int complete_deferred_experts(void) {
+	if (!wait_deferred_experts_gpu()) return 0;
 	finalize_deferred_experts();
+	return !g_forward_error;
 }
 
 // Discard the deferred GPU expert result: wait for GPU to finish (for buffer safety)
 // but skip the CPU readback/combine. Used during prefill for intermediate tokens
 // where the hidden state will be immediately overwritten by the next token's embedding.
 // This saves ~0.1-0.2ms per prefill token (avoids unnecessary memcpy + combine work).
-static void discard_deferred_experts(void) {
-	wait_deferred_experts_gpu();
+static int discard_deferred_experts(void) {
+	int ok = wait_deferred_experts_gpu();
 	// Clear deferred state without reading back results
 	if (g_deferred.active) {
 		g_deferred.active = 0;
 		g_deferred.gpu_combined = 0;
 		g_deferred.cmd_experts = nil;
 	}
+	return ok && !g_forward_error;
 }
 
 // ============================================================================
@@ -12163,7 +12190,12 @@ static void fused_layer_forward(
 		if (!cmd12_chain_pending && !cmd12_full_chain_pending) {
 			// Normal behavior: CMD1 wait also completes preceding CMD3 on this serial queue.
 			if (g_timing_enabled) { t0 = now_ms(); }
-			[cmd1 waitUntilCompleted];
+			if (!metal_wait_command_buffer_checked(cmd1, "CMD1")) {
+			g_use_2bit = saved_use_2bit;
+			g_use_q3_outlier = saved_use_q3_outlier;
+			g_use_q3_experts = saved_use_q3_experts;
+			return;
+		}
 			if (cmd1_profile_commit_start_ms > 0.0) {
 				double cmd1_profile_complete_ms = now_ms();
 				cmd1_production_timing_note(
@@ -12186,10 +12218,13 @@ static void fused_layer_forward(
 				(const float *)[g_metal->buf_input contents]);
 			if (g_timing_enabled) { t1 = now_ms(); g_timing.cmd1_wait += t1 - t0; }
 
-			cmd3_production_timing_note_completed();
-
 			if (g_timing_enabled) { t0 = now_ms(); }
-			finalize_deferred_experts();
+			if (!complete_deferred_experts()) {
+			g_use_2bit = saved_use_2bit;
+			g_use_q3_outlier = saved_use_q3_outlier;
+			g_use_q3_experts = saved_use_q3_experts;
+			return;
+		}
 			if (g_pred_enabled && g_pred_generating && g_pred_valid && packed_fd >= 0 &&
 				g_metal->buf_multi_expert_data_B[0] && g_pred_count[layer_idx] > 0) {
 				async_pread_start(packed_fd, g_pred_experts[layer_idx],
@@ -12207,7 +12242,12 @@ static void fused_layer_forward(
 		// ---- ORIGINAL PATH: CPU deferred completion + input norm ----
 		// Complete deferred experts from previous layer
 		if (g_timing_enabled) { t0 = now_ms(); }
-		wait_deferred_experts_gpu();
+		if (!wait_deferred_experts_gpu()) {
+			g_use_2bit = saved_use_2bit;
+			g_use_q3_outlier = saved_use_q3_outlier;
+			g_use_q3_experts = saved_use_q3_experts;
+			return;
+		}
 		if (g_timing_enabled) { t1 = now_ms(); g_timing.deferred_wait += t1 - t0; }
 
 		if (g_timing_enabled) { t0 = now_ms(); }
@@ -12351,7 +12391,12 @@ static void fused_layer_forward(
 		if (!cmd12_chain_pending && !cmd12_full_chain_pending) {
 			if (g_timing_enabled) { t0 = now_ms(); }
 			if (cmd1) {
-				[cmd1 waitUntilCompleted];
+				if (!metal_wait_command_buffer_checked(cmd1, "CMD1")) {
+			g_use_2bit = saved_use_2bit;
+			g_use_q3_outlier = saved_use_q3_outlier;
+			g_use_q3_experts = saved_use_q3_experts;
+			return;
+		}
 				if (cmd1_profile_commit_start_ms > 0.0) {
 					double cmd1_profile_complete_ms = now_ms();
 					cmd1_production_timing_note(
@@ -12941,13 +12986,22 @@ static void fused_layer_forward(
 	if (cmd12_chain_pending && !cmd12_chain_this_layer) {
 		// Safety fallback: finish CMD1 before taking any non-fused/CPU path.
 		if (g_timing_enabled) { t0 = now_ms(); }
-		[cmd1 waitUntilCompleted];
+		if (!metal_wait_command_buffer_checked(cmd1, "CMD1")) {
+			g_use_2bit = saved_use_2bit;
+			g_use_q3_outlier = saved_use_q3_outlier;
+			g_use_q3_experts = saved_use_q3_experts;
+			return;
+		}
 		if (g_timing_enabled) { t1 = now_ms(); g_timing.cmd1_wait += t1 - t0; }
 
 		if (cmd12_chain_from_fast_path) {
-			cmd3_production_timing_note_completed();
 			if (g_timing_enabled) { t0 = now_ms(); }
-			finalize_deferred_experts();
+			if (!complete_deferred_experts()) {
+			g_use_2bit = saved_use_2bit;
+			g_use_q3_outlier = saved_use_q3_outlier;
+			g_use_q3_experts = saved_use_q3_experts;
+			return;
+		}
 			cpu_vec_copy(residual, hidden, HIDDEN_DIM);
 			if (g_timing_enabled) { t1 = now_ms(); g_timing.deferred_cpu += t1 - t0; }
 		}
@@ -12958,13 +13012,22 @@ static void fused_layer_forward(
 		// This should be unreachable because eligibility is established before
 		// CMD1 submission. Do not silently continue with stale CPU Q/K/V state.
 		if (g_timing_enabled) { t0 = now_ms(); }
-		[cmd1 waitUntilCompleted];
+		if (!metal_wait_command_buffer_checked(cmd1, "CMD1")) {
+			g_use_2bit = saved_use_2bit;
+			g_use_q3_outlier = saved_use_q3_outlier;
+			g_use_q3_experts = saved_use_q3_experts;
+			return;
+		}
 		if (g_timing_enabled) { t1 = now_ms(); g_timing.cmd1_wait += t1 - t0; }
 		sync_full_attn_cpu_kv_from_gpu(kv, cmd12_full_chain_fa_idx,
 			cmd12_full_chain_cache_pos);
 		if (cmd12_full_chain_from_fast_path) {
-			cmd3_production_timing_note_completed();
-			finalize_deferred_experts();
+			if (!complete_deferred_experts()) {
+			g_use_2bit = saved_use_2bit;
+			g_use_q3_outlier = saved_use_q3_outlier;
+			g_use_q3_experts = saved_use_q3_experts;
+			return;
+		}
 		}
 		fprintf(stderr,
 				"ERROR: --cmd12-full-chain lost fused-CMD2 eligibility at layer %d; aborting safely\n",
@@ -13222,7 +13285,12 @@ static void fused_layer_forward(
 			(is_full && g_prefill_nrow_capture) ? now_ms() : 0.0;
 #endif
 		[cmd_fused commit];
-		[cmd_fused waitUntilCompleted];
+		if (!metal_wait_command_buffer_checked(cmd_fused, "CMD2 fused")) {
+			g_use_2bit = saved_use_2bit;
+			g_use_q3_outlier = saved_use_q3_outlier;
+			g_use_q3_experts = saved_use_q3_experts;
+			return;
+		}
 #ifdef FLASH_PREFILL_NROW_ENABLED
 		if (nrow_fa_cmd2_started > 0.0)
 			g_prefill_nrow_prof_cmd2_ms += now_ms() - nrow_fa_cmd2_started;
@@ -13248,8 +13316,12 @@ static void fused_layer_forward(
 			// This one existing CMD2 wait completed queued CMD1 as well and, on
 			// the fast path, the preceding deferred CMD3.
 			if (cmd12_chain_from_fast_path) {
-				cmd3_production_timing_note_completed();
-				finalize_deferred_experts();
+				if (!complete_deferred_experts()) {
+			g_use_2bit = saved_use_2bit;
+			g_use_q3_outlier = saved_use_q3_outlier;
+			g_use_q3_experts = saved_use_q3_experts;
+			return;
+		}
 			}
 			g_cmd12_chain_layers++;
 			if (cmd12_chain_from_fast_path)
@@ -13269,8 +13341,12 @@ static void fused_layer_forward(
 			// Publish this token's prepared GPU K/V to the CPU cache now, after
 			// attention no longer depends on eliminating the synchronization point.
 			if (cmd12_full_chain_from_fast_path) {
-				cmd3_production_timing_note_completed();
-				finalize_deferred_experts();
+				if (!complete_deferred_experts()) {
+			g_use_2bit = saved_use_2bit;
+			g_use_q3_outlier = saved_use_q3_outlier;
+			g_use_q3_experts = saved_use_q3_experts;
+			return;
+		}
 			}
 			sync_full_attn_cpu_kv_from_gpu(kv, cmd12_full_chain_fa_idx,
 				cmd12_full_chain_cache_pos);
