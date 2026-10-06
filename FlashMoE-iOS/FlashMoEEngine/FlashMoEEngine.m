@@ -617,21 +617,41 @@ void flashmoe_destroy(FlashMoEContext *ctx) {
 // Generation — the core inference loop adapted for callback-based streaming
 // ============================================================================
 
+// All iOS generation paths must observe infer.m's fail-closed forward flag.
+// fused_layer_forward() is void, so use the desktop checked wrapper instead of
+// silently continuing after a layer reports a Metal/layout/cache failure.
+static int flashmoe_forward_position_checked(FlashMoEContext *ctx, int pos) {
+    return run_all_layers_checked(ctx->wf, ctx->hidden,
+                                  ctx->kv_caches, ctx->layer_states,
+                                  ctx->layer_mmaps, ctx->layer_fds,
+                                  pos, ctx->K);
+}
+
+// A cancelled or failed turn must never leave partially advanced KV/GDN state
+// eligible for continuation. We deliberately invalidate the conversation
+// instead of carrying forward a half-committed turn. The next user turn can
+// safely re-prefill the visible transcript from scratch.
+static void flashmoe_abort_partial_generation(FlashMoEContext *ctx,
+                                              const char *reason) {
+    if (!ctx) return;
+    if (reason) {
+        snprintf(ctx->last_error, sizeof(ctx->last_error), "%s", reason);
+    }
+    flashmoe_reset(ctx);
+}
+
 // A sampled token is visible to the caller before it becomes an input to the
 // next decode step. Before persisting conversation state, run that final emitted
 // token through the transformer once so KV/delta state and current_pos describe
 // exactly the transcript the user saw. Without this, continuation state trails
-// the assistant output by one token.
+// the assistant output by one token. Returns the new position, or -1 on forward
+// failure.
 static int flashmoe_commit_emitted_token(FlashMoEContext *ctx, int token_id, int pos) {
     embed_lookup(ctx->wf, token_id, ctx->hidden);
-    for (int layer = 0; layer < g_cfg.num_layers; layer++) {
-        int is_full = ((layer + 1) % FULL_ATTN_INTERVAL == 0);
-        fused_layer_forward(ctx->wf, layer, ctx->hidden,
-                            is_full ? ctx->kv_caches[layer] : NULL,
-                            is_full ? NULL : ctx->layer_states[layer],
-                            pos,
-                            ctx->layer_mmaps[layer] != MAP_FAILED ? ctx->layer_mmaps[layer] : NULL,
-                            ctx->K, ctx->layer_fds[layer]);
+    if (!flashmoe_forward_position_checked(ctx, pos)) {
+        snprintf(ctx->last_error, sizeof(ctx->last_error),
+                 "Forward failure while committing final emitted token at position %d", pos);
+        return -1;
     }
     complete_deferred_experts();
     return pos + 1;
@@ -661,6 +681,13 @@ int flashmoe_generate(
         if (!pt) {
             snprintf(ctx->last_error, sizeof(ctx->last_error), "Failed to tokenize prompt");
             return -1;
+        }
+        if (!context_preflight("iOS generation", 0, pt->count, max_tokens)) {
+            snprintf(ctx->last_error, sizeof(ctx->last_error),
+                     "Context window full: prompt=%d generation=%d capacity=%d",
+                     pt->count, max_tokens, g_kv_seq_len);
+            free(pt->ids); free(pt);
+            return -2;
         }
 
         int K = ctx->K;
@@ -692,20 +719,18 @@ int flashmoe_generate(
                 if (atomic_load(&ctx->cancelled)) {
                     free(embed_batch);
                     free(pt->ids); free(pt);
-                    return ctx->tokens_generated;
+                    flashmoe_abort_partial_generation(ctx, "Generation cancelled");
+                    return 0;
                 }
 
                 memcpy(ctx->hidden, embed_batch + (size_t)token_idx * HIDDEN_DIM,
                        HIDDEN_DIM * sizeof(float));
 
-                for (int layer = 0; layer < g_cfg.num_layers; layer++) {
-                    int is_full = ((layer + 1) % FULL_ATTN_INTERVAL == 0);
-                    fused_layer_forward(ctx->wf, layer, ctx->hidden,
-                                        is_full ? ctx->kv_caches[layer] : NULL,
-                                        is_full ? NULL : ctx->layer_states[layer],
-                                        pos,
-                                        ctx->layer_mmaps[layer] != MAP_FAILED ? ctx->layer_mmaps[layer] : NULL,
-                                        K, ctx->layer_fds[layer]);
+                if (!flashmoe_forward_position_checked(ctx, pos)) {
+                    free(embed_batch);
+                    free(pt->ids); free(pt);
+                    flashmoe_abort_partial_generation(ctx, "Forward failure during prefill");
+                    return -1;
                 }
                 discard_deferred_experts();
                 pos++;
@@ -737,14 +762,11 @@ int flashmoe_generate(
                 embed_lookup(ctx->wf, pt->ids[0], ctx->hidden);
             }
 
-            for (int layer = 0; layer < g_cfg.num_layers; layer++) {
-                int is_full = ((layer + 1) % FULL_ATTN_INTERVAL == 0);
-                fused_layer_forward(ctx->wf, layer, ctx->hidden,
-                                    is_full ? ctx->kv_caches[layer] : NULL,
-                                    is_full ? NULL : ctx->layer_states[layer],
-                                    pos,
-                                    ctx->layer_mmaps[layer] != MAP_FAILED ? ctx->layer_mmaps[layer] : NULL,
-                                    K, ctx->layer_fds[layer]);
+            if (!flashmoe_forward_position_checked(ctx, pos)) {
+                if (embed_batch) free(embed_batch);
+                free(pt->ids); free(pt);
+                flashmoe_abort_partial_generation(ctx, "Forward failure during generation");
+                return -1;
             }
             complete_deferred_experts();
             pos++;
@@ -775,7 +797,13 @@ int flashmoe_generate(
             double tps = gen_time > 0 ? 1000.0 / gen_time : 0;
             int stop = callback(token_text, next_token, ctx->tokens_generated, tps, user_data);
             if (stop) {
-                pos = flashmoe_commit_emitted_token(ctx, next_token, pos);
+                int committed_pos = flashmoe_commit_emitted_token(ctx, next_token, pos);
+                if (committed_pos < 0) {
+                    free(pt->ids); free(pt);
+                    flashmoe_abort_partial_generation(ctx, "Forward failure while committing stopped turn");
+                    return -1;
+                }
+                pos = committed_pos;
                 ctx->current_pos = pos;
                 ctx->turn_count++;
                 free(pt->ids); free(pt);
@@ -808,14 +836,11 @@ int flashmoe_generate(
             // Embed + forward pass
             embed_lookup(ctx->wf, next_token, ctx->hidden);
 
-            for (int layer = 0; layer < g_cfg.num_layers; layer++) {
-                int is_full = ((layer + 1) % FULL_ATTN_INTERVAL == 0);
-                fused_layer_forward(ctx->wf, layer, ctx->hidden,
-                                    is_full ? ctx->kv_caches[layer] : NULL,
-                                    is_full ? NULL : ctx->layer_states[layer],
-                                    pos,
-                                    ctx->layer_mmaps[layer] != MAP_FAILED ? ctx->layer_mmaps[layer] : NULL,
-                                    K, ctx->layer_fds[layer]);
+            if (!flashmoe_forward_position_checked(ctx, pos)) {
+                if (embed_batch) free(embed_batch);
+                free(pt->ids); free(pt);
+                flashmoe_abort_partial_generation(ctx, "Forward failure during generation");
+                return -1;
             }
             complete_deferred_experts();
             pos++;
@@ -862,9 +887,22 @@ int flashmoe_generate(
             ctx->tokens_per_second = (ctx->tokens_generated - 1) * 1000.0 / gen_elapsed;
         }
 
+        if (atomic_load(&ctx->cancelled)) {
+            int emitted = ctx->tokens_generated;
+            free(pt->ids); free(pt);
+            flashmoe_abort_partial_generation(ctx, "Generation cancelled");
+            return emitted;
+        }
+
         // Persist state for KV cache reuse in next turn. The final emitted
         // token has not yet been used as model input, so commit it first.
-        pos = flashmoe_commit_emitted_token(ctx, next_token, pos);
+        int committed_pos = flashmoe_commit_emitted_token(ctx, next_token, pos);
+        if (committed_pos < 0) {
+            free(pt->ids); free(pt);
+            flashmoe_abort_partial_generation(ctx, "Forward failure while committing turn");
+            return -1;
+        }
+        pos = committed_pos;
         ctx->current_pos = pos;
         ctx->turn_count++;
 
@@ -912,15 +950,15 @@ int flashmoe_generate_continuation(
         int K = ctx->K;
         int pos = ctx->current_pos;  // Resume from where we left off
 
-        // Check we have room in the KV cache
-        if (pos + pt->count + max_tokens > MAX_SEQ_LEN) {
-            NSLog(@"[FlashMoE] Context full (%d + %d + %d > %d), resetting to fresh generation",
-                  pos, pt->count, max_tokens, MAX_SEQ_LEN);
+        // Check the actual runtime CPU KV capacity before mutating state.
+        // On iPhone this is commonly far below MAX_SEQ_LEN.
+        if (!context_preflight("iOS continuation", pos, pt->count, max_tokens)) {
+            NSLog(@"[FlashMoE] Context full (%d + %d + %d > %d)",
+                  pos, pt->count, max_tokens, g_kv_seq_len);
             free(pt->ids); free(pt);
-            // Fall back to full generation with chat template
-            // Caller should handle this by using flashmoe_generate instead
-            snprintf(ctx->last_error, sizeof(ctx->last_error), "Context window full, reset required");
-            return -2;  // Signal to caller: context full, need reset
+            snprintf(ctx->last_error, sizeof(ctx->last_error),
+                     "Context window full, reset required");
+            return -2;  // State is untouched; caller may re-prefill from scratch.
         }
 
         // NOTE: No reset_delta_net_state() — reuse KV caches and linear attention state
@@ -939,20 +977,18 @@ int flashmoe_generate_continuation(
                 if (atomic_load(&ctx->cancelled)) {
                     free(embed_batch);
                     free(pt->ids); free(pt);
-                    return ctx->tokens_generated;
+                    flashmoe_abort_partial_generation(ctx, "Generation cancelled");
+                    return 0;
                 }
 
                 memcpy(ctx->hidden, embed_batch + (size_t)token_idx * HIDDEN_DIM,
                        HIDDEN_DIM * sizeof(float));
 
-                for (int layer = 0; layer < g_cfg.num_layers; layer++) {
-                    int is_full = ((layer + 1) % FULL_ATTN_INTERVAL == 0);
-                    fused_layer_forward(ctx->wf, layer, ctx->hidden,
-                                        is_full ? ctx->kv_caches[layer] : NULL,
-                                        is_full ? NULL : ctx->layer_states[layer],
-                                        pos,
-                                        ctx->layer_mmaps[layer] != MAP_FAILED ? ctx->layer_mmaps[layer] : NULL,
-                                        K, ctx->layer_fds[layer]);
+                if (!flashmoe_forward_position_checked(ctx, pos)) {
+                    free(embed_batch);
+                    free(pt->ids); free(pt);
+                    flashmoe_abort_partial_generation(ctx, "Forward failure during prefill");
+                    return -1;
                 }
                 discard_deferred_experts();
                 pos++;
@@ -968,14 +1004,11 @@ int flashmoe_generate_continuation(
                 embed_lookup(ctx->wf, pt->ids[0], ctx->hidden);
             }
 
-            for (int layer = 0; layer < g_cfg.num_layers; layer++) {
-                int is_full = ((layer + 1) % FULL_ATTN_INTERVAL == 0);
-                fused_layer_forward(ctx->wf, layer, ctx->hidden,
-                                    is_full ? ctx->kv_caches[layer] : NULL,
-                                    is_full ? NULL : ctx->layer_states[layer],
-                                    pos,
-                                    ctx->layer_mmaps[layer] != MAP_FAILED ? ctx->layer_mmaps[layer] : NULL,
-                                    K, ctx->layer_fds[layer]);
+            if (!flashmoe_forward_position_checked(ctx, pos)) {
+                if (embed_batch) free(embed_batch);
+                free(pt->ids); free(pt);
+                flashmoe_abort_partial_generation(ctx, "Forward failure during generation");
+                return -1;
             }
             complete_deferred_experts();
             pos++;
@@ -1003,7 +1036,13 @@ int flashmoe_generate_continuation(
             double tps = gen_time > 0 ? 1000.0 / gen_time : 0;
             int stop = callback(token_text, next_token, ctx->tokens_generated, tps, user_data);
             if (stop) {
-                pos = flashmoe_commit_emitted_token(ctx, next_token, pos);
+                int committed_pos = flashmoe_commit_emitted_token(ctx, next_token, pos);
+                if (committed_pos < 0) {
+                    free(pt->ids); free(pt);
+                    flashmoe_abort_partial_generation(ctx, "Forward failure while committing stopped continuation");
+                    return -1;
+                }
+                pos = committed_pos;
                 free(pt->ids); free(pt);
                 ctx->current_pos = pos;
                 ctx->turn_count++;
@@ -1029,14 +1068,11 @@ int flashmoe_generate_continuation(
 
             embed_lookup(ctx->wf, next_token, ctx->hidden);
 
-            for (int layer = 0; layer < g_cfg.num_layers; layer++) {
-                int is_full = ((layer + 1) % FULL_ATTN_INTERVAL == 0);
-                fused_layer_forward(ctx->wf, layer, ctx->hidden,
-                                    is_full ? ctx->kv_caches[layer] : NULL,
-                                    is_full ? NULL : ctx->layer_states[layer],
-                                    pos,
-                                    ctx->layer_mmaps[layer] != MAP_FAILED ? ctx->layer_mmaps[layer] : NULL,
-                                    K, ctx->layer_fds[layer]);
+            if (!flashmoe_forward_position_checked(ctx, pos)) {
+                if (embed_batch) free(embed_batch);
+                free(pt->ids); free(pt);
+                flashmoe_abort_partial_generation(ctx, "Forward failure during generation");
+                return -1;
             }
             complete_deferred_experts();
             pos++;
@@ -1074,7 +1110,20 @@ int flashmoe_generate_continuation(
             ctx->tokens_per_second = (ctx->tokens_generated - 1) * 1000.0 / gen_elapsed;
         }
 
-        pos = flashmoe_commit_emitted_token(ctx, next_token, pos);
+        if (atomic_load(&ctx->cancelled)) {
+            int emitted = ctx->tokens_generated;
+            free(pt->ids); free(pt);
+            flashmoe_abort_partial_generation(ctx, "Generation cancelled");
+            return emitted;
+        }
+
+        int committed_pos = flashmoe_commit_emitted_token(ctx, next_token, pos);
+        if (committed_pos < 0) {
+            free(pt->ids); free(pt);
+            flashmoe_abort_partial_generation(ctx, "Forward failure while committing continuation");
+            return -1;
+        }
+        pos = committed_pos;
         ctx->current_pos = pos;
         ctx->turn_count++;
 

@@ -279,6 +279,16 @@ final class FlashMoEEngine: @unchecked Sendable {
                 // Clean up
                 Unmanaged<TokenCallbackContext>.fromOpaque(userDataPtr).release()
 
+                if result < 0 {
+                    let error = String(cString: flashmoe_last_error(ctx))
+                    DispatchQueue.main.async {
+                        self?.state = .error(error)
+                        self?.isGenerating = false
+                    }
+                    continuation.finish()
+                    return
+                }
+
                 // Get final stats
                 var stats = FlashMoEStats()
                 flashmoe_get_stats(ctx, &stats)
@@ -358,6 +368,15 @@ final class FlashMoEEngine: @unchecked Sendable {
                 if result == -2 {
                     DispatchQueue.main.async {
                         self?.state = .ready
+                        self?.isGenerating = false
+                    }
+                    continuation.finish()
+                    return
+                }
+                if result < 0 {
+                    let error = String(cString: flashmoe_last_error(ctx))
+                    DispatchQueue.main.async {
+                        self?.state = .error(error)
                         self?.isGenerating = false
                     }
                     continuation.finish()
