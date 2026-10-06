@@ -18304,7 +18304,7 @@ printf("[serve] Tool API revision 9.4 — bounded cache + malformed-tool recover
 			g_forward_error = !run_all_layers_checked(wf, hidden, kv_caches, layer_states,
 							(void **)layer_mmaps, layer_fds, sys_pos, K);
 			if (g_forward_error) break;
-			discard_deferred_experts();
+			if (!discard_deferred_experts()) break;
 			sys_pos++;
 		}
 		if (g_forward_error) {
@@ -18332,7 +18332,13 @@ printf("[serve] Tool API revision 9.4 — bounded cache + malformed-tool recover
 				free(sys_pt);
 				return;
 			}
-			complete_deferred_experts();
+			if (!complete_deferred_experts()) {
+				fprintf(stderr, "ERROR: system-prompt deferred Metal completion failed\n");
+				if (sys_embed_batch) free(sys_embed_batch);
+				free(sys_pt->ids);
+				free(sys_pt);
+				return;
+			}
 			sys_pos++;
 		}
 		if (sys_embed_batch) { free(sys_embed_batch); sys_embed_batch = NULL; }
@@ -18641,8 +18647,11 @@ printf("[serve] Tool API revision 9.4 — bounded cache + malformed-tool recover
                 wf, hidden, kv_caches, layer_states,
                 (void **)layer_mmaps, layer_fds, warm_pos, K);
             if (g_forward_error) break;
-            if (i + 1 == warm_pt->count) complete_deferred_experts();
-            else discard_deferred_experts();
+            if (i + 1 == warm_pt->count) {
+                if (!complete_deferred_experts()) break;
+            } else {
+                if (!discard_deferred_experts()) break;
+            }
             warm_pos++;
             if ((warm_pos % 128) == 0 || warm_pos == warm_pt->count) {
                 double elapsed_ms = now_ms() - warm_start_ms;
@@ -19745,7 +19754,7 @@ printf("[serve] Tool API revision 9.4 — bounded cache + malformed-tool recover
 								(void **)layer_mmaps, layer_fds, pos, K);
 				prefill_forward_ms += now_ms() - forward_started_ms;
 				if (g_forward_error) break;
-				discard_deferred_experts();
+				if (!discard_deferred_experts()) break;
 				pos++;
 				i++;
 				prefill_completed_tokens++;
@@ -19875,8 +19884,11 @@ printf("[serve] Tool API revision 9.4 — bounded cache + malformed-tool recover
 				prefill_forward_ms += now_ms() - forward_started_ms;
 				prefill_completed_tokens++;
 				if (!g_forward_error) {
-					complete_deferred_experts();
-					pos++;
+					if (!complete_deferred_experts()) {
+						g_forward_error = 1;
+					} else {
+						pos++;
+					}
 				}
 				}
 			}
@@ -20061,7 +20073,16 @@ printf("[serve] Tool API revision 9.4 — bounded cache + malformed-tool recover
 						session_ended_with_eos = 0;
 						break;
 					}
-					discard_deferred_experts();
+					if (!discard_deferred_experts()) {
+						fprintf(stderr, "[serve] %s EOS-state deferred Metal completion failed\n", request_id);
+						request_state_failed = 1;
+						active_session_id[0] = '\0';
+						active_session_tool_sig = 0;
+						active_session_tool_sig_valid = 0;
+						session_pos = 0;
+						session_ended_with_eos = 0;
+						break;
+					}
 					pos++;
 					break;
 				}
@@ -20204,7 +20225,16 @@ printf("[serve] Tool API revision 9.4 — bounded cache + malformed-tool recover
 					session_ended_with_eos = 0;
 					break;
 				}
-				complete_deferred_experts();
+				if (!complete_deferred_experts()) {
+					fprintf(stderr, "[serve] %s deferred Metal completion failed\n", request_id);
+					request_state_failed = 1;
+					active_session_id[0] = '\0';
+					active_session_tool_sig = 0;
+					active_session_tool_sig_valid = 0;
+					session_pos = 0;
+					session_ended_with_eos = 0;
+					break;
+				}
 				pos++;
 
 				if (final_norm_w) {
@@ -22028,7 +22058,13 @@ if (g_temperature <= 0.0f) {
 					io_pool_shutdown();
 					return 1;
 				}
-				complete_deferred_experts();
+				if (!complete_deferred_experts()) {
+					fprintf(stderr, "\nERROR: PPL deferred Metal completion failed at token %d\n", i);
+					free(gt->ids); free(gt);
+					free(hidden); free(logits);
+					io_pool_shutdown();
+					return 1;
+				}
 				pos++;
 
 				// Score: compute cross-entropy for predicting token[i+1]
@@ -22173,7 +22209,14 @@ if (g_temperature <= 0.0f) {
 
 				// Discard last layer's expert output — hidden will be overwritten
 				// by the next token's embedding. Only wait for GPU (buffer safety).
-				discard_deferred_experts();
+				if (!discard_deferred_experts()) {
+					fprintf(stderr, "ERROR: CLI prefill deferred Metal completion failed at token %d\n", token_idx);
+					free(embed_batch);
+					free(pt->ids); free(pt);
+					free(hidden); free(logits);
+					io_pool_shutdown();
+					return 1;
+				}
 				pos++;
 				token_idx++;
 
@@ -22211,7 +22254,14 @@ if (g_temperature <= 0.0f) {
 				return 1;
 			}
 			// Full completion — need hidden state for final norm + lm_head
-			complete_deferred_experts();
+			if (!complete_deferred_experts()) {
+				fprintf(stderr, "ERROR: CLI final prefill deferred Metal completion failed\n");
+				if (embed_batch) free(embed_batch);
+				free(pt->ids); free(pt);
+				free(hidden); free(logits);
+				io_pool_shutdown();
+				return 1;
+			}
 			pos++;
 		}
 
@@ -22328,7 +22378,13 @@ if (g_temperature <= 0.0f) {
 
 			// Complete last layer's deferred GPU experts before final norm
 			pipeline_phase_ms = now_ms();
-			complete_deferred_experts();
+			if (!complete_deferred_experts()) {
+				fprintf(stderr, "ERROR: CLI deferred Metal completion failed at position %d\n", pos);
+				free(pt->ids); free(pt);
+				free(hidden); free(logits);
+				io_pool_shutdown();
+				return 1;
+			}
 			if (g_pipeline_profile_enabled && g_pipeline_profile_decode_active)
 				pipeline_tok_final_deferred_ms = now_ms() - pipeline_phase_ms;
 			pos++;
