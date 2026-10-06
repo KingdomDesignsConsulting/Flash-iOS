@@ -958,6 +958,124 @@ kernel void grouped_tiered_gate_up_m4_4row(
 // identical to accepted M4 kernels; only output-row packing changes from four
 // rows per threadgroup to eight. This isolates whether the N128 gate+up win from
 // 4-row packing continues at a larger threadgroup without increasing M.
+// Benchmark-only Qwen3.6-inspired single-row Q4 gate+up candidate.
+// Two SIMD groups per 64-thread TG; each SIMD computes four output rows.
+// This is used only for expert groups with count==1 and bits==4. It preserves
+// Flash's affine Q4 storage but tests the external kernel's output-row packing
+// and shift-free nibble arithmetic against the accepted M4 path.
+kernel void grouped_tiered_gate_up_m1_q4x4(
+    device const uint *gate_weights [[buffer(0)]],
+    device const ushort *gate_scales [[buffer(1)]],
+    device const ushort *gate_biases [[buffer(2)]],
+    device const uint *up_weights [[buffer(3)]],
+    device const ushort *up_scales [[buffer(4)]],
+    device const ushort *up_biases [[buffer(5)]],
+    device const float *inputs [[buffer(6)]],
+    device float *gate_outputs [[buffer(7)]],
+    device float *up_outputs [[buffer(8)]],
+    constant uint &in_dim [[buffer(9)]],
+    constant uint &out_dim [[buffer(10)]],
+    constant uint &count [[buffer(11)]],
+    constant uint &bits [[buffer(12)]],
+    uint3 tg [[threadgroup_position_in_grid]],
+    uint lid [[thread_position_in_threadgroup]],
+    uint lane [[thread_index_in_simdgroup]],
+    uint simd [[simdgroup_index_in_threadgroup]]) {
+    if (count != 1u || bits != 4u || in_dim != 2048u) return;
+
+    constexpr uint kRowsPerSimd = 4u;
+    constexpr uint kRowsPerTG = 8u;
+    constexpr uint kValuesPerLane = 16u;
+    constexpr uint kBlock = 512u;
+    constexpr uint kGroupsPerRow = 32u;
+    constexpr uint kBytesPerRow = 1024u;
+
+    const uint out_row = tg.x * kRowsPerTG + simd * kRowsPerSimd;
+    if (out_row >= out_dim) return;
+
+    const device uchar *gate_bytes =
+        reinterpret_cast<const device uchar *>(gate_weights)
+        + out_row * kBytesPerRow + lane * 8u;
+    const device uchar *up_bytes =
+        reinterpret_cast<const device uchar *>(up_weights)
+        + out_row * kBytesPerRow + lane * 8u;
+
+    const device ushort *gate_scale_row =
+        gate_scales + out_row * kGroupsPerRow + lane / 4u;
+    const device ushort *gate_bias_row =
+        gate_biases + out_row * kGroupsPerRow + lane / 4u;
+    const device ushort *up_scale_row =
+        up_scales + out_row * kGroupsPerRow + lane / 4u;
+    const device ushort *up_bias_row =
+        up_biases + out_row * kGroupsPerRow + lane / 4u;
+
+    const device float *input = inputs + lane * kValuesPerLane;
+    float gate_acc[kRowsPerSimd] = {0.0f, 0.0f, 0.0f, 0.0f};
+    float up_acc[kRowsPerSimd] = {0.0f, 0.0f, 0.0f, 0.0f};
+    float xv[kValuesPerLane];
+
+    for (uint block = 0u; block < in_dim; block += kBlock) {
+        float xsum = 0.0f;
+        for (uint i = 0u; i < kValuesPerLane; i += 4u) {
+            const float x0 = input[i + 0u];
+            const float x1 = input[i + 1u];
+            const float x2 = input[i + 2u];
+            const float x3 = input[i + 3u];
+            xsum += x0 + x1 + x2 + x3;
+            xv[i + 0u] = x0;
+            xv[i + 1u] = x1 / 16.0f;
+            xv[i + 2u] = x2 / 256.0f;
+            xv[i + 3u] = x3 / 4096.0f;
+        }
+
+        for (uint r = 0u; r < kRowsPerSimd && out_row + r < out_dim; r++) {
+            const device ushort *gw =
+                reinterpret_cast<const device ushort *>(gate_bytes + r * kBytesPerRow);
+            const device ushort *uw =
+                reinterpret_cast<const device ushort *>(up_bytes + r * kBytesPerRow);
+            float gdot = 0.0f;
+            float udot = 0.0f;
+            for (uint i = 0u; i < kValuesPerLane / 4u; i++) {
+                const ushort gp = gw[i];
+                const ushort up = uw[i];
+                gdot += xv[4u * i + 0u] * float(gp & 0x000fu)
+                      + xv[4u * i + 1u] * float(gp & 0x00f0u)
+                      + xv[4u * i + 2u] * float(gp & 0x0f00u)
+                      + xv[4u * i + 3u] * float(gp & 0xf000u);
+                udot += xv[4u * i + 0u] * float(up & 0x000fu)
+                      + xv[4u * i + 1u] * float(up & 0x00f0u)
+                      + xv[4u * i + 2u] * float(up & 0x0f00u)
+                      + xv[4u * i + 3u] * float(up & 0xf000u);
+            }
+
+            const uint scale_off = r * kGroupsPerRow;
+            const float gs = bf16_to_float(gate_scale_row[scale_off]);
+            const float gb = bf16_to_float(gate_bias_row[scale_off]);
+            const float us = bf16_to_float(up_scale_row[scale_off]);
+            const float ub = bf16_to_float(up_bias_row[scale_off]);
+            gate_acc[r] += gs * gdot + gb * xsum;
+            up_acc[r] += us * udot + ub * xsum;
+        }
+
+        gate_bytes += kBlock / 2u;
+        up_bytes += kBlock / 2u;
+        gate_scale_row += kBlock / 64u;
+        gate_bias_row += kBlock / 64u;
+        up_scale_row += kBlock / 64u;
+        up_bias_row += kBlock / 64u;
+        input += kBlock;
+    }
+
+    for (uint r = 0u; r < kRowsPerSimd && out_row + r < out_dim; r++) {
+        const float g = simd_sum(gate_acc[r]);
+        const float u = simd_sum(up_acc[r]);
+        if (lane == 0u) {
+            gate_outputs[out_row + r] = g;
+            up_outputs[out_row + r] = u;
+        }
+    }
+}
+
 kernel void grouped_tiered_gate_up_m4_8row(
     device const uint *gate_weights [[buffer(0)]],
     device const ushort *gate_scales [[buffer(1)]],
