@@ -38,6 +38,7 @@ struct FlashMoEContext {
     KVCache **kv_caches;           // [num_layers] KV caches for full attention
     float *hidden;                 // [hidden_dim] working buffer
     float *logits;                 // [vocab_size] logits buffer
+    float *norm_scratch;           // [hidden_dim] persistent final-norm scratch
     uint16_t *final_norm_w;        // pointer into wf (not owned)
     int K;                         // num experts per token
 
@@ -221,9 +222,8 @@ int flashmoe_load(FlashMoEContext *ctx, const FlashMoEConfig *config) {
         // Suppress debug output for iOS
         g_stream_mode = 1;
 
-        if (config->think_budget > 0) {
-            g_think_budget = config->think_budget;
-        }
+        // 0 means unlimited; do not inherit a previous load's budget.
+        g_think_budget = config->think_budget;
 
         // Set quantization mode
         g_use_tiered = config->use_tiered;
@@ -321,6 +321,9 @@ int flashmoe_load(FlashMoEContext *ctx, const FlashMoEConfig *config) {
         if (!validate_native_tensor_layout(ctx->wf)) {
             return flashmoe_load_fail(ctx, "Model tensor layout/dtype validation failed");
         }
+        if (!validate_required_model_tensors(ctx->wf)) {
+            return flashmoe_load_fail(ctx, "Required model tensor validation failed");
+        }
 
         // Wrap weight file for Metal GPU access
         metal_set_weights(g_metal, ctx->wf->data, ctx->wf->size);
@@ -385,6 +388,11 @@ int flashmoe_load(FlashMoEContext *ctx, const FlashMoEConfig *config) {
             if (fstat(ctx->layer_fds[i], &st) != 0 || st.st_size <= 0) {
                 char error[512];
                 snprintf(error, sizeof(error), "Invalid expert layer %d: %s", i, path);
+                return flashmoe_load_fail(ctx, error);
+            }
+            if (g_use_tiered && !validate_tiered_layer_file(i, ctx->layer_fds[i], path)) {
+                char error[512];
+                snprintf(error, sizeof(error), "Invalid tiered expert layer %d: %s", i, path);
                 return flashmoe_load_fail(ctx, error);
             }
             ctx->layer_mmap_sizes[i] = st.st_size;
@@ -456,8 +464,9 @@ int flashmoe_load(FlashMoEContext *ctx, const FlashMoEConfig *config) {
         // ---- Allocate working buffers ----
         ctx->hidden = calloc((size_t)HIDDEN_DIM, sizeof(float));
         ctx->logits = calloc((size_t)VOCAB_SIZE, sizeof(float));
+        ctx->norm_scratch = calloc((size_t)HIDDEN_DIM, sizeof(float));
         ctx->final_norm_w = get_tensor_ptr(ctx->wf, "model.norm.weight");
-        if (!ctx->hidden || !ctx->logits || !ctx->final_norm_w) {
+        if (!ctx->hidden || !ctx->logits || !ctx->norm_scratch || !ctx->final_norm_w) {
             return flashmoe_load_fail(ctx, "Working-buffer or final-norm allocation failed");
         }
 
@@ -525,6 +534,7 @@ void flashmoe_unload(FlashMoEContext *ctx) {
         // Free working buffers
         free(ctx->hidden); ctx->hidden = NULL;
         free(ctx->logits); ctx->logits = NULL;
+        free(ctx->norm_scratch); ctx->norm_scratch = NULL;
 
         // Reset deferred state (h_mid is now a static array, no free needed)
         memset(g_deferred.h_mid, 0, sizeof(g_deferred.h_mid));
@@ -812,9 +822,8 @@ int flashmoe_generate(
         int pos = 0;
 
         // ---- Batch prefill: embed all prompt tokens ----
-        float *embed_batch = NULL;
-        if (pt->count > 1) {
-            embed_batch = malloc((size_t)pt->count * HIDDEN_DIM * sizeof(float));
+        float *embed_batch = try_alloc_embedding_batch(pt->count, "iOS prompt");
+        if (embed_batch) {
             for (int i = 0; i < pt->count; i++) {
                 embed_lookup(ctx->wf, pt->ids[i], embed_batch + (size_t)i * HIDDEN_DIM);
             }
@@ -831,8 +840,12 @@ int flashmoe_generate(
                     return 0;
                 }
 
-                memcpy(ctx->hidden, embed_batch + (size_t)token_idx * HIDDEN_DIM,
-                       HIDDEN_DIM * sizeof(float));
+                if (embed_batch) {
+                    memcpy(ctx->hidden, embed_batch + (size_t)token_idx * HIDDEN_DIM,
+                           HIDDEN_DIM * sizeof(float));
+                } else {
+                    embed_lookup(ctx->wf, pt->ids[token_idx], ctx->hidden);
+                }
 
                 if (!flashmoe_forward_position_checked(ctx, pos)) {
                     free(embed_batch);
@@ -867,7 +880,7 @@ int flashmoe_generate(
                 memcpy(ctx->hidden, embed_batch + (size_t)(pt->count - 1) * HIDDEN_DIM,
                        HIDDEN_DIM * sizeof(float));
             } else {
-                embed_lookup(ctx->wf, pt->ids[0], ctx->hidden);
+                embed_lookup(ctx->wf, pt->ids[pt->count - 1], ctx->hidden);
             }
 
             if (!flashmoe_forward_position_checked(ctx, pos)) {
@@ -884,10 +897,9 @@ int flashmoe_generate(
 
         // ---- Final norm + LM head + sample first token ----
         if (ctx->final_norm_w) {
-            float *normed = malloc(HIDDEN_DIM * sizeof(float));
-            cpu_rms_norm(ctx->hidden, ctx->final_norm_w, normed, HIDDEN_DIM, RMS_NORM_EPS);
-            memcpy(ctx->hidden, normed, HIDDEN_DIM * sizeof(float));
-            free(normed);
+            cpu_rms_norm(ctx->hidden, ctx->final_norm_w, ctx->norm_scratch,
+                         HIDDEN_DIM, RMS_NORM_EPS);
+            memcpy(ctx->hidden, ctx->norm_scratch, HIDDEN_DIM * sizeof(float));
         }
 
         lm_head_forward(ctx->wf, ctx->hidden, ctx->logits);
@@ -955,10 +967,9 @@ int flashmoe_generate(
 
             // Final norm + LM head
             if (ctx->final_norm_w) {
-                float *normed = malloc(HIDDEN_DIM * sizeof(float));
-                cpu_rms_norm(ctx->hidden, ctx->final_norm_w, normed, HIDDEN_DIM, RMS_NORM_EPS);
-                memcpy(ctx->hidden, normed, HIDDEN_DIM * sizeof(float));
-                free(normed);
+                cpu_rms_norm(ctx->hidden, ctx->final_norm_w, ctx->norm_scratch,
+                             HIDDEN_DIM, RMS_NORM_EPS);
+                memcpy(ctx->hidden, ctx->norm_scratch, HIDDEN_DIM * sizeof(float));
             }
 
             lm_head_forward(ctx->wf, ctx->hidden, ctx->logits);
@@ -1072,9 +1083,8 @@ int flashmoe_generate_continuation(
         // NOTE: No reset_delta_net_state() — reuse KV caches and linear attention state
 
         // ---- Prefill continuation tokens ----
-        float *embed_batch = NULL;
-        if (pt->count > 1) {
-            embed_batch = malloc((size_t)pt->count * HIDDEN_DIM * sizeof(float));
+        float *embed_batch = try_alloc_embedding_batch(pt->count, "iOS prompt");
+        if (embed_batch) {
             for (int i = 0; i < pt->count; i++) {
                 embed_lookup(ctx->wf, pt->ids[i], embed_batch + (size_t)i * HIDDEN_DIM);
             }
@@ -1089,8 +1099,12 @@ int flashmoe_generate_continuation(
                     return 0;
                 }
 
-                memcpy(ctx->hidden, embed_batch + (size_t)token_idx * HIDDEN_DIM,
-                       HIDDEN_DIM * sizeof(float));
+                if (embed_batch) {
+                    memcpy(ctx->hidden, embed_batch + (size_t)token_idx * HIDDEN_DIM,
+                           HIDDEN_DIM * sizeof(float));
+                } else {
+                    embed_lookup(ctx->wf, pt->ids[token_idx], ctx->hidden);
+                }
 
                 if (!flashmoe_forward_position_checked(ctx, pos)) {
                     free(embed_batch);
@@ -1109,7 +1123,7 @@ int flashmoe_generate_continuation(
                 memcpy(ctx->hidden, embed_batch + (size_t)(pt->count - 1) * HIDDEN_DIM,
                        HIDDEN_DIM * sizeof(float));
             } else {
-                embed_lookup(ctx->wf, pt->ids[0], ctx->hidden);
+                embed_lookup(ctx->wf, pt->ids[pt->count - 1], ctx->hidden);
             }
 
             if (!flashmoe_forward_position_checked(ctx, pos)) {
@@ -1126,10 +1140,9 @@ int flashmoe_generate_continuation(
 
         // ---- Final norm + LM head + sample first token ----
         if (ctx->final_norm_w) {
-            float *normed = malloc(HIDDEN_DIM * sizeof(float));
-            cpu_rms_norm(ctx->hidden, ctx->final_norm_w, normed, HIDDEN_DIM, RMS_NORM_EPS);
-            memcpy(ctx->hidden, normed, HIDDEN_DIM * sizeof(float));
-            free(normed);
+            cpu_rms_norm(ctx->hidden, ctx->final_norm_w, ctx->norm_scratch,
+                         HIDDEN_DIM, RMS_NORM_EPS);
+            memcpy(ctx->hidden, ctx->norm_scratch, HIDDEN_DIM * sizeof(float));
         }
 
         lm_head_forward(ctx->wf, ctx->hidden, ctx->logits);
@@ -1186,10 +1199,9 @@ int flashmoe_generate_continuation(
             pos++;
 
             if (ctx->final_norm_w) {
-                float *normed = malloc(HIDDEN_DIM * sizeof(float));
-                cpu_rms_norm(ctx->hidden, ctx->final_norm_w, normed, HIDDEN_DIM, RMS_NORM_EPS);
-                memcpy(ctx->hidden, normed, HIDDEN_DIM * sizeof(float));
-                free(normed);
+                cpu_rms_norm(ctx->hidden, ctx->final_norm_w, ctx->norm_scratch,
+                             HIDDEN_DIM, RMS_NORM_EPS);
+                memcpy(ctx->hidden, ctx->norm_scratch, HIDDEN_DIM * sizeof(float));
             }
 
             lm_head_forward(ctx->wf, ctx->hidden, ctx->logits);
@@ -1299,7 +1311,7 @@ void flashmoe_get_stats(FlashMoEContext *ctx, FlashMoEStats *stats) {
         stats->num_kv_heads = g_cfg.num_kv_heads;
         stats->head_dim = g_cfg.head_dim;
         stats->moe_intermediate = g_cfg.moe_intermediate;
-        stats->is_smoke_test = (g_cfg.num_experts < 512) ? 1 : 0;
+        stats->is_smoke_test = 0;  // 256-expert Qwen3.5-35B-A3B is the production target
 
         // Determine expert quantization bits
         if (g_use_2bit)          stats->expert_quant_bits = 2;
