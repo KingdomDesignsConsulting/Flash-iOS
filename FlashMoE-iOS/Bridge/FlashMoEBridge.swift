@@ -98,8 +98,9 @@ final class FlashMoEEngine: @unchecked Sendable {
     private(set) var tokensGenerated: Int = 0
     private(set) var timeToFirstToken: Double = 0
 
-    /// Smoke test mode: model has fewer than 512 experts (degraded, skip chat template)
-    var isSmoke: Bool { (modelInfo?.numExperts ?? 512) < 512 }
+    /// Smoke/test mode is determined by the engine, not inferred from expert count.
+    /// The production Qwen3.5-35B-A3B model legitimately has 256 routed experts.
+    var isSmoke: Bool { modelInfo?.isSmokeTest ?? false }
 
     // Private engine state
     private var context: OpaquePointer?  // FlashMoEContext*
