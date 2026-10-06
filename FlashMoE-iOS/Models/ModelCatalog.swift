@@ -22,10 +22,13 @@ struct CatalogEntry: Identifiable, Codable, Sendable {
     let displayName: String
     let repoId: String
     let description: String
-    let totalSizeBytes: UInt64
     let quantization: String
     let expertLayers: Int
     let files: [RepoFile]
+
+    var totalSizeBytes: UInt64 {
+        files.reduce(0) { $0 + $1.sizeBytes }
+    }
 
     var totalSizeGB: Double {
         Double(totalSizeBytes) / (1024.0 * 1024.0 * 1024.0)
@@ -49,7 +52,6 @@ enum ModelCatalog {
             displayName: "Qwen 3.5 35B-A3B",
             repoId: "alexintosh/Qwen3.5-35B-A3B-Q4-FlashMoE",
             description: "Compact 35B MoE model. 3B active params per token. Good for 8GB devices.",
-            totalSizeBytes: 19_500_000_000,
             quantization: "4-bit",
             expertLayers: 40,
             files: makeFileList(
@@ -72,7 +74,6 @@ enum ModelCatalog {
             displayName: "Qwen 3.5 35B-A3B Tiered",
             repoId: "alexintosh/Qwen3.5-35B-A3B-Q4-Tiered-FlashMoE",
             description: "Tiered quantization: hot experts 4-bit, cold 2-bit. ~12GB experts (vs 18GB full). Faster with slight quality trade-off.",
-            totalSizeBytes: 13_424_643_082,
             quantization: "tiered (4-bit/2-bit)",
             expertLayers: 40,
             files: makeTieredFileList()
