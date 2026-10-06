@@ -11561,7 +11561,8 @@ static int g_target_verify_route_stats_active = 0;
 #if !defined(FLASH_PREFILL_NROW_N32) && !defined(FLASH_PREFILL_NROW_N64) && !defined(FLASH_PREFILL_NROW_N128)
 #define FLASH_PREFILL_NROW_N128 1
 #endif
-#ifndef FLASH_PREFILL_NROW_DOWN_M4_2ROW
+#if !defined(FLASH_PREFILL_NROW_DOWN_M4_2ROW) && \
+    !defined(FLASH_PREFILL_NROW_DOWN_M4_2ROW_BITSPLIT)
 #define FLASH_PREFILL_NROW_DOWN_M4_2ROW 1
 #endif
 #if !defined(FLASH_PREFILL_NROW_GATEUP_M4_2ROW) && \

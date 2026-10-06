@@ -4,13 +4,14 @@
 #if defined(FLASH_PREFILL_NROW_DOWN_BIT_TIMING) && !defined(FLASH_PREFILL_NROW_EXPERT_PHASE_TIMING)
 #error FLASH_PREFILL_NROW_DOWN_BIT_TIMING requires FLASH_PREFILL_NROW_EXPERT_PHASE_TIMING
 #endif
-#if (defined(FLASH_PREFILL_NROW_DOWN_ACC16) || defined(FLASH_PREFILL_NROW_DOWN_ACC32) || defined(FLASH_PREFILL_NROW_DOWN_M4) || defined(FLASH_PREFILL_NROW_DOWN_M4_2ROW) || defined(FLASH_PREFILL_NROW_DOWN_M4_4ROW)) && (defined(FLASH_PREFILL_NROW_DOWN_2ROW) || defined(FLASH_PREFILL_NROW_DOWN_COOP_2ROW))
+#if (defined(FLASH_PREFILL_NROW_DOWN_ACC16) || defined(FLASH_PREFILL_NROW_DOWN_ACC32) || defined(FLASH_PREFILL_NROW_DOWN_M4) || defined(FLASH_PREFILL_NROW_DOWN_M4_2ROW) || defined(FLASH_PREFILL_NROW_DOWN_M4_2ROW_BITSPLIT) || defined(FLASH_PREFILL_NROW_DOWN_M4_4ROW)) && (defined(FLASH_PREFILL_NROW_DOWN_2ROW) || defined(FLASH_PREFILL_NROW_DOWN_COOP_2ROW))
 #error routed-down diagnostics cannot be combined with V8/V9 down geometry
 #endif
-#if (defined(FLASH_PREFILL_NROW_DOWN_ACC16) && (defined(FLASH_PREFILL_NROW_DOWN_ACC32) || defined(FLASH_PREFILL_NROW_DOWN_M4) || defined(FLASH_PREFILL_NROW_DOWN_M4_2ROW) || defined(FLASH_PREFILL_NROW_DOWN_M4_4ROW))) || \
-    (defined(FLASH_PREFILL_NROW_DOWN_ACC32) && (defined(FLASH_PREFILL_NROW_DOWN_M4) || defined(FLASH_PREFILL_NROW_DOWN_M4_2ROW) || defined(FLASH_PREFILL_NROW_DOWN_M4_4ROW))) || \
-    (defined(FLASH_PREFILL_NROW_DOWN_M4) && (defined(FLASH_PREFILL_NROW_DOWN_M4_2ROW) || defined(FLASH_PREFILL_NROW_DOWN_M4_4ROW))) || \
-    (defined(FLASH_PREFILL_NROW_DOWN_M4_2ROW) && defined(FLASH_PREFILL_NROW_DOWN_M4_4ROW))
+#if (defined(FLASH_PREFILL_NROW_DOWN_ACC16) && (defined(FLASH_PREFILL_NROW_DOWN_ACC32) || defined(FLASH_PREFILL_NROW_DOWN_M4) || defined(FLASH_PREFILL_NROW_DOWN_M4_2ROW) || defined(FLASH_PREFILL_NROW_DOWN_M4_2ROW_BITSPLIT) || defined(FLASH_PREFILL_NROW_DOWN_M4_4ROW))) || \
+    (defined(FLASH_PREFILL_NROW_DOWN_ACC32) && (defined(FLASH_PREFILL_NROW_DOWN_M4) || defined(FLASH_PREFILL_NROW_DOWN_M4_2ROW) || defined(FLASH_PREFILL_NROW_DOWN_M4_2ROW_BITSPLIT) || defined(FLASH_PREFILL_NROW_DOWN_M4_4ROW))) || \
+    (defined(FLASH_PREFILL_NROW_DOWN_M4) && (defined(FLASH_PREFILL_NROW_DOWN_M4_2ROW) || defined(FLASH_PREFILL_NROW_DOWN_M4_2ROW_BITSPLIT) || defined(FLASH_PREFILL_NROW_DOWN_M4_4ROW))) || \
+    (defined(FLASH_PREFILL_NROW_DOWN_M4_2ROW) && (defined(FLASH_PREFILL_NROW_DOWN_M4_2ROW_BITSPLIT) || defined(FLASH_PREFILL_NROW_DOWN_M4_4ROW))) || \
+    (defined(FLASH_PREFILL_NROW_DOWN_M4_2ROW_BITSPLIT) && defined(FLASH_PREFILL_NROW_DOWN_M4_4ROW))
 #error choose exactly one routed-down diagnostic kernel
 #endif
 
@@ -41,6 +42,10 @@ typedef struct {
 #endif
 #ifdef FLASH_PREFILL_NROW_DOWN_M4_2ROW
     id<MTLComputePipelineState> projection_m4_2row;
+#endif
+#ifdef FLASH_PREFILL_NROW_DOWN_M4_2ROW_BITSPLIT
+    id<MTLComputePipelineState> projection_m4_2row_q4;
+    id<MTLComputePipelineState> projection_m4_2row_q2;
 #endif
 #ifdef FLASH_PREFILL_NROW_DOWN_M4_4ROW
     id<MTLComputePipelineState> projection_m4_4row;
@@ -137,6 +142,10 @@ static __attribute__((unused)) void prefill_nrow_grouped_release(PrefillNRowGrou
 #endif
 #ifdef FLASH_PREFILL_NROW_DOWN_M4_2ROW
     p->projection_m4_2row = nil;
+#endif
+#ifdef FLASH_PREFILL_NROW_DOWN_M4_2ROW_BITSPLIT
+    p->projection_m4_2row_q4 = nil;
+    p->projection_m4_2row_q2 = nil;
 #endif
 #ifdef FLASH_PREFILL_NROW_DOWN_M4_4ROW
     p->projection_m4_4row = nil;
@@ -254,6 +263,12 @@ static int prefill_nrow_grouped_init(PrefillNRowGrouped *p) {
     fn = [library newFunctionWithName:@"grouped_tiered_projection_m4_2row"];
     p->projection_m4_2row = [g_metal->device newComputePipelineStateWithFunction:fn error:&error];
 #endif
+#ifdef FLASH_PREFILL_NROW_DOWN_M4_2ROW_BITSPLIT
+    fn = [library newFunctionWithName:@"grouped_tiered_projection_m4_2row_q4"];
+    p->projection_m4_2row_q4 = [g_metal->device newComputePipelineStateWithFunction:fn error:&error];
+    fn = [library newFunctionWithName:@"grouped_tiered_projection_m4_2row_q2"];
+    p->projection_m4_2row_q2 = [g_metal->device newComputePipelineStateWithFunction:fn error:&error];
+#endif
 #ifdef FLASH_PREFILL_NROW_DOWN_M4_4ROW
     fn = [library newFunctionWithName:@"grouped_tiered_projection_m4_4row"];
     p->projection_m4_4row = [g_metal->device newComputePipelineStateWithFunction:fn error:&error];
@@ -270,7 +285,9 @@ static int prefill_nrow_grouped_init(PrefillNRowGrouped *p) {
 fprintf(stderr, "[prefill-nrow] slab_rows=%d assignments=%d\n",
         PREFILL_NROW_ROWS, PREFILL_NROW_ASSIGNMENTS);
 #ifdef FLASH_PREFILL_NROW_DOWN_BIT_TIMING
-#ifdef FLASH_PREFILL_NROW_DOWN_M4_2ROW
+#ifdef FLASH_PREFILL_NROW_DOWN_M4_2ROW_BITSPLIT
+    fprintf(stderr, "[prefill-nrow] routed down diagnostics=Q4/Q2 gpu-time candidate=M4-2row-bitsplit\n");
+#elif defined(FLASH_PREFILL_NROW_DOWN_M4_2ROW)
     fprintf(stderr, "[prefill-nrow] routed down diagnostics=Q4/Q2 gpu-time candidate=M4-2row\n");
 #elif defined(FLASH_PREFILL_NROW_DOWN_M4_4ROW)
     fprintf(stderr, "[prefill-nrow] routed down diagnostics=Q4/Q2 gpu-time candidate=M4-4row\n");
@@ -285,7 +302,9 @@ fprintf(stderr, "[prefill-nrow] slab_rows=%d assignments=%d\n",
 #endif
 #endif
 #ifndef FLASH_PREFILL_NROW_DOWN_BIT_TIMING
-#ifdef FLASH_PREFILL_NROW_DOWN_M4_2ROW
+#ifdef FLASH_PREFILL_NROW_DOWN_M4_2ROW_BITSPLIT
+    fprintf(stderr, "[prefill-nrow] routed down candidate=M4-2row-bitsplit\n");
+#elif defined(FLASH_PREFILL_NROW_DOWN_M4_2ROW)
     fprintf(stderr, "[prefill-nrow] routed down candidate=M4-2row\n");
 #elif defined(FLASH_PREFILL_NROW_DOWN_M4_4ROW)
     fprintf(stderr, "[prefill-nrow] routed down candidate=M4-4row\n");
@@ -455,6 +474,10 @@ fprintf(stderr, "[prefill-nrow] slab_rows=%d assignments=%d\n",
 #endif
 #ifdef FLASH_PREFILL_NROW_DOWN_M4_2ROW
         p->projection_m4_2row &&
+#endif
+#ifdef FLASH_PREFILL_NROW_DOWN_M4_2ROW_BITSPLIT
+        p->projection_m4_2row_q4 &&
+        p->projection_m4_2row_q2 &&
 #endif
 #ifdef FLASH_PREFILL_NROW_DOWN_M4_4ROW
         p->projection_m4_4row &&
@@ -1000,6 +1023,36 @@ static void prefill_nrow_encode_down_m4_2row(id<MTLCommandBuffer> cmd,
     [enc setBytes:&count length:4 atIndex:7];
     [enc setBytes:&bits length:4 atIndex:8];
     [enc dispatchThreadgroups:MTLSizeMake((out_dim + 1u) / 2u, (count + 3u) / 4u, 1)
+        threadsPerThreadgroup:MTLSizeMake(64, 1, 1)];
+    [enc endEncoding];
+}
+#endif
+
+#ifdef FLASH_PREFILL_NROW_DOWN_M4_2ROW_BITSPLIT
+// Fixed-bit specialization of the accepted M4-2row routed-down geometry.
+// Q4 and Q2 use separate pipelines so unpack width, masks, and shifts are
+// compiler constants while row packing, activation order, and reductions stay
+// identical to the accepted dynamic-bit kernel.
+static void prefill_nrow_encode_down_m4_2row_bitsplit(id<MTLCommandBuffer> cmd,
+    PrefillNRowGrouped *p, id<MTLBuffer> data, NSUInteger data_base,
+    NSUInteger w, NSUInteger s, NSUInteger b,
+    id<MTLBuffer> input, NSUInteger input_offset,
+    id<MTLBuffer> output, NSUInteger output_offset,
+    uint32_t in_dim, uint32_t out_dim, uint32_t count, uint32_t bits) {
+    id<MTLComputeCommandEncoder> enc = [cmd computeCommandEncoder];
+    [enc setComputePipelineState:(bits == 4u)
+        ? p->projection_m4_2row_q4 : p->projection_m4_2row_q2];
+    [enc setBuffer:data offset:data_base + w atIndex:0];
+    [enc setBuffer:data offset:data_base + s atIndex:1];
+    [enc setBuffer:data offset:data_base + b atIndex:2];
+    [enc setBuffer:input offset:input_offset atIndex:3];
+    [enc setBuffer:output offset:output_offset atIndex:4];
+    [enc setBytes:&in_dim length:4 atIndex:5];
+    [enc setBytes:&out_dim length:4 atIndex:6];
+    [enc setBytes:&count length:4 atIndex:7];
+    [enc setBytes:&bits length:4 atIndex:8];
+    [enc dispatchThreadgroups:MTLSizeMake((out_dim + 1u) / 2u,
+                                          (count + 3u) / 4u, 1)
         threadsPerThreadgroup:MTLSizeMake(64, 1, 1)];
     [enc endEncoding];
 }
@@ -1573,7 +1626,9 @@ static int prefill_nrow_grouped_layer(PrefillNRowGrouped *p,
 #else
         id<MTLCommandBuffer> selected_down_cmd = down_cmd;
 #endif
-#if defined(FLASH_PREFILL_NROW_DOWN_M4_2ROW)
+#if defined(FLASH_PREFILL_NROW_DOWN_M4_2ROW_BITSPLIT)
+        prefill_nrow_encode_down_m4_2row_bitsplit(
+#elif defined(FLASH_PREFILL_NROW_DOWN_M4_2ROW)
         prefill_nrow_encode_down_m4_2row(selected_down_cmd, p, data, data_base,
             layout.down_w_off, layout.down_s_off, layout.down_b_off,
             p->act, mid_off, p->output, hidden_off,
@@ -1697,7 +1752,9 @@ static int prefill_nrow_grouped_layer(PrefillNRowGrouped *p,
             threadsPerThreadgroup:MTLSizeMake(256, 1, 1)];
         [enc endEncoding];
 
-#if defined(FLASH_PREFILL_NROW_DOWN_M4_2ROW)
+#if defined(FLASH_PREFILL_NROW_DOWN_M4_2ROW_BITSPLIT)
+        prefill_nrow_encode_down_m4_2row_bitsplit(
+#elif defined(FLASH_PREFILL_NROW_DOWN_M4_2ROW)
         prefill_nrow_encode_down_m4_2row(cmd, p, data, data_base,
             layout.down_w_off, layout.down_s_off, layout.down_b_off,
             p->act, mid_off, p->output, hidden_off,

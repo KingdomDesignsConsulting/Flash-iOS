@@ -261,6 +261,102 @@ kernel void grouped_tiered_projection_m4_2row(
     }
 }
 
+// Fixed Q4 specialization of the accepted M4-2row routed-down kernel.
+kernel void grouped_tiered_projection_m4_2row_q4(
+    device const uint *weights [[buffer(0)]],
+    device const ushort *scales [[buffer(1)]],
+    device const ushort *biases [[buffer(2)]],
+    device const float *inputs [[buffer(3)]],
+    device float *outputs [[buffer(4)]],
+    constant uint &in_dim [[buffer(5)]],
+    constant uint &out_dim [[buffer(6)]],
+    constant uint &count [[buffer(7)]],
+    constant uint &_bits_unused [[buffer(8)]],
+    uint3 tg [[threadgroup_position_in_grid]],
+    uint3 tid [[thread_position_in_threadgroup]]) {
+    const uint simd = tid.x >> 5;
+    const uint lane = tid.x & 31u;
+    const uint row = tg.x * 2u + simd;
+    const uint base = tg.y * 4u;
+    if (simd >= 2u || row >= out_dim || base >= count) return;
+    const uint packed_cols = in_dim / 8u;
+    const uint groups = in_dim / 64u;
+    const bool v1 = base + 1u < count;
+    const bool v2 = base + 2u < count;
+    const bool v3 = base + 3u < count;
+    float a0 = 0.0f, a1 = 0.0f, a2 = 0.0f, a3 = 0.0f;
+    for (uint col = lane; col < packed_cols; col += 32u) {
+        const uint group = col / 8u;
+        const float scale = bf16_to_float(scales[row * groups + group]);
+        const float bias = bf16_to_float(biases[row * groups + group]);
+        const uint packed = weights[row * packed_cols + col];
+        for (uint j = 0; j < 8u; j++) {
+            const float w = float((packed >> (j * 4u)) & 0xFu) * scale + bias;
+            const uint xcol = col * 8u + j;
+            a0 += w * inputs[(base + 0u) * in_dim + xcol];
+            if (v1) a1 += w * inputs[(base + 1u) * in_dim + xcol];
+            if (v2) a2 += w * inputs[(base + 2u) * in_dim + xcol];
+            if (v3) a3 += w * inputs[(base + 3u) * in_dim + xcol];
+        }
+    }
+    const float s0 = simd_sum(a0), s1 = simd_sum(a1);
+    const float s2 = simd_sum(a2), s3 = simd_sum(a3);
+    if (lane == 0) {
+        outputs[(base + 0u) * out_dim + row] = s0;
+        if (v1) outputs[(base + 1u) * out_dim + row] = s1;
+        if (v2) outputs[(base + 2u) * out_dim + row] = s2;
+        if (v3) outputs[(base + 3u) * out_dim + row] = s3;
+    }
+}
+
+// Fixed Q2 specialization of the accepted M4-2row routed-down kernel.
+kernel void grouped_tiered_projection_m4_2row_q2(
+    device const uint *weights [[buffer(0)]],
+    device const ushort *scales [[buffer(1)]],
+    device const ushort *biases [[buffer(2)]],
+    device const float *inputs [[buffer(3)]],
+    device float *outputs [[buffer(4)]],
+    constant uint &in_dim [[buffer(5)]],
+    constant uint &out_dim [[buffer(6)]],
+    constant uint &count [[buffer(7)]],
+    constant uint &_bits_unused [[buffer(8)]],
+    uint3 tg [[threadgroup_position_in_grid]],
+    uint3 tid [[thread_position_in_threadgroup]]) {
+    const uint simd = tid.x >> 5;
+    const uint lane = tid.x & 31u;
+    const uint row = tg.x * 2u + simd;
+    const uint base = tg.y * 4u;
+    if (simd >= 2u || row >= out_dim || base >= count) return;
+    const uint packed_cols = in_dim / 16u;
+    const uint groups = in_dim / 64u;
+    const bool v1 = base + 1u < count;
+    const bool v2 = base + 2u < count;
+    const bool v3 = base + 3u < count;
+    float a0 = 0.0f, a1 = 0.0f, a2 = 0.0f, a3 = 0.0f;
+    for (uint col = lane; col < packed_cols; col += 32u) {
+        const uint group = col / 4u;
+        const float scale = bf16_to_float(scales[row * groups + group]);
+        const float bias = bf16_to_float(biases[row * groups + group]);
+        const uint packed = weights[row * packed_cols + col];
+        for (uint j = 0; j < 16u; j++) {
+            const float w = float((packed >> (j * 2u)) & 0x3u) * scale + bias;
+            const uint xcol = col * 16u + j;
+            a0 += w * inputs[(base + 0u) * in_dim + xcol];
+            if (v1) a1 += w * inputs[(base + 1u) * in_dim + xcol];
+            if (v2) a2 += w * inputs[(base + 2u) * in_dim + xcol];
+            if (v3) a3 += w * inputs[(base + 3u) * in_dim + xcol];
+        }
+    }
+    const float s0 = simd_sum(a0), s1 = simd_sum(a1);
+    const float s2 = simd_sum(a2), s3 = simd_sum(a3);
+    if (lane == 0) {
+        outputs[(base + 0u) * out_dim + row] = s0;
+        if (v1) outputs[(base + 1u) * out_dim + row] = s1;
+        if (v2) outputs[(base + 2u) * out_dim + row] = s2;
+        if (v3) outputs[(base + 3u) * out_dim + row] = s3;
+    }
+}
+
 // V12B occupancy diagnostic: same fixed M=4 arithmetic as V12A, but one
 // 128-thread workgroup carries four independent 32-lane SIMD groups. Each
 // SIMD group owns one output row; all four consume the same activation tile.

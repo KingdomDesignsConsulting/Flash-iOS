@@ -42,7 +42,7 @@ INFER_CFLAGS = $(CFLAGS) -DFLASH_PREFILL_NROW_PRODUCTION -DFLASH_PREFILL_NROW_AS
 CHAT_TARGET = chat
 CHAT_SRC = chat.m
 
-.PHONY: all clean run verify bench moe moebench full fullbench fast metallib infer-run chat-run build-chat n128bench n128gateup8 n128gateup4row n128gateup8row n128gateup8cache n128gateup8bits n128gateup16row n128serve8row n128serve8bits
+.PHONY: all clean run verify bench moe moebench full fullbench fast metallib infer-run chat-run build-chat n128bench n128gateup8 n128gateup4row n128gateup8row n128gateup8cache n128gateup8bits n128downbits n128gateup16row n128serve8row n128serve8bits
 
 all: $(TARGET) $(INFER_TARGET)
 
@@ -168,6 +168,23 @@ n128gateup8bits: $(INFER_SRC) $(INFER_DEPS)
 	$(CC) $(N128_GATEUP8BITS_CFLAGS) $(FRAMEWORKS) $(LDFLAGS) $(INFER_SRC) -o "$(N128_GATEUP8BITS_TARGET)"
 	@echo "Built benchmark-only $(N128_GATEUP8BITS_TARGET); production ./$(INFER_TARGET) was not replaced."
 
+# Experimental N128 routed-down fixed-bit decode candidate. Gate+up stays on
+# the production M4-8row Q4/Q2 bitsplit path; only accepted M4-2row down changes
+# from dynamic bit-width decode to dedicated Q4/Q2 pipelines.
+N128_DOWNBITS_TARGET = ../Testing/Temporary Testing Files/Apps/infer-n128-down-m4-2row-bitsplit-bench
+N128_DOWNBITS_CFLAGS = $(CFLAGS) \
+	-DFLASH_PREFILL_NROW_BENCH \
+	-DFLASH_PREFILL_NROW_ASYNC \
+	-DFLASH_PREFILL_NROW_N128 \
+	-DFLASH_PREFILL_NROW_1K_1024 \
+	-DFLASH_PREFILL_NROW_DOWN_M4_2ROW_BITSPLIT \
+	-DFLASH_PREFILL_NROW_GATEUP_M4_8ROW_BITSPLIT \
+	-DFLASH_PREFILL_NROW_EXPERT_PHASE_TIMING
+
+n128downbits: $(INFER_SRC) $(INFER_DEPS)
+	$(CC) $(N128_DOWNBITS_CFLAGS) $(FRAMEWORKS) $(LDFLAGS) $(INFER_SRC) -o "$(N128_DOWNBITS_TARGET)"
+	@echo "Built benchmark-only $(N128_DOWNBITS_TARGET); production ./$(INFER_TARGET) was not replaced."
+
 # Experimental N128 gate+up M4-16row candidate. Routed down remains M4-2row;
 # gate+up retains M4 arithmetic and changes only threadgroup packing 8 -> 16 rows.
 N128_GATEUP16ROW_TARGET = ../Testing/Temporary Testing Files/Apps/infer-n128-gateup-m4-16row-bench
@@ -217,7 +234,7 @@ $(CHAT_TARGET): $(CHAT_SRC) linenoise.c linenoise.h
 	$(CC) -O2 -Wall -fobjc-arc -framework Foundation $(CHAT_SRC) linenoise.c -o $(CHAT_TARGET)
 
 clean:
-	rm -f $(TARGET) $(INFER_TARGET) "$(N128_BENCH_TARGET)" "$(N128_GATEUP8_TARGET)" "$(N128_GATEUP4ROW_TARGET)" "$(N128_GATEUP8ROW_TARGET)" "$(N128_GATEUP8CACHE_TARGET)" "$(N128_GATEUP8BITS_TARGET)" "$(N128_GATEUP16ROW_TARGET)" "$(N128_SERVE8ROW_TARGET)" "$(N128_SERVE8BITS_TARGET)" $(CHAT_TARGET) $(SHADER_AIR) $(SHADER_LIB)
+	rm -f $(TARGET) $(INFER_TARGET) "$(N128_BENCH_TARGET)" "$(N128_GATEUP8_TARGET)" "$(N128_GATEUP4ROW_TARGET)" "$(N128_GATEUP8ROW_TARGET)" "$(N128_GATEUP8CACHE_TARGET)" "$(N128_GATEUP8BITS_TARGET)" "$(N128_DOWNBITS_TARGET)" "$(N128_GATEUP16ROW_TARGET)" "$(N128_SERVE8ROW_TARGET)" "$(N128_SERVE8BITS_TARGET)" $(CHAT_TARGET) $(SHADER_AIR) $(SHADER_LIB)
 
 # Run targets
 run: $(TARGET)
