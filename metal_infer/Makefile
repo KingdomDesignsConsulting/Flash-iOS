@@ -248,6 +248,24 @@ n128serve8bits: $(INFER_SRC) $(INFER_DEPS)
 	$(CC) $(N128_SERVE8BITS_CFLAGS) $(FRAMEWORKS) $(LDFLAGS) $(INFER_SRC) -o "$(N128_SERVE8BITS_TARGET)"
 	@echo "Built serving candidate $(N128_SERVE8BITS_TARGET); production ./$(INFER_TARGET) was not replaced."
 
+# Benchmark-only exact-small-M dense verifier transfer from MLX-VLM PR #2430.
+# Keeps the accepted N128 routed-MoE geometry fixed and changes only ordinary
+# resident MLX4 dense projections from repeated M1 dispatches to pairwise M2.
+N128_DENSE_M2_TARGET = ../Testing/Temporary Testing Files/Apps/infer-n128-dense-m2-bench
+N128_DENSE_M2_CFLAGS = $(CFLAGS) \
+	-DFLASH_PREFILL_NROW_BENCH \
+	-DFLASH_PREFILL_NROW_ASYNC \
+	-DFLASH_PREFILL_NROW_N128 \
+	-DFLASH_PREFILL_NROW_1K_1024 \
+	-DFLASH_PREFILL_NROW_DOWN_M4_2ROW \
+	-DFLASH_PREFILL_NROW_GATEUP_M4_8ROW_BITSPLIT \
+	-DFLASH_PREFILL_NROW_DENSE_M2 \
+	-DFLASH_PREFILL_NROW_EXPERT_PHASE_TIMING
+
+n128densem2: $(INFER_SRC) $(INFER_DEPS)
+	$(CC) $(N128_DENSE_M2_CFLAGS) $(FRAMEWORKS) $(LDFLAGS) $(INFER_SRC) -o "$(N128_DENSE_M2_TARGET)"
+	@echo "Built benchmark-only $(N128_DENSE_M2_TARGET); production ./$(INFER_TARGET) was not replaced."
+
 # Build the chat client (thin HTTP/SSE client + linenoise line editor)
 $(CHAT_TARGET): $(CHAT_SRC) linenoise.c linenoise.h
 	$(CC) -O2 -Wall -fobjc-arc -framework Foundation $(CHAT_SRC) linenoise.c -o $(CHAT_TARGET)
