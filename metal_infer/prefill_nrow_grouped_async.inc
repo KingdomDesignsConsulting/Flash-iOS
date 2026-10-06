@@ -29,6 +29,10 @@ enum {
     PREFILL_NROW_K = 8,
     PREFILL_NROW_ASSIGNMENTS = PREFILL_NROW_ROWS * PREFILL_NROW_K,
 };
+#ifdef FLASH_PREFILL_NROW_DENSE_M2
+static id<MTLComputePipelineState> g_prefill_nrow_dense_m2 = nil;
+#endif
+
 typedef struct {
     id<MTLComputePipelineState> projection;
 #ifdef FLASH_PREFILL_NROW_DOWN_ACC16
@@ -130,6 +134,9 @@ typedef struct {
 
 static __attribute__((unused)) void prefill_nrow_grouped_release(PrefillNRowGrouped *p) {
     if (!p) return;
+#ifdef FLASH_PREFILL_NROW_DENSE_M2
+    g_prefill_nrow_dense_m2 = nil;
+#endif
     p->projection = nil;
 #ifdef FLASH_PREFILL_NROW_DOWN_ACC16
     p->projection_acc16 = nil;
@@ -245,7 +252,19 @@ static int prefill_nrow_grouped_init(PrefillNRowGrouped *p) {
         fprintf(stderr, "[prefill-nrow] shader: %s\n", error.localizedDescription.UTF8String);
         return 0;
     }
-    id<MTLFunction> fn = [library newFunctionWithName:@"grouped_tiered_projection"];
+    id<MTLFunction> fn = nil;
+#ifdef FLASH_PREFILL_NROW_DENSE_M2
+    fn = [library newFunctionWithName:@"dense_affine_q4_m2"];
+    g_prefill_nrow_dense_m2 =
+        [g_metal->device newComputePipelineStateWithFunction:fn error:&error];
+    if (!g_prefill_nrow_dense_m2) {
+        fprintf(stderr, "[prefill-nrow] dense M2 pipeline: %s\n",
+                error.localizedDescription.UTF8String);
+        return 0;
+    }
+    fprintf(stderr, "[prefill-nrow] dense affine candidate=M2 exact-Q4\n");
+#endif
+    fn = [library newFunctionWithName:@"grouped_tiered_projection"];
     p->projection = [g_metal->device newComputePipelineStateWithFunction:fn error:&error];
 #ifdef FLASH_PREFILL_NROW_DOWN_ACC16
     fn = [library newFunctionWithName:@"grouped_tiered_projection_acc16"];
@@ -574,6 +593,69 @@ static int prefill_nrow_encode_dense_rows(
         (size_t)w_off >= [g_metal->wf_buf length] ||
         (size_t)s_off >= [g_metal->wf_buf length] ||
         (size_t)b_off >= [g_metal->wf_buf length]) return 0;
+
+#ifdef FLASH_PREFILL_NROW_DENSE_M2
+    // Benchmark-only verifier prototype: process each pair of dense activation
+    // rows in one exact-small-M kernel. This deliberately applies only to the
+    // model's native 2048-wide MLX4 group-64 projections; all other formats and
+    // shapes retain the production M1 dispatch loop below.
+    if (g_prefill_nrow_dense_m2 && in_dim <= 2048u && group_size == 64u &&
+        (input_stride % sizeof(float)) == 0 &&
+        (output_stride % sizeof(float)) == 0) {
+        const uint32_t input_stride_f =
+            (uint32_t)(input_stride / sizeof(float));
+        const uint32_t output_stride_f =
+            (uint32_t)(output_stride / sizeof(float));
+        const uint32_t num_tgs = (out_dim + 7u) / 8u;
+
+        [enc setComputePipelineState:g_prefill_nrow_dense_m2];
+        [enc setBuffer:g_metal->wf_buf offset:w_off atIndex:0];
+        [enc setBuffer:g_metal->wf_buf offset:s_off atIndex:1];
+        [enc setBuffer:g_metal->wf_buf offset:b_off atIndex:2];
+        [enc setBytes:&out_dim length:4 atIndex:5];
+        [enc setBytes:&in_dim length:4 atIndex:6];
+        [enc setBytes:&group_size length:4 atIndex:7];
+        [enc setBytes:&input_stride_f length:4 atIndex:8];
+        [enc setBytes:&output_stride_f length:4 atIndex:9];
+
+        for (int row = 0; row + 1 < PREFILL_NROW_ROWS; row += 2) {
+            [enc setBuffer:input offset:(NSUInteger)row * input_stride atIndex:3];
+            [enc setBuffer:output offset:(NSUInteger)row * output_stride atIndex:4];
+            [enc dispatchThreadgroups:MTLSizeMake(num_tgs, 1, 1)
+                threadsPerThreadgroup:MTLSizeMake(256, 1, 1)];
+        }
+
+        // Current benchmark slab widths are even. Keep a safe scalar tail in
+        // case a future diagnostic chooses an odd row count.
+        if ((PREFILL_NROW_ROWS & 1) != 0) {
+            BatchMatvecSpec tail_shape = {
+                W, scales, biases, NULL, out_dim, in_dim, group_size,
+                0, kind, source
+            };
+            int tail_v3 = tiny_matvec_select_v3(&tail_shape);
+            [enc setComputePipelineState:
+                tail_v3 ? g_metal->matvec_v3 : g_metal->matvec_fast];
+            [enc setBuffer:g_metal->wf_buf offset:w_off atIndex:0];
+            [enc setBuffer:g_metal->wf_buf offset:s_off atIndex:1];
+            [enc setBuffer:g_metal->wf_buf offset:b_off atIndex:2];
+            [enc setBuffer:input
+                offset:(NSUInteger)(PREFILL_NROW_ROWS - 1) * input_stride atIndex:3];
+            [enc setBuffer:output
+                offset:(NSUInteger)(PREFILL_NROW_ROWS - 1) * output_stride atIndex:4];
+            [enc setBytes:&out_dim length:4 atIndex:5];
+            [enc setBytes:&in_dim length:4 atIndex:6];
+            [enc setBytes:&group_size length:4 atIndex:7];
+            if (tail_v3) {
+                [enc dispatchThreadgroups:MTLSizeMake(num_tgs, 1, 1)
+                    threadsPerThreadgroup:MTLSizeMake(256, 1, 1)];
+            } else {
+                [enc dispatchThreadgroups:MTLSizeMake(out_dim, 1, 1)
+                    threadsPerThreadgroup:MTLSizeMake(64, 1, 1)];
+            }
+        }
+        return 1;
+    }
+#endif
 
     BatchMatvecSpec shape = {
         W, scales, biases, NULL, out_dim, in_dim, group_size, 0, kind, source
