@@ -224,9 +224,9 @@ static __attribute__((unused)) void prefill_nrow_grouped_release(PrefillNRowGrou
 static int prefill_nrow_grouped_init(PrefillNRowGrouped *p) {
     NSString *executable_dir = infer_executable_directory();
     NSArray<NSString *> *paths = executable_dir
-        ? @[@"prefill_probe/chunk_kernels.metal",
-            @"metal_infer/prefill_probe/chunk_kernels.metal",
-            [executable_dir stringByAppendingPathComponent:@"prefill_probe/chunk_kernels.metal"]]
+        ? @[[executable_dir stringByAppendingPathComponent:@"prefill_probe/chunk_kernels.metal"],
+            @"prefill_probe/chunk_kernels.metal",
+            @"metal_infer/prefill_probe/chunk_kernels.metal"]
         : @[@"prefill_probe/chunk_kernels.metal",
             @"metal_infer/prefill_probe/chunk_kernels.metal"];
     NSString *source = nil;
