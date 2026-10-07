@@ -17966,6 +17966,9 @@ static int sse_send_done(int fd, const char *request_id, const char *finish_reas
     return http_write_str(fd, "data: [DONE]\n\n");
 }
 
+static int send_session_invalidated_error(
+    int fd, int stream_response, NSString *message);
+
 static int run_api_regression_self_tests(void) {
     int failures = 0;
     NSDictionary *test_timings = @{
@@ -18039,6 +18042,40 @@ static int run_api_regression_self_tests(void) {
             [sse containsString:@"\"resend_full_history\":true"];
     } else passed = NO;
     printf("[api-self-test] streaming session reset notice: %s\n", passed ? "PASS" : "FAIL");
+    if (!passed) failures++;
+
+    if (pipe(pipefd) == 0) {
+        passed = send_session_invalidated_error(
+            pipefd[1], 1, @"prefill failed") == 0;
+        close(pipefd[1]);
+        char output[1024] = {0};
+        ssize_t count = read(pipefd[0], output, sizeof(output) - 1);
+        close(pipefd[0]);
+        NSString *sse = count > 0 ? [NSString stringWithUTF8String:output] : nil;
+        passed = passed &&
+            [sse containsString:@"\"session_invalidated\":true"] &&
+            [sse containsString:@"\"resend_full_history\":true"] &&
+            [sse containsString:@"data: [DONE]"];
+    } else passed = NO;
+    printf("[api-self-test] SSE inference failure resets session: %s\n",
+           passed ? "PASS" : "FAIL");
+    if (!passed) failures++;
+
+    if (pipe(pipefd) == 0) {
+        passed = send_session_invalidated_error(
+            pipefd[1], 0, @"generation failed") == 0;
+        close(pipefd[1]);
+        char output[1536] = {0};
+        ssize_t count = read(pipefd[0], output, sizeof(output) - 1);
+        close(pipefd[0]);
+        NSString *http = count > 0 ? [NSString stringWithUTF8String:output] : nil;
+        passed = passed &&
+            [http containsString:@"HTTP/1.1 500 Internal Server Error"] &&
+            [http containsString:@"\"session_invalidated\":true"] &&
+            [http containsString:@"\"resend_full_history\":true"];
+    } else passed = NO;
+    printf("[api-self-test] HTTP inference failure resets session: %s\n",
+           passed ? "PASS" : "FAIL");
     if (!passed) failures++;
 #ifdef FLASH_API_FAULT_TEST
     if (pipe(pipefd) == 0) {
