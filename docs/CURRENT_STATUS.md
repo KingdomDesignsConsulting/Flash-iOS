@@ -169,11 +169,11 @@ replayed_accepted=0
 RESULT: PASS
 ```
 
-The correctness-first reference banks occupy approximately `376.13 MiB` for two complete `ServeStateSnapshot` copies. That representation is intentionally a correctness oracle, not a production serving design. The next verifier optimization is to replace full snapshots with compact mutable speculative state: appended KV positions/lengths, dual recurrent/GDN state, dual convolution-tail state, and the corresponding hidden vectors.
+The two complete `ServeStateSnapshot` reference banks occupy `376.13 MiB` and remain a correctness oracle. A compact row-0 bank now stores one appended full-attention K/V slot per layer, KV lengths, mutable recurrent/convolution state, and matching hidden. Row 1 stays live on full acceptance. The compact bank occupies `196,168,744` bytes (`187.081 MiB`), a `50.26%` reduction from the two reference banks. The short Drive and Git runs both passed all three oracle cases, byte-exact M2 logits (`496640/496640`), exact committed/fallback state and hidden, GPU KV-mirror checks, and one additional deterministic continuation step after full acceptance. Warmed Drive captures took `4.99–5.57 ms` compact versus `10.06–10.37 ms` for two full snapshots; row-1 restore took `4.78 ms`, row-0 anchor rollback `4.77 ms`, and full acceptance required no restore. These are short diagnostics, not serving throughput results.
 
-The validation build currently reuses `--bench-target-verifier-batched` when `TARGET_VERIFY_EXACT_M2_INTEGRATION` is defined. Normal serving is unchanged and no draft-token source is wired into the HTTP decode loop yet.
+The validation build currently reuses `--bench-target-verifier-batched` when `TARGET_VERIFY_EXACT_M2_INTEGRATION` is defined. A disabled-by-default draft-provider callback is exercised in the short harness. Normal serving is unchanged and no real draft-token source is wired into the HTTP decode loop yet. Kevin will run long-context correctness manually.
 
-Detailed design and validation results are in `docs/exact-m2-verifier-integration-2026-10-07.md`.
+Detailed design and validation results are in `docs/exact-m2-verifier-integration-2026-10-07.md` and `docs/compact-m2-state-bank-2026-10-07.md`.
 
 ## Warm state
 
@@ -207,7 +207,7 @@ The smoke was staging-heavy, but completed normally through 32 N-row chunks with
 
 ## Pending
 
-1. Replace correctness-first full `ServeStateSnapshot` banks with compact mutable-state banks before any production speculative-decode performance claim.
+1. Run Kevin's manual long-context compact-bank correctness check before any production speculative-decode performance claim.
 2. Wire a draft-token producer/provider into serving; serving currently has no draft source.
 3. Integrate the validated exact-M2 transaction into decode only after compact banking is proven correct; retain ordinary one-token decode as the disable/fallback path.
 4. Physical-iPhone model loading/generation remains separately unvalidated for the current iOS snapshot.

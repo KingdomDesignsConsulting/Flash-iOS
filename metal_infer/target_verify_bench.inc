@@ -74,7 +74,9 @@ static int run_target_verify_benchmark(WeightFile *wf, KVCache **kv_caches,
     const char *prefix = "<|im_start|>system\nTarget verifier timing benchmark."
         "\n<|im_end|>\n<|im_start|>user\nContinue a short sentence."
         "\n<|im_end|>\n<|im_start|>assistant\n";
-    PromptTokens *pt = encode_prompt_text_to_tokens(prefix);
+    const char *fixture = getenv("FLASH_TARGET_VERIFY_PROMPT_TOKENS");
+    PromptTokens *pt = fixture && *fixture ? load_prompt_tokens(fixture)
+                                         : encode_prompt_text_to_tokens(prefix);
     if (!pt || !validate_prompt_tokens(pt, 1, "target verifier benchmark")) return 1;
     if (!context_preflight("target verifier benchmark", 0, pt->count, 8)) return 1;
     g_cache_telemetry_enabled = 1;
