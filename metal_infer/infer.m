@@ -6514,6 +6514,8 @@ static int run_target_verify_affine_m8_mma_benchmark(
 }
 #endif
 
+#include "target_verify_affine_exactness_probe.inc"
+
 static void matvec_bench_discover_cached(WeightFile *wf, MetalCtx *ctx,
 									 MatvecBenchShape *shapes,
 									 char names[7][MAX_LAYERS * 4][160]);
@@ -6537,7 +6539,9 @@ static int run_matvec_benchmark(WeightFile *wf, MetalCtx *ctx, int pairs) {
 	static char names[7][MAX_LAYERS * 4][160];
 	memset(names, 0, sizeof(names));
 	matvec_bench_discover_cached(wf, ctx, shapes, names);
-#ifdef TARGET_VERIFY_MULTIROW_AFFINE_MMA
+#if defined(TARGET_VERIFY_AFFINE_EXACTNESS_PROBE) && defined(TARGET_VERIFY_MULTIROW_AFFINE_MMA)
+	return target_verify_exactness_probe(ctx, shapes, shape_count);
+#elif defined(TARGET_VERIFY_MULTIROW_AFFINE_MMA)
 	return run_target_verify_affine_m8_mma_benchmark(ctx, shapes, shape_count, pairs);
 #elif defined(TARGET_VERIFY_MULTIROW_AFFINE_M4)
 	return run_target_verify_affine_m4_benchmark(ctx, shapes, shape_count, pairs);
