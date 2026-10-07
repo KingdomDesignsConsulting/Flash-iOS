@@ -6392,6 +6392,28 @@ static int run_target_verify_affine_m8_mma_benchmark(
         uint64_t mma_exact = target_verify_m8_exact_count(
             (const float *)ref_output.contents,
             (const float *)mma_output.contents, values);
+        size_t mma_nonfinite = 0;
+        double ref_peak = 0.0, mma_peak = 0.0, row_max[8] = {0};
+        const float *ref_values = (const float *)ref_output.contents;
+        const float *mma_values = (const float *)mma_output.contents;
+        for (size_t v = 0; v < values; v++) {
+            if (!isfinite(ref_values[v]) || !isfinite(mma_values[v])) {
+                mma_nonfinite++;
+                continue;
+            }
+            double ra = fabs((double)ref_values[v]);
+            double ma = fabs((double)mma_values[v]);
+            double delta = fabs((double)ref_values[v] - (double)mma_values[v]);
+            if (ra > ref_peak) ref_peak = ra;
+            if (ma > mma_peak) mma_peak = ma;
+            if (delta > row_max[v / shape->out_dim])
+                row_max[v / shape->out_dim] = delta;
+        }
+        if (mma_nonfinite) {
+            fprintf(stderr, "ERROR: M8 MMA output contains %zu nonfinite values\n",
+                mma_nonfinite);
+            return 1;
+        }
 
         for (int w = 0; w < warmup_blocks; w++) {
             for (int mode = 0; mode < 4; mode++) {
@@ -6440,6 +6462,10 @@ static int run_target_verify_affine_m8_mma_benchmark(
         printf("  MMA vs M1:       max_abs=%.9g rms=%.9g bitwise_equal=%llu/%llu\n",
             mma_max, mma_rms, (unsigned long long)mma_exact,
             (unsigned long long)values);
+        printf("  MMA sanity:      nonfinite=%zu ref_peak=%.9g mma_peak=%.9g row_max=[%.3g %.3g %.3g %.3g %.3g %.3g %.3g %.3g]\n",
+            mma_nonfinite, ref_peak, mma_peak, row_max[0], row_max[1],
+            row_max[2], row_max[3], row_max[4], row_max[5], row_max[6],
+            row_max[7]);
 
         if (gpu_valid) {
             double ref = gpu[TARGET_VERIFY_M8_REF_M1][mid];
