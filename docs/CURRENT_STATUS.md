@@ -1,6 +1,6 @@
 # Flash-iOS current development status
 
-Status: 2026-10-05
+Status: 2026-10-07
 
 This file is the canonical summary of the active `flash-moe-production` development state. Dated architecture and benchmark documents remain historical evidence; when a dated section conflicts with this file, this file describes the current state.
 
@@ -131,6 +131,50 @@ make n128serve8bits
 
 The separate serving target remains isolated from production `./infer` and is useful for regression/A/B testing on port 11437. Normal production `./infer` now uses bitsplit and continues to serve on port 11436. The normal Makefile selects bitsplit explicitly in `INFER_CFLAGS`; benchmark/diagnostic targets can still select ordinary M4-8row or other candidates without changing the production binary.
 
+## Exact M2 target-verifier integration — validated 2026-10-07
+
+The arithmetic investigation after the M8 `simdgroup_matrix` ceiling test is closed for the current production numerical identity. The exact M2 Q4 affine kernel remains bitwise identical to production M1, while the tested M8/hybrid formulations are not. The best M8 ceiling result was approximately one M1 cost for eight rows, but preserving today's per-element/per-lane Flash rounding history is not possible from one coarse MMA partial per quantization group.
+
+The compile-time-isolated `TARGET_VERIFY_EXACT_M2_INTEGRATION` path now connects the exact M2 kernel to a real two-candidate verification transaction. Candidate transformer/state advances still use the ordinary production one-token path in causal order; the two LM-head rows are evaluated together with exact M2. Two post-candidate state banks plus matching hidden vectors support longest-prefix commit without replaying accepted candidates:
+
+```text
+row 0 rejected     -> restore anchor
+row 0 accepted     -> commit state-after-row0
+both accepted      -> commit state-after-row1
+```
+
+The isolated validation passed on the Apple M4 / Qwen3.5-35B-A3B target:
+
+```text
+full_accept accepted=2/2
+lm_bitwise=496640/496640
+lm_max_abs=0
+state_exact=yes
+hidden_exact=yes
+
+reject0 accepted=0
+commit_state_exact=yes
+commit_hidden_exact=yes
+fallback_state_exact=yes
+fallback_hidden_exact=yes
+replayed_accepted=0
+
+reject1 accepted=1
+commit_state_exact=yes
+commit_hidden_exact=yes
+fallback_state_exact=yes
+fallback_hidden_exact=yes
+replayed_accepted=0
+
+RESULT: PASS
+```
+
+The correctness-first reference banks occupy approximately `376.13 MiB` for two complete `ServeStateSnapshot` copies. That representation is intentionally a correctness oracle, not a production serving design. The next verifier optimization is to replace full snapshots with compact mutable speculative state: appended KV positions/lengths, dual recurrent/GDN state, dual convolution-tail state, and the corresponding hidden vectors.
+
+The validation build currently reuses `--bench-target-verifier-batched` when `TARGET_VERIFY_EXACT_M2_INTEGRATION` is defined. Normal serving is unchanged and no draft-token source is wired into the HTTP decode loop yet.
+
+Detailed design and validation results are in `docs/exact-m2-verifier-integration-2026-10-07.md`.
+
 ## Warm state
 
 Named Flash profiles identify reusable static prefixes while `session_id` identifies resident conversation state. Persistent warm state supports raw and Zstd forms; Zstd level 1 is the default storage representation. The selective compatibility identity excludes transient filesystem device ID but retains state-affecting model/configuration/source/runtime identity.
@@ -163,5 +207,8 @@ The smoke was staging-heavy, but completed normally through 32 N-row chunks with
 
 ## Pending
 
-1. Physical-iPhone model loading/generation remains separately unvalidated for the current iOS snapshot.
-2. Continue profiling the next material N128 bottleneck after the gate+up promotion.
+1. Replace correctness-first full `ServeStateSnapshot` banks with compact mutable-state banks before any production speculative-decode performance claim.
+2. Wire a draft-token producer/provider into serving; serving currently has no draft source.
+3. Integrate the validated exact-M2 transaction into decode only after compact banking is proven correct; retain ordinary one-token decode as the disable/fallback path.
+4. Physical-iPhone model loading/generation remains separately unvalidated for the current iOS snapshot.
+5. Continue profiling the next material N128 bottleneck after the gate+up promotion.
