@@ -18352,22 +18352,6 @@ static int send_session_invalidated_error(int fd, int stream_response, NSString 
     return 0;
 }
 
-static void sse_send_error(int fd, NSString *message) {
-    NSDictionary *obj = @{
-        @"error": @{
-            @"message": message ?: @"tool call parse failed",
-            @"type": @"server_error"
-        }
-    };
-    NSData *data = [NSJSONSerialization dataWithJSONObject:obj options:0 error:NULL];
-    if (data) {
-        NSString *json = [[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding];
-        NSString *event = [NSString stringWithFormat:@"data: %@\n\n", json];
-        http_write(fd, event.UTF8String, (int)strlen(event.UTF8String));
-    }
-    http_write_str(fd, "data: [DONE]\n\n");
-}
-
 static const char *SSE_HEADERS =
 	"HTTP/1.1 200 OK\r\n"
 	"Content-Type: text/event-stream\r\n"
