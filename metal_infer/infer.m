@@ -18280,6 +18280,41 @@ static int run_api_regression_self_tests(void) {
 }
 
 
+static int send_session_invalidated_error(int fd, int stream_response, NSString *message) {
+    NSDictionary *obj = @{
+        @"error": @{
+            @"message": message ?: @"inference failed",
+            @"type": @"server_error"
+        },
+        @"session_invalidated": @YES,
+        @"resend_full_history": @YES
+    };
+    NSData *data = [NSJSONSerialization dataWithJSONObject:obj options:0 error:NULL];
+    if (!data) return -1;
+
+    if (stream_response) {
+        NSString *json = [[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding];
+        NSString *event = [NSString stringWithFormat:@"data: %@\n\n", json];
+        if (http_write(fd, event.UTF8String, (int)strlen(event.UTF8String)) < 0)
+            return -1;
+        return http_write_str(fd, "data: [DONE]\n\n");
+    }
+
+    char headers[512];
+    int hn = snprintf(headers, sizeof(headers),
+        "HTTP/1.1 500 Internal Server Error\r\n"
+        "Content-Type: application/json; charset=utf-8\r\n"
+        "Content-Length: %lu\r\n"
+        "Access-Control-Allow-Origin: *\r\n"
+        "Connection: close\r\n\r\n",
+        (unsigned long)data.length);
+    if (hn <= 0 || hn >= (int)sizeof(headers) ||
+        http_write(fd, headers, hn) < 0 ||
+        http_write(fd, data.bytes, (int)data.length) < 0)
+        return -1;
+    return 0;
+}
+
 static void sse_send_error(int fd, NSString *message) {
     NSDictionary *obj = @{
         @"error": @{
@@ -20176,6 +20211,32 @@ printf("[serve] Tool API revision 9.4 — bounded cache + malformed-tool recover
 					request_enable_thinking ? "on" : "off",
 					request_enable_thinking ? request_think_budget : 0);
 
+			int start_pos = tool_prefix_cache_hit
+                ? tool_prefix_cache[tool_prefix_cache_hit_slot].snapshot.pos
+                : ((explicit_system || has_tools) ? 0 : sys_prompt_len);
+			int preflight_pos = is_continuation ? session_pos : start_pos;
+
+			// Deterministic capacity validation must happen before replacing the
+			// resident session or mutating/restoring model state. A rejected new
+			// request therefore leaves the previous conversation fully resident.
+			if (!context_preflight("HTTP request", preflight_pos, pt->count, max_gen)) {
+                if (request_prefix_pt) {
+                    free(request_prefix_pt->ids);
+                    free(request_prefix_pt);
+                    request_prefix_pt = NULL;
+                }
+				http_write_str(client_fd,
+					"HTTP/1.1 400 Bad Request\r\n"
+					"Content-Type: application/json\r\n"
+					"Connection: close\r\n\r\n"
+					"{\"error\":\"context length exceeds engine KV capacity\"}\n");
+				free(pt->ids);
+				free(pt);
+				free(reqbuf);
+				close(client_fd);
+				continue;
+			}
+
 			int pos;
 			if (is_continuation) {
 				// ---- Continue from existing session state ----
@@ -20183,10 +20244,6 @@ printf("[serve] Tool API revision 9.4 — bounded cache + malformed-tool recover
 				// conversation history. Just set pos to where we left off.
 				pos = session_pos;
 			} else {
-				int start_pos = tool_prefix_cache_hit
-                    ? tool_prefix_cache[tool_prefix_cache_hit_slot].snapshot.pos
-                    : ((explicit_system || has_tools) ? 0 : sys_prompt_len);
-
 				// A non-continuation request replaces the only resident session.
 				// Invalidate the old identity before mutating/restoring model state;
 				// commit the new session ID only after prefill succeeds.
@@ -20268,24 +20325,6 @@ printf("[serve] Tool API revision 9.4 — bounded cache + malformed-tool recover
 				}
 				pos = start_pos;  // start after cached system prompt
 			}
-			if (!context_preflight("HTTP request", pos, pt->count, max_gen)) {
-                if (request_prefix_pt) {
-                    free(request_prefix_pt->ids);
-                    free(request_prefix_pt);
-                    request_prefix_pt = NULL;
-                }
-				http_write_str(client_fd,
-					"HTTP/1.1 400 Bad Request\r\n"
-					"Content-Type: application/json\r\n"
-					"Connection: close\r\n\r\n"
-					"{\"error\":\"context length exceeds engine KV capacity\"}\n");
-				free(pt->ids);
-				free(pt);
-				free(reqbuf);
-				close(client_fd);
-				continue;
-			}
-
 			if (g_cache_telemetry_enabled) cache_telemetry_reset();
 
 			// Streaming requests use SSE. Non-streaming requests defer HTTP output
@@ -20499,15 +20538,9 @@ printf("[serve] Tool API revision 9.4 — bounded cache + malformed-tool recover
                     free(request_prefix_pt);
                     request_prefix_pt = NULL;
                 }
-				if (stream_response && !prefill_client_disconnected)
-					sse_send_error(client_fd, @"prefill failed");
-				else if (!prefill_client_disconnected)
-					http_write_str(client_fd,
-						"HTTP/1.1 500 Internal Server Error\r\n"
-						"Content-Type: application/json\r\n"
-						"Access-Control-Allow-Origin: *\r\n"
-						"Connection: close\r\n\r\n"
-						"{\"error\":\"prefill failed\"}\n");
+				if (!prefill_client_disconnected)
+					send_session_invalidated_error(
+						client_fd, stream_response, @"prefill failed");
 				free(pt->ids); free(pt);
 				free(reqbuf); close(client_fd);
 				continue;
@@ -20553,15 +20586,9 @@ printf("[serve] Tool API revision 9.4 — bounded cache + malformed-tool recover
                     free(request_prefix_pt);
                     request_prefix_pt = NULL;
                 }
-				if (stream_response && !prefill_client_disconnected)
-					sse_send_error(client_fd, @"prefill failed");
-				else if (!prefill_client_disconnected)
-					http_write_str(client_fd,
-						"HTTP/1.1 500 Internal Server Error\r\n"
-						"Content-Type: application/json\r\n"
-						"Access-Control-Allow-Origin: *\r\n"
-						"Connection: close\r\n\r\n"
-						"{\"error\":\"prefill failed\"}\n");
+				if (!prefill_client_disconnected)
+					send_session_invalidated_error(
+						client_fd, stream_response, @"prefill failed");
 				free(pt->ids); free(pt);
 				free(reqbuf); close(client_fd);
 				continue;
@@ -21017,7 +21044,10 @@ printf("[serve] Tool API revision 9.4 — bounded cache + malformed-tool recover
                             "\"message\":\"malformed model tool call\","
                             "\"session_invalidated\":true,\"resend_full_history\":true}}\n\n"
                             "data: [DONE]\n\n");
-                    } else sse_send_error(client_fd, @"generation failed");
+                    } else {
+                        send_session_invalidated_error(
+                            client_fd, 1, @"generation failed");
+                    }
                 } else if (tool_parse_failed) {
                     session_reusable = 0;
 
@@ -21084,17 +21114,17 @@ printf("[serve] Tool API revision 9.4 — bounded cache + malformed-tool recover
                     }
                 }
 			} else if (request_state_failed) {
-				http_write_str(client_fd, strict_invalid_tool_call ?
-                    "HTTP/1.1 500 Internal Server Error\r\nContent-Type: application/json\r\n"
-                    "Connection: close\r\n\r\n"
-                    "{\"error\":{\"type\":\"invalid_tool_call\","
-                    "\"message\":\"malformed model tool call\","
-                    "\"session_invalidated\":true,\"resend_full_history\":true}}\n" :
-					"HTTP/1.1 500 Internal Server Error\r\n"
-					"Content-Type: application/json\r\n"
-					"Access-Control-Allow-Origin: *\r\n"
-					"Connection: close\r\n\r\n"
-					"{\"error\":\"generation failed\"}\n");
+                if (strict_invalid_tool_call) {
+					http_write_str(client_fd,
+                        "HTTP/1.1 500 Internal Server Error\r\nContent-Type: application/json\r\n"
+                        "Connection: close\r\n\r\n"
+                        "{\"error\":{\"type\":\"invalid_tool_call\","
+                        "\"message\":\"malformed model tool call\","
+                        "\"session_invalidated\":true,\"resend_full_history\":true}}\n");
+                } else {
+                    send_session_invalidated_error(
+                        client_fd, 0, @"generation failed");
+                }
             } else if (tool_parse_failed) {
                 session_reusable = 0;
 
