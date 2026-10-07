@@ -6041,6 +6041,453 @@ static int run_target_verify_affine_m4_benchmark(
 }
 #endif
 
+#ifdef TARGET_VERIFY_MULTIROW_AFFINE_MMA
+typedef enum {
+    TARGET_VERIFY_M8_REF_M1 = 0,
+    TARGET_VERIFY_M8_M2 = 1,
+    TARGET_VERIFY_M8_M4 = 2,
+    TARGET_VERIFY_M8_MMA = 3
+} TargetVerifyM8Mode;
+
+static id<MTLComputePipelineState> target_verify_load_benchmark_pipeline(
+    MetalCtx *ctx, NSString *filename, NSString *function_name
+) {
+    if (!ctx || !ctx->device || !filename || !function_name) return nil;
+    NSString *executable_dir = infer_executable_directory();
+    NSMutableArray<NSString *> *paths = [NSMutableArray array];
+    if (executable_dir.length > 0) {
+        [paths addObject:[executable_dir
+            stringByAppendingPathComponent:[@"prefill_probe" stringByAppendingPathComponent:filename]]];
+        NSString *repo_root = executable_dir;
+        for (int i = 0; i < 3 && repo_root.length > 1; i++)
+            repo_root = [repo_root stringByDeletingLastPathComponent];
+        [paths addObject:[repo_root
+            stringByAppendingPathComponent:[@"metal_infer/prefill_probe"
+                stringByAppendingPathComponent:filename]]];
+    }
+    [paths addObject:[@"prefill_probe" stringByAppendingPathComponent:filename]];
+    [paths addObject:[@"metal_infer/prefill_probe" stringByAppendingPathComponent:filename]];
+
+    NSString *source = nil;
+    NSString *source_path = nil;
+    for (NSString *candidate in paths) {
+        source = [NSString stringWithContentsOfFile:candidate
+            encoding:NSUTF8StringEncoding error:NULL];
+        if (source) { source_path = candidate; break; }
+    }
+    if (!source) {
+        fprintf(stderr, "ERROR: verifier MMA benchmark cannot find %s\n",
+            filename.UTF8String);
+        return nil;
+    }
+
+    NSError *error = nil;
+    id<MTLLibrary> library = [ctx->device newLibraryWithSource:source
+        options:nil error:&error];
+    if (!library) {
+        fprintf(stderr, "ERROR: verifier MMA shader compile failed (%s): %s\n",
+            source_path.UTF8String,
+            error.localizedDescription.UTF8String ?: "unknown error");
+        return nil;
+    }
+    id<MTLFunction> fn = [library newFunctionWithName:function_name];
+    if (!fn) {
+        fprintf(stderr, "ERROR: verifier MMA source %s has no function %s\n",
+            source_path.UTF8String, function_name.UTF8String);
+        return nil;
+    }
+    id<MTLComputePipelineState> pipeline =
+        [ctx->device newComputePipelineStateWithFunction:fn error:&error];
+    if (!pipeline) {
+        fprintf(stderr, "ERROR: verifier MMA pipeline creation failed (%s): %s\n",
+            function_name.UTF8String,
+            error.localizedDescription.UTF8String ?: "unknown error");
+        return nil;
+    }
+    printf("[target-verify-mma] %s source=%s\n",
+        function_name.UTF8String, source_path.UTF8String);
+    return pipeline;
+}
+
+static void target_verify_m8_encode_m1(
+    MetalCtx *ctx, id<MTLComputeCommandEncoder> enc,
+    const MatvecBenchShape *shape, const MatvecBenchTensor *tensor,
+    id<MTLBuffer> input, id<MTLBuffer> output
+) {
+    uint32_t group_size = GROUP_SIZE;
+    uint32_t num_tgs = (shape->out_dim + 7u) / 8u;
+    [enc setComputePipelineState:ctx->matvec_v3];
+    [enc setBuffer:tensor->weight_buf offset:tensor->weight_off atIndex:0];
+    [enc setBuffer:tensor->weight_buf offset:tensor->scale_off atIndex:1];
+    [enc setBuffer:tensor->weight_buf offset:tensor->bias_off atIndex:2];
+    [enc setBytes:&shape->out_dim length:4 atIndex:5];
+    [enc setBytes:&shape->in_dim length:4 atIndex:6];
+    [enc setBytes:&group_size length:4 atIndex:7];
+    for (uint32_t row = 0; row < 8u; row++) {
+        [enc setBuffer:input
+            offset:(NSUInteger)row * shape->in_dim * sizeof(float) atIndex:3];
+        [enc setBuffer:output
+            offset:(NSUInteger)row * shape->out_dim * sizeof(float) atIndex:4];
+        [enc dispatchThreadgroups:MTLSizeMake(num_tgs, 1, 1)
+            threadsPerThreadgroup:MTLSizeMake(256, 1, 1)];
+    }
+}
+
+static void target_verify_m8_encode_smallm(
+    id<MTLComputePipelineState> pipeline,
+    id<MTLComputeCommandEncoder> enc,
+    const MatvecBenchShape *shape, const MatvecBenchTensor *tensor,
+    id<MTLBuffer> input, id<MTLBuffer> output,
+    uint32_t rows_per_dispatch
+) {
+    uint32_t group_size = GROUP_SIZE;
+    uint32_t input_stride = shape->in_dim;
+    uint32_t output_stride = shape->out_dim;
+    uint32_t num_tgs = (shape->out_dim + 7u) / 8u;
+    uint32_t dispatches = 8u / rows_per_dispatch;
+
+    [enc setComputePipelineState:pipeline];
+    [enc setBuffer:tensor->weight_buf offset:tensor->weight_off atIndex:0];
+    [enc setBuffer:tensor->weight_buf offset:tensor->scale_off atIndex:1];
+    [enc setBuffer:tensor->weight_buf offset:tensor->bias_off atIndex:2];
+    [enc setBytes:&shape->out_dim length:4 atIndex:5];
+    [enc setBytes:&shape->in_dim length:4 atIndex:6];
+    [enc setBytes:&group_size length:4 atIndex:7];
+    [enc setBytes:&input_stride length:4 atIndex:8];
+    [enc setBytes:&output_stride length:4 atIndex:9];
+
+    for (uint32_t d = 0; d < dispatches; d++) {
+        [enc setBuffer:input
+            offset:(NSUInteger)d * rows_per_dispatch * shape->in_dim * sizeof(float)
+            atIndex:3];
+        [enc setBuffer:output
+            offset:(NSUInteger)d * rows_per_dispatch * shape->out_dim * sizeof(float)
+            atIndex:4];
+        [enc dispatchThreadgroups:MTLSizeMake(num_tgs, 1, 1)
+            threadsPerThreadgroup:MTLSizeMake(256, 1, 1)];
+    }
+}
+
+static void target_verify_m8_encode_mma(
+    id<MTLComputePipelineState> pipeline,
+    id<MTLComputeCommandEncoder> enc,
+    const MatvecBenchShape *shape, const MatvecBenchTensor *tensor,
+    id<MTLBuffer> input, id<MTLBuffer> output
+) {
+    uint32_t group_size = GROUP_SIZE;
+    uint32_t input_stride = shape->in_dim;
+    uint32_t output_stride = shape->out_dim;
+    uint32_t num_tgs = (shape->out_dim + 31u) / 32u;
+
+    [enc setComputePipelineState:pipeline];
+    [enc setBuffer:tensor->weight_buf offset:tensor->weight_off atIndex:0];
+    [enc setBuffer:tensor->weight_buf offset:tensor->scale_off atIndex:1];
+    [enc setBuffer:tensor->weight_buf offset:tensor->bias_off atIndex:2];
+    [enc setBuffer:input offset:0 atIndex:3];
+    [enc setBuffer:output offset:0 atIndex:4];
+    [enc setBytes:&shape->out_dim length:4 atIndex:5];
+    [enc setBytes:&shape->in_dim length:4 atIndex:6];
+    [enc setBytes:&group_size length:4 atIndex:7];
+    [enc setBytes:&input_stride length:4 atIndex:8];
+    [enc setBytes:&output_stride length:4 atIndex:9];
+    [enc dispatchThreadgroups:MTLSizeMake(num_tgs, 1, 1)
+        threadsPerThreadgroup:MTLSizeMake(256, 1, 1)];
+}
+
+static int target_verify_m8_run_block(
+    MetalCtx *ctx,
+    id<MTLComputePipelineState> m2_pipeline,
+    id<MTLComputePipelineState> m4_pipeline,
+    id<MTLComputePipelineState> mma_pipeline,
+    const MatvecBenchShape *shape,
+    id<MTLBuffer> input,
+    id<MTLBuffer> output,
+    TargetVerifyM8Mode mode,
+    int windows,
+    double *wall_ms_per_window,
+    double *gpu_ms_per_window
+) {
+    if (!ctx || !shape || shape->tensor_count <= 0 || !input || !output ||
+        windows <= 0 || !m2_pipeline || !m4_pipeline || !mma_pipeline) return 0;
+
+    double wall_start = now_ms();
+    id<MTLCommandBuffer> cmd = [ctx->queue commandBuffer];
+    id<MTLComputeCommandEncoder> enc = [cmd computeCommandEncoder];
+    if (!cmd || !enc) return 0;
+
+    for (int i = 0; i < windows; i++) {
+        const MatvecBenchTensor *tensor =
+            &shape->tensors[i % shape->tensor_count];
+        switch (mode) {
+            case TARGET_VERIFY_M8_REF_M1:
+                target_verify_m8_encode_m1(ctx, enc, shape, tensor, input, output);
+                break;
+            case TARGET_VERIFY_M8_M2:
+                target_verify_m8_encode_smallm(
+                    m2_pipeline, enc, shape, tensor, input, output, 2u);
+                break;
+            case TARGET_VERIFY_M8_M4:
+                target_verify_m8_encode_smallm(
+                    m4_pipeline, enc, shape, tensor, input, output, 4u);
+                break;
+            case TARGET_VERIFY_M8_MMA:
+                target_verify_m8_encode_mma(
+                    mma_pipeline, enc, shape, tensor, input, output);
+                break;
+        }
+    }
+
+    [enc endEncoding];
+    [cmd commit];
+    [cmd waitUntilCompleted];
+    double wall_ms = now_ms() - wall_start;
+
+    if (cmd.status != MTLCommandBufferStatusCompleted) {
+        NSString *detail = cmd.error.localizedDescription;
+        const char *names[] = {"8xM1", "4xM2", "2xM4", "M8-MMA"};
+        fprintf(stderr,
+            "ERROR: target verifier %s command failed: status=%ld%s%s\n",
+            names[(int)mode], (long)cmd.status,
+            detail.length ? " error=" : "",
+            detail.length ? detail.UTF8String : "");
+        return 0;
+    }
+
+    if (wall_ms_per_window) *wall_ms_per_window = wall_ms / (double)windows;
+    if (gpu_ms_per_window) {
+        double start = cmd.GPUStartTime, end = cmd.GPUEndTime;
+        *gpu_ms_per_window =
+            (start > 0.0 && end >= start)
+            ? ((end - start) * 1000.0 / (double)windows) : 0.0;
+    }
+    return 1;
+}
+
+static uint64_t target_verify_m8_exact_count(
+    const float *a, const float *b, size_t n
+) {
+    uint64_t exact = 0;
+    for (size_t i = 0; i < n; i++) {
+        uint32_t ua = 0, ub = 0;
+        memcpy(&ua, &a[i], sizeof(ua));
+        memcpy(&ub, &b[i], sizeof(ub));
+        if (ua == ub) exact++;
+    }
+    return exact;
+}
+
+static int run_target_verify_affine_m8_mma_benchmark(
+    MetalCtx *ctx, MatvecBenchShape *shapes, int shape_count, int samples
+) {
+    if (!ctx || !ctx->matvec_v3 || samples <= 0) return 1;
+
+    id<MTLComputePipelineState> m2_pipeline =
+        target_verify_load_benchmark_pipeline(
+            ctx, @"target_verify_affine_m2.metal", @"dense_affine_q4_m2");
+    id<MTLComputePipelineState> m4_pipeline =
+        target_verify_load_benchmark_pipeline(
+            ctx, @"target_verify_affine_m4.metal", @"dense_affine_q4_m4");
+    id<MTLComputePipelineState> mma_pipeline =
+        target_verify_load_benchmark_pipeline(
+            ctx, @"target_verify_affine_m8_mma.metal", @"dense_affine_q4_m8_mma");
+    if (!m2_pipeline || !m4_pipeline || !mma_pipeline) return 1;
+
+    const int block_windows = 16;
+    const int warmup_blocks = 4;
+    id<MTLBuffer> input = [ctx->device
+        newBufferWithLength:8u * 2048u * sizeof(float)
+        options:MTLResourceStorageModeShared];
+    id<MTLBuffer> ref_output = [ctx->device
+        newBufferWithLength:8u * 8192u * sizeof(float)
+        options:MTLResourceStorageModeShared];
+    id<MTLBuffer> m2_output = [ctx->device
+        newBufferWithLength:8u * 8192u * sizeof(float)
+        options:MTLResourceStorageModeShared];
+    id<MTLBuffer> m4_output = [ctx->device
+        newBufferWithLength:8u * 8192u * sizeof(float)
+        options:MTLResourceStorageModeShared];
+    id<MTLBuffer> mma_output = [ctx->device
+        newBufferWithLength:8u * 8192u * sizeof(float)
+        options:MTLResourceStorageModeShared];
+    if (!input || !ref_output || !m2_output || !m4_output || !mma_output) {
+        fprintf(stderr, "ERROR: target verifier M8 MMA benchmark buffer allocation failed\n");
+        return 1;
+    }
+
+    printf("=== M8 Simdgroup-Matrix Target-Verifier Affine Benchmark ===\n");
+    printf("Device: %s\n", ctx->device.name.UTF8String);
+    printf("Reference: 8 x production dequant_matvec_4bit_v3 in one command buffer\n");
+    printf("Controls: 4 x exact M2 and 2 x exact M4 shared-weight kernels\n");
+    printf("Candidate: one Q4 simdgroup_matrix M8 dispatch (S=8, NT=4, RT=1)\n");
+    printf("Contract: Flash Q4/group64 layout, BF16 scale+bias, FP32 inputs/outputs\n");
+    printf("Exactness: M2/M4 expected bitwise; MMA numerical gap is measured, not assumed exact\n");
+    printf("Shapes: large affine ceiling test only (8192x2048, 4096x2048)\n");
+    printf("Measured block: %d M8 windows; samples=%d; warmup blocks=%d\n\n",
+        block_windows, samples, warmup_blocks);
+
+    int tested_shapes = 0;
+    for (int si = 0; si < shape_count; si++) {
+        MatvecBenchShape *shape = &shapes[si];
+        if (strcmp(shape->label, "8192x2048") != 0 &&
+            strcmp(shape->label, "4096x2048") != 0)
+            continue;
+        if (shape->tensor_count == 0) {
+            printf("%-11s SKIPPED — no real resident MLX4 tensor resolved\n",
+                shape->label);
+            continue;
+        }
+        if (shape->in_dim != 2048u || (shape->out_dim & 31u) != 0u ||
+            GROUP_SIZE != 64) {
+            printf("%-11s SKIPPED — M8 MMA phase-1 requires K=2048, N%%32=0, group64\n",
+                shape->label);
+            continue;
+        }
+
+        float *rows = (float *)input.contents;
+        for (uint32_t row = 0; row < 8u; row++) {
+            float a = 0.009f + 0.0013f * (float)row;
+            float b = 0.004f + 0.0007f * (float)row;
+            float p = 0.21f + 0.031f * (float)row;
+            float q = 0.05f + 0.006f * (float)row;
+            for (uint32_t i = 0; i < shape->in_dim; i++) {
+                rows[(size_t)row * shape->in_dim + i] =
+                    sinf((float)i * a + 0.37f * (float)row) * p +
+                    cosf((float)i * b + 0.19f * (float)row) * q;
+            }
+        }
+
+        double ignored_wall = 0.0, ignored_gpu = 0.0;
+        id<MTLBuffer> outputs[4] =
+            {ref_output, m2_output, m4_output, mma_output};
+        for (int mode = 0; mode < 4; mode++) {
+            if (!target_verify_m8_run_block(
+                    ctx, m2_pipeline, m4_pipeline, mma_pipeline,
+                    shape, input, outputs[mode], (TargetVerifyM8Mode)mode, 1,
+                    &ignored_wall, &ignored_gpu))
+                return 1;
+        }
+
+        const size_t values = 8u * (size_t)shape->out_dim;
+        double m2_max = 0.0, m2_rms = 0.0;
+        double m4_max = 0.0, m4_rms = 0.0;
+        double mma_max = 0.0, mma_rms = 0.0;
+        matvec_bench_compare(
+            (const float *)ref_output.contents,
+            (const float *)m2_output.contents,
+            (uint32_t)values, &m2_max, &m2_rms);
+        matvec_bench_compare(
+            (const float *)ref_output.contents,
+            (const float *)m4_output.contents,
+            (uint32_t)values, &m4_max, &m4_rms);
+        matvec_bench_compare(
+            (const float *)ref_output.contents,
+            (const float *)mma_output.contents,
+            (uint32_t)values, &mma_max, &mma_rms);
+        uint64_t m2_exact = target_verify_m8_exact_count(
+            (const float *)ref_output.contents,
+            (const float *)m2_output.contents, values);
+        uint64_t m4_exact = target_verify_m8_exact_count(
+            (const float *)ref_output.contents,
+            (const float *)m4_output.contents, values);
+        uint64_t mma_exact = target_verify_m8_exact_count(
+            (const float *)ref_output.contents,
+            (const float *)mma_output.contents, values);
+
+        for (int w = 0; w < warmup_blocks; w++) {
+            for (int mode = 0; mode < 4; mode++) {
+                if (!target_verify_m8_run_block(
+                        ctx, m2_pipeline, m4_pipeline, mma_pipeline,
+                        shape, input, outputs[mode], (TargetVerifyM8Mode)mode,
+                        block_windows, NULL, NULL))
+                    return 1;
+            }
+        }
+
+        double *wall[4] = {0}, *gpu[4] = {0};
+        for (int mode = 0; mode < 4; mode++) {
+            wall[mode] = calloc((size_t)samples, sizeof(double));
+            gpu[mode] = calloc((size_t)samples, sizeof(double));
+            if (!wall[mode] || !gpu[mode]) return 1;
+        }
+
+        int gpu_valid = 1;
+        for (int sample = 0; sample < samples; sample++) {
+            // Rotate first mode to reduce thermal/order bias.
+            for (int order = 0; order < 4; order++) {
+                int mode = (sample + order) & 3;
+                if (!target_verify_m8_run_block(
+                        ctx, m2_pipeline, m4_pipeline, mma_pipeline,
+                        shape, input, outputs[mode], (TargetVerifyM8Mode)mode,
+                        block_windows, &wall[mode][sample], &gpu[mode][sample]))
+                    return 1;
+                if (gpu[mode][sample] <= 0.0) gpu_valid = 0;
+            }
+        }
+
+        for (int mode = 0; mode < 4; mode++) {
+            qsort(wall[mode], (size_t)samples, sizeof(double), matvec_bench_double_cmp);
+            qsort(gpu[mode], (size_t)samples, sizeof(double), matvec_bench_double_cmp);
+        }
+        int mid = samples / 2;
+
+        printf("%-11s real tensors=%d\n", shape->label, shape->tensor_count);
+        printf("  M2 correctness:  max_abs=%.9g rms=%.9g bitwise_equal=%llu/%llu\n",
+            m2_max, m2_rms, (unsigned long long)m2_exact,
+            (unsigned long long)values);
+        printf("  M4 correctness:  max_abs=%.9g rms=%.9g bitwise_equal=%llu/%llu\n",
+            m4_max, m4_rms, (unsigned long long)m4_exact,
+            (unsigned long long)values);
+        printf("  MMA vs M1:       max_abs=%.9g rms=%.9g bitwise_equal=%llu/%llu\n",
+            mma_max, mma_rms, (unsigned long long)mma_exact,
+            (unsigned long long)values);
+
+        if (gpu_valid) {
+            double ref = gpu[TARGET_VERIFY_M8_REF_M1][mid];
+            printf("  GPU median/window:\n");
+            printf("    8xM1   %.6f ms  ratio=1.0000\n", ref);
+            printf("    4xM2   %.6f ms  ratio=%.4f\n",
+                gpu[TARGET_VERIFY_M8_M2][mid],
+                gpu[TARGET_VERIFY_M8_M2][mid] / ref);
+            printf("    2xM4   %.6f ms  ratio=%.4f\n",
+                gpu[TARGET_VERIFY_M8_M4][mid],
+                gpu[TARGET_VERIFY_M8_M4][mid] / ref);
+            printf("    M8-MMA %.6f ms  ratio=%.4f  effective speedup=%.2fx\n",
+                gpu[TARGET_VERIFY_M8_MMA][mid],
+                gpu[TARGET_VERIFY_M8_MMA][mid] / ref,
+                ref / gpu[TARGET_VERIFY_M8_MMA][mid]);
+        } else {
+            printf("  GPU median: unavailable (invalid Metal timestamps in sample set)\n");
+        }
+
+        double ref_wall = wall[TARGET_VERIFY_M8_REF_M1][mid];
+        printf("  wall median/window:\n");
+        printf("    8xM1   %.6f ms  ratio=1.0000\n", ref_wall);
+        printf("    4xM2   %.6f ms  ratio=%.4f\n",
+            wall[TARGET_VERIFY_M8_M2][mid],
+            wall[TARGET_VERIFY_M8_M2][mid] / ref_wall);
+        printf("    2xM4   %.6f ms  ratio=%.4f\n",
+            wall[TARGET_VERIFY_M8_M4][mid],
+            wall[TARGET_VERIFY_M8_M4][mid] / ref_wall);
+        printf("    M8-MMA %.6f ms  ratio=%.4f  effective speedup=%.2fx\n",
+            wall[TARGET_VERIFY_M8_MMA][mid],
+            wall[TARGET_VERIFY_M8_MMA][mid] / ref_wall,
+            ref_wall / wall[TARGET_VERIFY_M8_MMA][mid]);
+
+        for (int mode = 0; mode < 4; mode++) {
+            free(wall[mode]);
+            free(gpu[mode]);
+        }
+        tested_shapes++;
+    }
+
+    if (tested_shapes == 0) {
+        fprintf(stderr, "ERROR: M8 MMA benchmark found no compatible real MLX4 tensors\n");
+        return 1;
+    }
+    return 0;
+}
+#endif
+
 static void matvec_bench_discover_cached(WeightFile *wf, MetalCtx *ctx,
 									 MatvecBenchShape *shapes,
 									 char names[7][MAX_LAYERS * 4][160]);
@@ -6064,7 +6511,9 @@ static int run_matvec_benchmark(WeightFile *wf, MetalCtx *ctx, int pairs) {
 	static char names[7][MAX_LAYERS * 4][160];
 	memset(names, 0, sizeof(names));
 	matvec_bench_discover_cached(wf, ctx, shapes, names);
-#ifdef TARGET_VERIFY_MULTIROW_AFFINE_M4
+#ifdef TARGET_VERIFY_MULTIROW_AFFINE_MMA
+	return run_target_verify_affine_m8_mma_benchmark(ctx, shapes, shape_count, pairs);
+#elif defined(TARGET_VERIFY_MULTIROW_AFFINE_M4)
 	return run_target_verify_affine_m4_benchmark(ctx, shapes, shape_count, pairs);
 #elif defined(TARGET_VERIFY_MULTIROW_AFFINE)
 	return run_target_verify_affine_m2_benchmark(ctx, shapes, shape_count, pairs);
