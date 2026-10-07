@@ -6,6 +6,7 @@ static int target_verify_double_cmp(const void *a, const void *b) {
     return (x > y) - (x < y);
 }
 
+
 typedef struct {
     double ms;
     double transformer_ms, lm_head_ms;
@@ -14,6 +15,7 @@ typedef struct {
     uint64_t cold_group_loads, cold_group_reuses;
     int matches;
 } TargetVerifySample;
+
 
 static int target_verify_run(WeightFile *wf, KVCache **kv_caches,
                              void **layer_states, void **layer_mmaps,
@@ -58,8 +60,11 @@ static int target_verify_run(WeightFile *wf, KVCache **kv_caches,
     return 1;
 }
 
+
 #include "target_verify_batch.inc"
 #include "target_verify_grouped.inc"
+#include "target_verify_exact_m2_integration.inc"
+
 
 static int run_target_verify_benchmark(WeightFile *wf, KVCache **kv_caches,
                                        void **layer_states, void **layer_mmaps,
@@ -103,13 +108,22 @@ static int run_target_verify_benchmark(WeightFile *wf, KVCache **kv_caches,
         if (ok) complete_deferred_experts();
     }
     if (ok && batched) {
-        int result = batched == 2
-            ? target_verify_layer_major_experiment(wf, kv_caches, layer_states,
+        int result;
+#ifdef TARGET_VERIFY_EXACT_M2_INTEGRATION
+        if (batched == 1)
+            result = target_verify_exact_m2_integration_experiment(wf, kv_caches,
+                layer_states, layer_mmaps, layer_fds, K, hidden, logits,
+                final_norm_w, &anchor, anchor_hidden, candidates);
+        else
+#endif
+        if (batched == 2)
+            result = target_verify_layer_major_experiment(wf, kv_caches, layer_states,
                 layer_mmaps, layer_fds, K, hidden, logits, final_norm_w,
-                &anchor, anchor_hidden, candidates)
-            : target_verify_batched_experiment(wf, kv_caches, layer_states,
-            layer_mmaps, layer_fds, K, hidden, logits, final_norm_w,
-            &anchor, anchor_hidden, candidates);
+                &anchor, anchor_hidden, candidates);
+        else
+            result = target_verify_batched_experiment(wf, kv_caches, layer_states,
+                layer_mmaps, layer_fds, K, hidden, logits, final_norm_w,
+                &anchor, anchor_hidden, candidates);
         free(anchor_hidden);
         serve_state_snapshot_free(&anchor);
         free(pt->ids);
