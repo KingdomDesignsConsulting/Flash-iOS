@@ -5330,7 +5330,7 @@ static id<MTLComputePipelineState> target_verify_affine_m2_pipeline(MetalCtx *ct
 	NSMutableArray<NSString *> *paths = [NSMutableArray array];
 	if (executable_dir.length > 0) {
 		[paths addObject:[executable_dir
-			stringByAppendingPathComponent:@"prefill_probe/chunk_kernels.metal"]];
+			stringByAppendingPathComponent:@"prefill_probe/target_verify_affine_m2.metal"]];
 
 		// Benchmark binaries normally live under
 		// Testing/Temporary Testing Files/Apps. Climb back to the repo root.
@@ -5338,10 +5338,10 @@ static id<MTLComputePipelineState> target_verify_affine_m2_pipeline(MetalCtx *ct
 		for (int i = 0; i < 3 && repo_root.length > 1; i++)
 			repo_root = [repo_root stringByDeletingLastPathComponent];
 		[paths addObject:[repo_root
-			stringByAppendingPathComponent:@"metal_infer/prefill_probe/chunk_kernels.metal"]];
+			stringByAppendingPathComponent:@"metal_infer/prefill_probe/target_verify_affine_m2.metal"]];
 	}
-	[paths addObject:@"prefill_probe/chunk_kernels.metal"];
-	[paths addObject:@"metal_infer/prefill_probe/chunk_kernels.metal"];
+	[paths addObject:@"prefill_probe/target_verify_affine_m2.metal"];
+	[paths addObject:@"metal_infer/prefill_probe/target_verify_affine_m2.metal"];
 
 	NSString *source = nil;
 	NSString *source_path = nil;
@@ -5356,7 +5356,7 @@ static id<MTLComputePipelineState> target_verify_affine_m2_pipeline(MetalCtx *ct
 	if (!source) {
 		fprintf(stderr,
 			"ERROR: target verifier affine benchmark cannot find "
-			"prefill_probe/chunk_kernels.metal\n");
+			"prefill_probe/target_verify_affine_m2.metal\n");
 		return nil;
 	}
 
