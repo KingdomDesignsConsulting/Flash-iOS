@@ -48,7 +48,7 @@ static int target_verify_layer_state_report(const ServeStateSnapshot *a,
     for (int layer = 0; layer < 48 && shape_ok; layer++) {
         if (a->gpu_delta_snapshot[layer] && b->gpu_delta_snapshot[layer]) {
             double d = target_verify_state_max_diff(a->gpu_delta_snapshot[layer],
-                b->gpu_delta_snapshot[layer], 64ULL * 128 * 128,
+                b->gpu_delta_snapshot[layer], gpu_delta_state_bytes() / sizeof(float),
                 &gpu_ssm_diffs);
             if (d > gpu_ssm_max) gpu_ssm_max = d;
         }
