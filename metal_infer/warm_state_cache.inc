@@ -997,7 +997,8 @@ static int warm_state_self_test(const char *directory) {
         goto cleanup;
     }
     size_t file_size = (size_t)st.st_size;
-    fprintf(stderr, "[warm-state-test] checkpoint file size: %zu bytes\n", file_size);    uint8_t *original = malloc(file_size);
+    fprintf(stderr, "[warm-state-test] checkpoint file size: %zu bytes\n", file_size);
+    uint8_t *original = malloc(file_size);
     if (!original) { failures++; goto cleanup; }
     int fd = open(path.fileSystemRepresentation, O_RDONLY);
     int read_ok = fd >= 0 && warm_read_all(fd, original, file_size, NULL);
@@ -1274,4 +1275,4 @@ cleanup:
     rmdir(directory);
     printf("[warm-state-test] RESULT: %s\n", failures ? "FAIL" : "PASS");
     return failures ? 1 : 0;
-}}
+}
