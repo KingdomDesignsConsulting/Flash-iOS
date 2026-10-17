@@ -19,7 +19,7 @@ static int target_verify_snapshot_equal(const ServeStateSnapshot *a,
     for (int i = 0; i < 48; i++) {
         if (a->gpu_delta_snapshot[i] &&
             memcmp(a->gpu_delta_snapshot[i], b->gpu_delta_snapshot[i],
-                   64ULL * 128 * 128 * sizeof(float))) return 0;
+                   gpu_delta_state_bytes())) return 0;
         if (a->gpu_conv_snapshot[i] &&
             memcmp(a->gpu_conv_snapshot[i], b->gpu_conv_snapshot[i],
                    3ULL * 12288 * sizeof(float))) return 0;
