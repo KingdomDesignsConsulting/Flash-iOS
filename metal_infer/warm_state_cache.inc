@@ -3,7 +3,7 @@
 // is used for runtime and disk caches.
 #define WARM_STATE_VERSION 1U
 #define WARM_STATE_ZSTD_VERSION 2U // Storage only; not part of execution compatibility.
-#define WARM_STATE_LAYOUT_VERSION 1U
+#define WARM_STATE_LAYOUT_VERSION 2U // GPU recurrence payload follows model geometry.
 /*
  * CACHE CORRECTNESS CONTRACT:
  * Any inference-math change capable of changing serialized prefix state MUST
@@ -304,7 +304,7 @@ static int warm_payload_bytes(const WarmStateHeader *head,
             !warm_add_bytes(&size, 1, (uint64_t)head->conv_bytes + head->ssm_bytes)) return 0;
     }
     if (!warm_add_bytes(&size, head->gpu_layers,
-        64ULL * 128 * 128 * sizeof(float) + 3ULL * 12288 * sizeof(float))) return 0;
+        gpu_delta_state_bytes() + 3ULL * 12288 * sizeof(float))) return 0;
     *result = size;
     return 1;
 }
@@ -371,7 +371,7 @@ static int warm_transfer_snapshot(int fd, ServeStateSnapshot *snap,
     }
     for (int i = 0; i < (int)head->gpu_layers; i++) {
         if (!warm_transfer_buffer(fd, &snap->gpu_delta_snapshot[i],
-                                  64 * 128 * 128 * sizeof(float), writing, hash) ||
+                                  gpu_delta_state_bytes(), writing, hash) ||
             !warm_transfer_buffer(fd, &snap->gpu_conv_snapshot[i],
                                   3 * 12288 * sizeof(float), writing, hash))
             return 0;
@@ -420,7 +420,7 @@ static int warm_transfer_snapshot_memory(uint8_t *payload, size_t size,
     }
     for (int i = 0; i < (int)head->gpu_layers; i++) {
         if (!warm_memory_buffer(&cursor, &remaining,
-                &snap->gpu_delta_snapshot[i], 64 * 128 * 128 * sizeof(float), writing) ||
+                &snap->gpu_delta_snapshot[i], gpu_delta_state_bytes(), writing) ||
             !warm_memory_buffer(&cursor, &remaining,
                 &snap->gpu_conv_snapshot[i], 3 * 12288 * sizeof(float), writing)) return 0;
     }
@@ -850,6 +850,64 @@ static int warm_state_selected_exists(NSString *path) {
     return destination && access(destination.fileSystemRepresentation, F_OK) == 0;
 }
 
+// Exercise the actual GPU payload transfers without a Metal device. The normal
+// synthetic checkpoint below has no GPU sections and cannot catch geometry bugs.
+static int warm_gpu_geometry_self_test(const char *directory) {
+    int saved_heads = LINEAR_NUM_V_HEADS;
+    int saved_key = LINEAR_KEY_DIM, saved_value = LINEAR_VALUE_DIM;
+    int failures = 0;
+    for (int heads = 32; heads <= 64; heads *= 2) {
+        g_cfg.linear_num_v_heads = heads;
+        g_cfg.linear_key_dim = g_cfg.linear_value_dim = 128;
+        const size_t delta = gpu_delta_state_bytes();
+        const size_t conv = 3ULL * 12288 * sizeof(float);
+        KVCache *kv[MAX_LAYERS] = {0};
+        void *linear[MAX_LAYERS] = {0};
+        ServeStateSnapshot source = {0}, memory = {0}, disk = {0};
+        WarmStateHeader head = {.gpu_layers = 1};
+        uint64_t bytes = 0;
+        int passed = warm_payload_bytes(&head, kv, linear, &bytes) &&
+            bytes == delta + conv;
+        source.gpu_delta_snapshot[0] = malloc(delta);
+        source.gpu_conv_snapshot[0] = malloc(conv);
+        uint8_t *payload = malloc(delta + conv);
+        passed = passed && source.gpu_delta_snapshot[0] &&
+            source.gpu_conv_snapshot[0] && payload;
+        if (passed) {
+            memset(source.gpu_delta_snapshot[0], 0x3a, delta);
+            memset(source.gpu_conv_snapshot[0], 0x5c, conv);
+            ((uint8_t *)source.gpu_delta_snapshot[0])[delta - 1] = 0xa7;
+            passed = warm_transfer_snapshot_memory(payload, bytes, &source,
+                &head, kv, linear, 1) &&
+                warm_transfer_snapshot_memory(payload, bytes, &memory,
+                    &head, kv, linear, 0) &&
+                memcmp(source.gpu_delta_snapshot[0], memory.gpu_delta_snapshot[0], delta) == 0 &&
+                memcmp(source.gpu_conv_snapshot[0], memory.gpu_conv_snapshot[0], conv) == 0;
+        }
+        NSString *path = [[NSString stringWithUTF8String:directory]
+            stringByAppendingPathComponent:@"gpu-payload.tmp"];
+        int fd = open(path.fileSystemRepresentation, O_RDWR | O_CREAT | O_EXCL, 0600);
+        passed = passed && fd >= 0;
+        if (passed) passed = warm_transfer_snapshot(fd, &source, &head, kv,
+            linear, 1, NULL) && lseek(fd, 0, SEEK_SET) == 0 &&
+            warm_transfer_snapshot(fd, &disk, &head, kv, linear, 0, NULL) &&
+            memcmp(source.gpu_delta_snapshot[0], disk.gpu_delta_snapshot[0], delta) == 0 &&
+            memcmp(source.gpu_conv_snapshot[0], disk.gpu_conv_snapshot[0], conv) == 0 &&
+            lseek(fd, 0, SEEK_END) == (off_t)bytes;
+        if (fd >= 0) { close(fd); unlink(path.fileSystemRepresentation); }
+        free(payload);
+        serve_state_snapshot_free(&source);
+        serve_state_snapshot_free(&memory);
+        serve_state_snapshot_free(&disk);
+        printf("[warm-state-test] GPU %d-head raw/memory payload (%zu bytes): %s\n",
+               heads, delta, passed ? "PASS" : "FAIL");
+        if (!passed) failures++;
+    }
+    g_cfg.linear_num_v_heads = saved_heads;
+    g_cfg.linear_key_dim = saved_key; g_cfg.linear_value_dim = saved_value;
+    return failures;
+}
+
 // Exercises the actual disk format and loader without a model or Metal device.
 static int warm_state_self_test(const char *directory) {
     int original_compression = g_warm_state_zstd_enabled;
@@ -892,7 +950,7 @@ static int warm_state_self_test(const char *directory) {
     size_t ssm = LINEAR_NUM_V_HEADS * LINEAR_VALUE_DIM * LINEAR_KEY_DIM * sizeof(float);
     source.snapshot.la_conv_snapshot[0] = malloc(conv);
     source.snapshot.la_ssm_snapshot[0] = malloc(ssm);
-    int failures = 0;
+    int failures = warm_gpu_geometry_self_test(directory);
     if (!naming_passed) failures++;
     if (!source.snapshot.la_conv_snapshot[0] || !source.snapshot.la_ssm_snapshot[0]) {
         failures++;
@@ -939,8 +997,7 @@ static int warm_state_self_test(const char *directory) {
         goto cleanup;
     }
     size_t file_size = (size_t)st.st_size;
-    fprintf(stderr, "[warm-state-test] checkpoint file size: %zu bytes\n", file_size);
-    uint8_t *original = malloc(file_size);
+    fprintf(stderr, "[warm-state-test] checkpoint file size: %zu bytes\n", file_size);    uint8_t *original = malloc(file_size);
     if (!original) { failures++; goto cleanup; }
     int fd = open(path.fileSystemRepresentation, O_RDONLY);
     int read_ok = fd >= 0 && warm_read_all(fd, original, file_size, NULL);
@@ -1081,7 +1138,7 @@ static int warm_state_self_test(const char *directory) {
         switch (case_index) {
             case 0: header->magic[0] ^= 1; break;
             case 1: header->version++; break;
-            case 2: header->layout_version++; break;
+            case 2: header->layout_version = 1; break; // Reject the old fixed-64-head payload.
             case 3: header->token_count = TOOL_PREFIX_CACHE_MAX_TOKENS + 1; break;
             case 4: header->payload_bytes++; break;
             case 5: header->conv_bytes++; break;
@@ -1217,4 +1274,4 @@ cleanup:
     rmdir(directory);
     printf("[warm-state-test] RESULT: %s\n", failures ? "FAIL" : "PASS");
     return failures ? 1 : 0;
-}
+}}
