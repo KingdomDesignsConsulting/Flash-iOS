@@ -38,6 +38,21 @@ INFER_SRC = infer.m
 # --no-prefill-nrow keeps the established scalar prefill available at runtime.
 INFER_CFLAGS = $(CFLAGS) -DFLASH_PREFILL_NROW_PRODUCTION -DFLASH_PREFILL_NROW_ASYNC -DFLASH_PREFILL_NROW_GATEUP_M4_8ROW_BITSPLIT
 
+# Isolated opt-in 16K GPU KV attention experiment. Never overwrites ./infer.
+# The 8K control and 16K variant share all other compile flags.
+GPU16K_EXPERIMENT_TARGET = infer-gpu16k-experiment
+GPU8K_CONTROL_TARGET = infer-gpu8k-control
+
+.PHONY: gpu16k-experiment gpu8k-control
+
+gpu16k-experiment: $(INFER_SRC) $(INFER_DEPS)
+	$(CC) $(INFER_CFLAGS) -DFLASH_EXPERIMENTAL_GPU_KV_16K $(FRAMEWORKS) $(LDFLAGS) $(INFER_SRC) -o $(GPU16K_EXPERIMENT_TARGET)
+	@echo "Isolated 16K experiment built: ./$(GPU16K_EXPERIMENT_TARGET); production ./infer unchanged."
+
+gpu8k-control: $(INFER_SRC) $(INFER_DEPS)
+	$(CC) $(INFER_CFLAGS) $(FRAMEWORKS) $(LDFLAGS) $(INFER_SRC) -o $(GPU8K_CONTROL_TARGET)
+	@echo "Isolated 8K control built: ./$(GPU8K_CONTROL_TARGET); production ./infer unchanged."
+
 # Chat TUI (interactive multi-turn)
 CHAT_TARGET = chat
 CHAT_SRC = chat.m
