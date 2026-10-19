@@ -410,7 +410,13 @@ static int validate_target_architecture(void) {
 // The current macOS CPU KV allocation remains intentionally capped below the
 // model-native limit; context_preflight() rejects requests before overflow.
 #define MAX_SEQ_LEN 262144
+// Experimental expansion is opt-in; production/default builds retain 8K.
+// Run isolated correctness and persistence qualification before promotion.
+#if defined(FLASH_EXPERIMENTAL_GPU_KV_16K)
+#define GPU_KV_SEQ  16384
+#else
 #define GPU_KV_SEQ  8192
+#endif
 
 // Runtime CPU KV sequence limit used by kv_cache_new().
 static int g_kv_seq_len = 65536;
