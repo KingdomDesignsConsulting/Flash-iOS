@@ -8780,6 +8780,12 @@ static int serve_state_snapshot_restore(const ServeStateSnapshot *snap,
     return 1;
 }
 
+// Raw GPU DeltaNet state footprint, shared by snapshot persistence and verifier.
+// Must match the fixed per-linear-layer Metal allocation above.
+static inline size_t gpu_delta_state_bytes(void) {
+    return 64ULL * 128 * 128 * sizeof(float);
+}
+
 static int g_warm_state_zstd_enabled = 1;
 #include "warm_state_cache.inc"
 
