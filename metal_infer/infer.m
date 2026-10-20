@@ -412,7 +412,9 @@ static int validate_target_architecture(void) {
 #define MAX_SEQ_LEN 262144
 // Experimental expansion is opt-in; production/default builds retain 8K.
 // Run isolated correctness and persistence qualification before promotion.
-#if defined(FLASH_EXPERIMENTAL_GPU_KV_16K)
+#if defined(FLASH_EXPERIMENTAL_LAZY_SHARED_GPU_KV)
+#define GPU_KV_SEQ  65536
+#elif defined(FLASH_EXPERIMENTAL_GPU_KV_16K)
 #define GPU_KV_SEQ  16384
 #else
 #define GPU_KV_SEQ  8192
@@ -5006,6 +5008,7 @@ static MetalCtx *metal_setup(void) {
 		int gpu_kv = (g_kv_seq_len < GPU_KV_SEQ) ? g_kv_seq_len : GPU_KV_SEQ;
 		size_t kv_cache_size = (size_t)gpu_kv * kv_dim * sizeof(float);
 		for (int i = 0; i < g_cfg.num_full_attn_layers; i++) {
+			#ifndef FLASH_EXPERIMENTAL_LAZY_SHARED_GPU_KV
 			ctx->buf_kv_k[i] = [ctx->device newBufferWithLength:kv_cache_size
 														options:MTLResourceStorageModeShared];
 			ctx->buf_kv_v[i] = [ctx->device newBufferWithLength:kv_cache_size
@@ -5016,6 +5019,12 @@ static MetalCtx *metal_setup(void) {
 				return NULL;
 			}
 		}
+#else
+			// Canonical KV memory is allocated with the per-layer CPU state and wrapped below.
+			ctx->buf_kv_k[i] = nil;
+			ctx->buf_kv_v[i] = nil;
+		}
+#endif
 		ctx->buf_attn_q      = [ctx->device newBufferWithLength:NUM_ATTN_HEADS * HEAD_DIM * sizeof(float)
 														options:MTLResourceStorageModeShared];
 		ctx->buf_attn_scores = [ctx->device newBufferWithLength:(size_t)NUM_ATTN_HEADS * gpu_kv * sizeof(float)
@@ -8423,33 +8432,90 @@ typedef struct {
 	float *k_cache;  // [max_seq, num_kv_heads * head_dim]
 	float *v_cache;  // [max_seq, num_kv_heads * head_dim]
 	int len;         // current number of cached entries
+#ifdef FLASH_EXPERIMENTAL_LAZY_SHARED_GPU_KV
+	size_t mapped_bytes; // mmap backing length; buffers are non-owning Metal views
+	int fa_idx;
+#endif
 } KVCache;
 
-static KVCache *kv_cache_new(void) {
+static KVCache *kv_cache_new(int fa_idx) {
 	KVCache *c = calloc(1, sizeof(KVCache));
 	if (!c) {
 		fprintf(stderr, "ERROR: KVCache structure allocation failed\n");
 		return NULL;
 	}
 	int seq = g_kv_seq_len;
+#ifdef FLASH_EXPERIMENTAL_LAZY_SHARED_GPU_KV
+	if (!g_metal || fa_idx < 0 || fa_idx >= g_cfg.num_full_attn_layers ||
+		seq > GPU_KV_SEQ || seq <= 0) {
+		fprintf(stderr, "ERROR: lazy shared KV requires Metal and capacity <= %d tokens\n", GPU_KV_SEQ);
+		free(c); return NULL;
+	}
+	size_t bytes = (size_t)seq * NUM_KV_HEADS * HEAD_DIM * sizeof(float);
+	size_t page = (size_t)getpagesize();
+	if (bytes > SIZE_MAX - (page - 1)) { free(c); return NULL; }
+	c->mapped_bytes = ((bytes + page - 1) / page) * page;
+	c->fa_idx = fa_idx;
+	if (c->mapped_bytes > [g_metal->device maxBufferLength]) {
+		fprintf(stderr, "ERROR: lazy KV buffer exceeds Metal maxBufferLength\n");
+		free(c); return NULL;
+	}
+	c->k_cache = mmap(NULL, c->mapped_bytes, PROT_READ | PROT_WRITE,
+		MAP_PRIVATE | MAP_ANON, -1, 0);
+	c->v_cache = mmap(NULL, c->mapped_bytes, PROT_READ | PROT_WRITE,
+		MAP_PRIVATE | MAP_ANON, -1, 0);
+	if (c->k_cache == MAP_FAILED) c->k_cache = NULL;
+	if (c->v_cache == MAP_FAILED) c->v_cache = NULL;
+#else
+	(void)fa_idx;
 	c->k_cache = calloc((size_t)seq * NUM_KV_HEADS * HEAD_DIM, sizeof(float));
 	c->v_cache = calloc((size_t)seq * NUM_KV_HEADS * HEAD_DIM, sizeof(float));
+#endif
 	c->len = 0;
 	if (!c->k_cache || !c->v_cache) {
 		fprintf(stderr, "ERROR: KV cache alloc failed (seq=%d, %.1f MB each)\n",
 				seq, (double)seq * NUM_KV_HEADS * HEAD_DIM * sizeof(float) / 1e6);
+		#ifdef FLASH_EXPERIMENTAL_LAZY_SHARED_GPU_KV
+		if (c->k_cache) munmap(c->k_cache, c->mapped_bytes);
+		if (c->v_cache) munmap(c->v_cache, c->mapped_bytes);
+		#else
 		free(c->k_cache);
 		free(c->v_cache);
+		#endif
 		free(c);
 		return NULL;
 	}
+#ifdef FLASH_EXPERIMENTAL_LAZY_SHARED_GPU_KV
+	g_metal->buf_kv_k[fa_idx] = [g_metal->device newBufferWithBytesNoCopy:c->k_cache
+		length:c->mapped_bytes options:MTLResourceStorageModeShared deallocator:nil];
+	g_metal->buf_kv_v[fa_idx] = [g_metal->device newBufferWithBytesNoCopy:c->v_cache
+		length:c->mapped_bytes options:MTLResourceStorageModeShared deallocator:nil];
+	if (!g_metal->buf_kv_k[fa_idx] || !g_metal->buf_kv_v[fa_idx]) {
+		fprintf(stderr, "ERROR: lazy KV Metal wrapping failed at full-attn slot %d\n", fa_idx);
+		g_metal->buf_kv_k[fa_idx] = nil;
+		g_metal->buf_kv_v[fa_idx] = nil;
+		munmap(c->k_cache, c->mapped_bytes);
+		munmap(c->v_cache, c->mapped_bytes);
+		free(c); return NULL;
+	}
+#endif
 	return c;
 }
 
 static void kv_cache_free(KVCache *c) {
 	if (c) {
+#ifdef FLASH_EXPERIMENTAL_LAZY_SHARED_GPU_KV
+		// Buffer views must die before their mmap storage is unmapped.
+		if (g_metal && c->fa_idx >= 0 && c->fa_idx < g_cfg.num_full_attn_layers) {
+			g_metal->buf_kv_k[c->fa_idx] = nil;
+			g_metal->buf_kv_v[c->fa_idx] = nil;
+		}
+		munmap(c->k_cache, c->mapped_bytes);
+		munmap(c->v_cache, c->mapped_bytes);
+#else
 		free(c->k_cache);
 		free(c->v_cache);
+#endif
 		free(c);
 	}
 }
@@ -8766,12 +8832,16 @@ static int serve_state_snapshot_restore(const ServeStateSnapshot *snap,
                     size_t gpu_tokens = (size_t)len;
                     if (gpu_tokens > GPU_KV_SEQ) gpu_tokens = GPU_KV_SEQ;
                     size_t gpu_sz = gpu_tokens * kv_dim * sizeof(float);
+#ifndef FLASH_EXPERIMENTAL_LAZY_SHARED_GPU_KV
                     if (gpu_sz > 0) {
                         memcpy([g_metal->buf_kv_k[fa_idx] contents],
                                snap->k_snapshot[i], gpu_sz);
                         memcpy([g_metal->buf_kv_v[fa_idx] contents],
                                snap->v_snapshot[i], gpu_sz);
                     }
+#else
+                    (void)gpu_sz; // CPU restore already populated canonical Metal-visible KV memory.
+#endif
                 }
             }
         }
@@ -11437,6 +11507,11 @@ static void encode_full_attn_prepare(
 }
 
 static void sync_full_attn_cpu_kv_from_gpu(KVCache *kv, int fa_idx, int cache_pos) {
+#ifdef FLASH_EXPERIMENTAL_LAZY_SHARED_GPU_KV
+	(void)kv; (void)fa_idx; (void)cache_pos;
+	// Caller has already awaited GPU command completion. Shared KV needs no copy.
+	return;
+#endif
 	if (!kv || !g_metal || fa_idx < 0 || fa_idx >= g_cfg.num_full_attn_layers || cache_pos < 0)
 		return;
 	size_t kv_dim = (size_t)NUM_KV_HEADS * HEAD_DIM;
@@ -13809,12 +13884,14 @@ static void fused_layer_forward(
 		memcpy(kv->v_cache + cache_pos * kv_dim, v_out, kv_dim * sizeof(float));
 
 		int fa_idx = (layer_idx + 1) / FULL_ATTN_INTERVAL - 1;
+		#ifndef FLASH_EXPERIMENTAL_LAZY_SHARED_GPU_KV
 		if (g_metal && g_metal->attn_scores_pipe && fa_idx >= 0 && fa_idx < g_cfg.num_full_attn_layers && cache_pos < GPU_KV_SEQ) {
 			memcpy((float *)[g_metal->buf_kv_k[fa_idx] contents] + cache_pos * kv_dim,
 				   k_out, kv_dim * sizeof(float));
 			memcpy((float *)[g_metal->buf_kv_v[fa_idx] contents] + cache_pos * kv_dim,
 				   v_out, kv_dim * sizeof(float));
 		}
+		#endif
 		kv->len++;
 #ifdef FLASH_PREFILL_NROW_ENABLED
 		if (g_prefill_nrow_capture)
@@ -23153,7 +23230,7 @@ if (g_temperature <= 0.0f) {
 		for (int i = 0; i < NUM_LAYERS; i++) {
 			int is_full = ((i + 1) % FULL_ATTN_INTERVAL == 0);
 			if (is_full) {
-				kv_caches[i] = kv_cache_new();
+				kv_caches[i] = kv_cache_new((i + 1) / FULL_ATTN_INTERVAL - 1);
 				if (!kv_caches[i]) {
 					fprintf(stderr, "ERROR: unable to allocate KV state for layer %d\n", i);
 					for (int j = 0; j < NUM_LAYERS; j++) {
