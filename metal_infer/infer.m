@@ -418,6 +418,29 @@ static int validate_target_architecture(void) {
 #define GPU_KV_SEQ  8192
 #endif
 
+// Opt-in diagnostics for exact GPU/CPU attention routing near the 8K/16K boundary.
+// Reports at most once per (context, route) when FLASH_TRACE_GPU_KV_BOUNDARY=1.
+static void trace_gpu_kv_boundary(int seq_len, int layer_idx, int gpu_path, const char *route) {
+    static unsigned char seen[6][2] = {{0}};
+    if (seq_len < 8191 || seq_len > 16385) return;
+    int slot = -1;
+    switch (seq_len) {
+        case 8191: slot = 0; break;
+        case 8192: slot = 1; break;
+        case 8193: slot = 2; break;
+        case 12288: slot = 3; break;
+        case 16384: slot = 4; break;
+        case 16385: slot = 5; break;
+        default: return;
+    }
+    if (seen[slot][!!gpu_path]) return;
+    const char *flag = getenv("FLASH_TRACE_GPU_KV_BOUNDARY");
+    if (!flag || strcmp(flag, "1") != 0) return;
+    seen[slot][!!gpu_path] = 1;
+    fprintf(stderr, "[gpu-kv-boundary] seq=%d layer=%d cap=%d backend=%s route=%s\\n",
+            seq_len, layer_idx, GPU_KV_SEQ, gpu_path ? "GPU" : "CPU", route);
+}
+
 // Runtime CPU KV sequence limit used by kv_cache_new().
 static int g_kv_seq_len = 65536;
 static int g_forward_error = 0;
@@ -13198,6 +13221,7 @@ static void fused_layer_forward(
 		if (cache_pos >= 0 && cache_pos < g_kv_seq_len && cache_pos < GPU_KV_SEQ &&
 			seq_len >= 32 && seq_len <= GPU_KV_SEQ &&
 			fa_idx >= 0 && fa_idx < g_cfg.num_full_attn_layers) {
+			trace_gpu_kv_boundary(seq_len, layer_idx, 1, "cmd12-chain");
 			can_cmd12_full_chain = 1;
 			cmd12_full_chain_cache_pos = cache_pos;
 			cmd12_full_chain_fa_idx = fa_idx;
@@ -13811,6 +13835,7 @@ static void fused_layer_forward(
 							  fa_idx >= 0 && fa_idx < g_cfg.num_full_attn_layers &&
 							  kv->len >= 32 && kv->len <= GPU_KV_SEQ);
 
+		trace_gpu_kv_boundary(kv->len, layer_idx, gpu_attn_ready, "standalone-attn");
 		if (gpu_attn_ready) {
 			// Copy Q and gate to GPU; attention dispatches will be in CMD2
 			memcpy([g_metal->buf_attn_q contents], q, q_dim * sizeof(float));
