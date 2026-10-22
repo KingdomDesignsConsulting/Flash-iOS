@@ -55,8 +55,9 @@ def main():
     time.sleep(0.5)
    else:raise TimeoutError(f"{arm} startup timeout")
    for roundno in range(a.rounds):
-    for label,prompt in (("A","Give one brief fact about gravity."),("B","Explain why a bicycle stays balanced when moving."),("A","Give one brief fact about gravity.")):
+    for label,prompt in (("A","Give one brief fact about gravity."),("B","Explain why a bicycle stays balanced when moving."),("A","Give one brief fact about gravity."),("session-A","State one fact about Saturn."),("session-B","State one fact about Neptune."),("session-A","State one fact about Saturn.")):
      payload={"model":"qwen3.5","messages":[{"role":"system","content":"Answer in one short sentence."},{"role":"user","content":prompt}],"max_tokens":12,"temperature":0,"reasoning_effort":"off","stream":False}
+     if label.startswith("session-"):payload["session_id"]="flash-soak-"+label[-1].lower()
      start=time.monotonic()
      status,body=request(f"http://127.0.0.1:{port}/v1/chat/completions",payload,timeout=a.timeout)
      elapsed=time.monotonic()-start
@@ -87,7 +88,7 @@ def main():
    (out/"report.json").write_text(json.dumps(result,indent=2))
  arms=result["rounds"]
  # Token equality across arms requires same deterministic outputs, not response IDs.
- for case in ("A","B"):
+ for case in ("A","B","session-A","session-B"):
   l=[r["content"] for r in arms[0]["requests"] if r["case"]==case]
   r=[r["content"] for r in arms[1]["requests"] if r["case"]==case]
   if l!=r:result["status"]="FAIL";result.setdefault("errors",[]).append(f"content mismatch case {case}")
