@@ -240,5 +240,27 @@ static int gpu_kv_qualification(WeightFile *wf,KVCache **kv,void **states,void *
         }
     }}
     serve_state_snapshot_free(anchor);
+    // Persist the post-transition state too, then prove its next continuation
+    // is byte-exact after restore. At 32K this includes KV beyond the GPU view.
+    int tail_pos=pos+steps;
+    entry.tool_sig=0xCA8;entry.token_sig=UINT64_C(0x1810CA8000000000)+tail_pos;
+    entry.token_count=tail_pos;
+    float tail_hidden[HIDDEN_DIM];memcpy(tail_hidden,h,sizeof(tail_hidden));
+    if(!serve_state_snapshot_capture(anchor,kv,states,tail_pos)||
+       !warm_state_save(roundtrip,&entry,kv,states,0xCA818,entry.token_sig,0x181018))return 14;
+    ToolPrefixCacheEntry tail={0};
+    if(!qual_load_fixture(roundtrip,&tail,kv,states,tail_pos)||!qual_equal(&tail.snapshot,kv,states))return 14;
+    unlink(roundtrip.fileSystemRepresentation);serve_state_snapshot_free(anchor);
+    int next=qual_forward(wf,kv,states,maps,fds,K,h,logits,fn,tail_pos);
+    ServeStateSnapshot next_state={0};float next_hidden[HIDDEN_DIM];memcpy(next_hidden,h,sizeof(next_hidden));
+    if(next<0||!serve_state_snapshot_capture(&next_state,kv,states,tail_pos+1)||
+       !serve_state_snapshot_restore(&tail.snapshot,kv,states))return 15;
+    memcpy(h,tail_hidden,sizeof(tail_hidden));g_pred_valid=0;
+    int replay=qual_forward(wf,kv,states,maps,fds,K,h,logits,fn,tail_pos);
+    int exact=next==replay&&!memcmp(h,next_hidden,sizeof(next_hidden))&&
+        qual_equal(&next_state,kv,states)&&qual_mirror(kv);
+    serve_state_snapshot_free(&next_state);serve_state_snapshot_free(&tail.snapshot);
+    if(!exact)return 15;
+    fprintf(stderr,"[qual-tail] {\"saved_pos\":%d,\"continuation_len\":%d,\"token\":%d,\"state_hidden_exact\":true}\n",tail_pos,tail_pos+1,next);
     fprintf(stderr,"[qual] RESULT=PASS cap=%d\n",GPU_KV_SEQ);return 0;
 }

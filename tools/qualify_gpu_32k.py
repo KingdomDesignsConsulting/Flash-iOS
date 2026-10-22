@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """Qualify experimental GPU32K arms from immutable historical checkpoint fixtures."""
-import argparse, datetime, hashlib, json, os, pathlib, re, shutil, subprocess
+import argparse, datetime, hashlib, json, os, pathlib, re, shutil, subprocess, time
 import numpy as np
+from benchmark_gpu_16k import samples
 P=pathlib.Path
 MODEL='/Users/Shared/Main Hard Drive/AI Storage/AI Models/Reasoning/alexintosh/Qwen3.5-35B-A3B-Q4-Tiered-FlashMoE'
 FIELDS=('hidden','logits','kv','cpu-recurrent','gpu-recurrent')
@@ -38,6 +39,10 @@ def main():
  (out/'manifest.json').write_text(json.dumps(report,indent=2))
  rows={}
  for arm in a.arms.split(','):
+  pre=samples();deadline=time.monotonic()+60
+  while max(x if x is not None else 100 for x in pre)>=30 and time.monotonic()<deadline:
+   print('WAIT GPU',pre,flush=True);time.sleep(2);pre=samples()
+  if max(x if x is not None else 100 for x in pre)>=30:raise RuntimeError(f'GPU busy before {arm}: {pre}')
   dest=out/arm;dest.mkdir();binary=a.repo/'metal_infer'/('infer-qual-'+('lazy32k' if arm == 'lazy32k-nochain' else arm))
   command=[str(binary),'--model',MODEL,'--tiered','--no-malloc-cache','--no-expert-prefetch']
   if arm.endswith('nochain'):command.append('--no-cmd12-full-chain')
@@ -48,15 +53,20 @@ def main():
    except subprocess.TimeoutExpired:
     report['failure']=f'{arm} timeout';(out/'report.json').write_text(json.dumps(report,indent=2));raise
   text=log.read_text(errors='replace');records=[json.loads(line.split('] ',1)[1]) for line in text.splitlines() if line.startswith('[qual-step] ')]
-  report['arms'][arm]={'command':command,'binary_sha256':sha(binary),'exit':r.returncode,'steps':records}
+  report['arms'][arm]={'command':command,'binary_sha256':sha(binary),'exit':r.returncode,'pre_gpu':pre,'steps':records}
   (out/'report.json').write_text(json.dumps(report,indent=2))
   if r.returncode or '[qual] RESULT=PASS' not in text or len(records)!=5:raise RuntimeError(f'{arm} failed: exit={r.returncode}; see {log}')
+  tail=[json.loads(line.split('] ',1)[1]) for line in text.splitlines() if line.startswith('[qual-tail] ')]
+  if len(tail)!=1 or not tail[0]['state_hidden_exact']:raise RuntimeError(f'Missing exact post-transition restore: {arm}')
+  report['arms'][arm]['tail']=tail[0]
   cap=8192 if arm=='8k' else (32768 if arm.startswith('lazy32k') else 16384)
   for row in records:
    routes=[tuple(map(int,m)) for m in re.findall(r'\[qual-route\] pos=(\d+) layer=(\d+) len=(\d+) gpu=(\d+) chain=(\d+)',text) if int(m[0])==row['pos']]
    # Step zero is deliberately replayed once after rollback.
    expected=20 if row['step']==0 else 10
    if len(routes)!=expected or set(x[1] for x in routes)!=set(range(3,40,4)) or any(bool(x[3])!=(32<=row['len']<=cap) for x in routes):raise RuntimeError(f'route mismatch {arm} {row}: {routes}')
+   if any(x[4]!=int(bool(x[3]) and not arm.endswith('nochain')) for x in routes):raise RuntimeError(f'chain mismatch {arm} {row}: {routes}')
+   report['arms'][arm].setdefault('routes',[]).append(dict(step=row['step'],length=row['len'],layers=sorted(set(x[1] for x in routes)),gpu=routes[0][3],chain=routes[0][4]))
   rows[arm]=records;print('PASS',arm,flush=True)
  pairs=[]
  if '16k' in rows and 'lazy16k' in rows:pairs.append(('16k','lazy16k',True))
@@ -65,7 +75,8 @@ def main():
  if 'lazy32k-nochain' in rows and 'lazy32k' in rows:pairs.append(('lazy32k','lazy32k-nochain',False))
  if '8k' in rows and '16k' in rows:pairs.append(('8k','16k',False))
  if 'lazy16k-nochain' in rows and 'lazy16k' in rows:pairs.append(('lazy16k','lazy16k-nochain',False))
- passed=True
+ if not pairs:raise RuntimeError('Numerical qualification requires at least one control/candidate pair')
+ passed=len({r['tail']['token'] for r in report['arms'].values()})==1
  for control,candidate,exact in pairs:
   for step in range(5):
    result={'control':control,'candidate':candidate,'step':step,'token_equal':rows[control][step]['token']==rows[candidate][step]['token'],'fields':{}}

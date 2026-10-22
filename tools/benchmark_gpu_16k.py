@@ -65,9 +65,10 @@ def main():
    if round_id%2:arms.reverse()
    for arm in arms:
     pre=samples();deadline=time.monotonic()+a.idle_wait
-    while not a.exploratory and not idle(pre) and time.monotonic()<deadline:
+    ready=lambda v: all(x is not None and x<30 for x in v) if a.exploratory else idle(v)
+    while not ready(pre) and time.monotonic()<deadline:
      print('WAIT GPU',pre,flush=True);time.sleep(2);pre=samples()
-    if not idle(pre) and not a.exploratory:
+    if not ready(pre):
      (a.out/'manifest.json').write_text(json.dumps(manifest,indent=2));raise RuntimeError('GPU contention: bounded idle wait expired')
     name=f'round{round_id}-{pos}-{arm}';log=a.out/(name+'.log')
     binary=a.repo/'metal_infer'/('infer-perf-'+arm)
