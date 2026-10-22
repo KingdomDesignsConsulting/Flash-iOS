@@ -304,7 +304,7 @@ $(CHAT_TARGET): $(CHAT_SRC) linenoise.c linenoise.h
 	$(CC) -O2 -Wall -fobjc-arc -framework Foundation $(CHAT_SRC) linenoise.c -o $(CHAT_TARGET)
 
 clean:
-	rm -f $(TARGET) $(INFER_TARGET) "$(N128_BENCH_TARGET)" "$(N128_GATEUP8_TARGET)" "$(N128_GATEUP4ROW_TARGET)" "$(N128_GATEUP8ROW_TARGET)" "$(N128_GATEUP8CACHE_TARGET)" "$(N128_GATEUP8BITS_TARGET)" "$(N128_DOWNBITS_TARGET)" "$(N128_DOWNBITS_DIAG_TARGET)" "$(N128_DOWNCONTROL_DIAG_TARGET)" "$(N128_GATEUP16ROW_TARGET)" "$(N128_SERVE8ROW_TARGET)" "$(N128_SERVE8BITS_TARGET)" $(CHAT_TARGET) $(SHADER_AIR) $(SHADER_LIB) infer-lazy16k-experiment infer-qual-8k infer-qual-16k infer-qual-lazy16k infer-perf-8k infer-perf-16k infer-perf-lazy16k
+	rm -f $(TARGET) $(INFER_TARGET) "$(N128_BENCH_TARGET)" "$(N128_GATEUP8_TARGET)" "$(N128_GATEUP4ROW_TARGET)" "$(N128_GATEUP8ROW_TARGET)" "$(N128_GATEUP8CACHE_TARGET)" "$(N128_GATEUP8BITS_TARGET)" "$(N128_DOWNBITS_TARGET)" "$(N128_DOWNBITS_DIAG_TARGET)" "$(N128_DOWNCONTROL_DIAG_TARGET)" "$(N128_GATEUP16ROW_TARGET)" "$(N128_SERVE8ROW_TARGET)" "$(N128_SERVE8BITS_TARGET)" $(CHAT_TARGET) $(SHADER_AIR) $(SHADER_LIB) infer-lazy16k-experiment infer-qual-8k infer-qual-16k infer-qual-lazy16k infer-perf-8k infer-perf-16k infer-perf-lazy16k infer-lazy32k-experiment infer-qual-lazy32k infer-perf-lazy32k
 
 # Run targets
 run: $(TARGET)
@@ -368,3 +368,7 @@ lazy32k-experiment: $(INFER_SRC) $(INFER_DEPS)
 
 gpu-kv-qualification-32k: $(INFER_SRC) $(INFER_DEPS) gpu_kv_qualification.inc
 	$(CC) $(INFER_CFLAGS) -DFLASH_GPU_KV_QUALIFICATION -DFLASH_EXPERIMENTAL_LAZY_SHARED_GPU_KV_32K $(FRAMEWORKS) $(LDFLAGS) $(INFER_SRC) -o infer-qual-lazy32k
+
+.PHONY: gpu-kv-performance-32k
+gpu-kv-performance-32k: $(INFER_SRC) $(INFER_DEPS) gpu_kv_qualification.inc gpu_kv_performance.inc gpu_kv_perf_timing.inc
+	$(CC) $(INFER_CFLAGS) -DFLASH_GPU_KV_QUALIFICATION -DFLASH_GPU_KV_PERFORMANCE -DFLASH_EXPERIMENTAL_LAZY_SHARED_GPU_KV_32K $(FRAMEWORKS) $(LDFLAGS) $(INFER_SRC) -o infer-perf-lazy32k

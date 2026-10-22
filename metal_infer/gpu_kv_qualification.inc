@@ -79,6 +79,14 @@ static int qual_load_fixture(NSString *path, ToolPrefixCacheEntry *entry,
     uint64_t expected_full=0, source=UINT64_C(0x1810CA8000000000)+pos;
     WarmStateHeader validated=head;
     if(ok)ok=warm_payload_bytes(&head,kv,states,&expected_full);
+    // Current-engine fixtures store the complete GPU recurrent allocation;
+    // historical fixtures below store only its active geometry.
+    if(ok && head.payload_bytes==expected_full) {
+        close(fd);
+        ToolPrefixCacheEntry expected={0};
+        expected.tool_sig=0xCA8;expected.token_sig=source;expected.token_count=pos;
+        return warm_state_load(path,entry,kv,states,0xCA818,source,0x181018,&expected);
+    }
     validated.payload_bytes=expected_full;
     if(ok)ok=head.version==WARM_STATE_VERSION &&
         warm_state_header_valid(&validated,0xCA818,source,0x181018,kv,states) &&
@@ -110,11 +118,58 @@ static int qual_load_fixture(NSString *path, ToolPrefixCacheEntry *entry,
     fprintf(stderr,"[qual] historical_fixture_checksum=PASS active_gdn_bytes=%u padded_gdn_bytes=%zu\n",head.ssm_bytes,gpu_delta_state_bytes());
     return 1;
 }
+// Qualification-only fixture extension. The driver atomically publishes the
+// completed output directory, so a killed writer never replaces a resume point.
+static int qual_extend_fixture(WeightFile *wf,KVCache **kv,void **states,void **maps,
+    int *fds,int K,float *h) {
+    int pos=atoi(getenv("FLASH_QUAL_POS"));
+    int target=atoi(getenv("FLASH_QUAL_EXTEND_TO"));
+    if(target<=pos||target>32766||!getenv("FLASH_QUAL_OUT"))return 21;
+    ToolPrefixCacheEntry entry={0};
+    if(!qual_load_fixture([NSString stringWithUTF8String:getenv("FLASH_QUAL_ANCHOR")],&entry,kv,states,pos)||
+       !serve_state_snapshot_restore(&entry.snapshot,kv,states))return 22;
+    FILE *f=fopen(getenv("FLASH_QUAL_HIDDEN"),"rb");if(!f)return 23;
+    int ok=fread(h,4,HIDDEN_DIM,f)==(size_t)HIDDEN_DIM;fclose(f);if(!ok)return 23;
+    serve_state_snapshot_free(&entry.snapshot);
+    double start=now_ms();
+    while(pos<target) {@autoreleasepool {
+        if(target-pos>=PREFILL_NROW_CAPTURE_ROWS &&
+           prefill_nrow_runtime_cache_range_eligible(kv) && prefill_nrow_runtime_prepare(K)) {
+            uint32_t ids[PREFILL_NROW_CAPTURE_ROWS];
+            for(int i=0;i<PREFILL_NROW_CAPTURE_ROWS;i++)ids[i]=1000+((pos+i)*73)%1000;
+            if(!prefill_nrow_runtime_chunk(wf,kv,states,maps,fds,K,pos,ids,NULL,h,NULL,NULL))return 24;
+            pos+=PREFILL_NROW_CAPTURE_ROWS;
+        } else {
+            embed_lookup(wf,1000+(pos*73)%1000,h);
+            if(!run_all_layers_checked(wf,h,kv,states,maps,fds,pos,K)||!complete_deferred_experts())return 24;
+            pos++;
+        }
+        fprintf(stderr,"[qual-extend] pos=%d target=%d elapsed_ms=%.3f\n",pos,target,now_ms()-start);
+    }}
+    if(!complete_deferred_experts()||!qual_mirror(kv))return 25;
+    for(int l=3;l<NUM_LAYERS;l+=FULL_ATTN_INTERVAL)if(kv[l]->len!=target)return 25;
+    if(!serve_state_snapshot_capture(&entry.snapshot,kv,states,target))return 26;
+    entry.tool_sig=0xCA8;entry.token_sig=UINT64_C(0x1810CA8000000000)+target;entry.token_count=target;
+    NSString *path=[NSString stringWithFormat:@"%s/anchor.state",getenv("FLASH_QUAL_OUT")];
+    g_warm_state_zstd_enabled=0;
+    if(!warm_state_save(path,&entry,kv,states,0xCA818,entry.token_sig,0x181018))return 27;
+    ToolPrefixCacheEntry loaded={0};
+    if(!qual_load_fixture(path,&loaded,kv,states,target)||!qual_equal(&loaded.snapshot,kv,states))return 28;
+    serve_state_snapshot_free(&loaded.snapshot);serve_state_snapshot_free(&entry.snapshot);
+    NSString *hidden=[NSString stringWithFormat:@"%s/hidden.bin",getenv("FLASH_QUAL_OUT")];
+    int fd=open(hidden.fileSystemRepresentation,O_WRONLY|O_CREAT|O_EXCL,0600);
+    if(fd<0)return 29;
+    ok=warm_write_all(fd,h,HIDDEN_DIM*sizeof(float),NULL)&&fsync(fd)==0;
+    if(close(fd)!=0)ok=0;
+    fprintf(stderr,"[qual-extend] RESULT=%s pos=%d elapsed_ms=%.3f\n",ok?"PASS":"FAIL",target,now_ms()-start);
+    return ok?0:29;
+}
 static int gpu_kv_qualification(WeightFile *wf,KVCache **kv,void **states,void **maps,int *fds,int K,
                                  float *h,float *logits,uint16_t *fn) {
     int pos=atoi(getenv("FLASH_QUAL_POS")), steps=5;
     const char *anchor_path=getenv("FLASH_QUAL_ANCHOR"),*hidden_path=getenv("FLASH_QUAL_HIDDEN");
     if(!anchor_path||!hidden_path||!getenv("FLASH_QUAL_OUT")||pos<=0)return 1;
+    if(getenv("FLASH_QUAL_EXTEND_TO"))return qual_extend_fixture(wf,kv,states,maps,fds,K,h);
     if(!qual_lifetime())return 2;
     ToolPrefixCacheEntry entry={0},expected={0};
     expected.tool_sig=0xCA8;expected.token_sig=UINT64_C(0x1810CA8000000000)+pos;expected.token_count=pos;

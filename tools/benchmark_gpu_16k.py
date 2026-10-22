@@ -29,10 +29,10 @@ def parse(log):
 def summarize(records):
  table=[];boundary=[]
  for pos in sorted(set(r['pos'] for r in records)):
-  for arm in ['8k','16k','lazy16k']:
+  for arm in ['8k','16k','lazy16k','lazy32k']:
    runs=[r for r in records if r['pos']==pos and r['arm']==arm and r['accepted']]
    if not runs:continue
-   selected=pos+1 if pos!=16382 else 16384
+   selected=pos+2 if pos in (16382,24574,32766) else pos+1
    steps=[s for r in runs for s in r['data']['step'] if s['observer']==0 and s['len']==selected]
    prof=[s for r in runs for s in r['data']['step'] if s['observer']==1 and s['len']==selected]
    pre=[p for r in runs for p in r['data']['prefill']]
@@ -44,23 +44,23 @@ def summarize(records):
     checkpoint_assisted_ttft_ms=stats([p['ttft_ms'] for p in pre]),restore_ms=stats([p['restore_ms'] for p in pre]),gpu_layers=steps[0]['gpu_layers'],
     confidence='moderate' if timing['cv']<=.05 and (attngpu if steps[0]['gpu_layers'] else attncpu)['cv']<=.05 and len(runs)>=2 else 'low: variable or single process')
    table.append(row)
-   for length in (8192,8193,16384,16385):
+   for length in (8192,8193,16384,16385,24576,32768,32769):
     ss=[s for r in runs for s in r['data']['step'] if s['observer']==0 and s['len']==length]
     pp=[s for r in runs for s in r['data']['step'] if s['observer']==1 and s['len']==length]
     if ss:boundary.append(dict(length=length,arm=arm,wall_ms=stats([s['wall_ms'] for s in ss]),gpu_layers=ss[0]['gpu_layers'],attention_gpu_ms=stats([s['attention_gpu_ms']/10 for s in pp]),attention_cpu_ms=stats([s['attention_cpu_ms']/10 for s in pp])))
  return dict(table=table,boundaries=boundary,excluded_runs=[{k:r[k] for k in ('arm','pos','round','pre_gpu','post_gpu','accepted')} for r in records if not r['accepted']])
 def main():
- ap=argparse.ArgumentParser(description=__doc__);ap.add_argument('--out',type=P,required=True);ap.add_argument('--repo',type=P,default=P(__file__).resolve().parents[1]);ap.add_argument('--contexts',default='2047,4095,8191,16382');ap.add_argument('--rounds',type=int,default=2);ap.add_argument('--repeats',type=int,default=3);ap.add_argument('--steps',type=int,default=4);ap.add_argument('--suffix',type=int,default=8);ap.add_argument('--arms',default='8k,16k,lazy16k');ap.add_argument('--idle-wait',type=int,default=60);ap.add_argument('--post-settle',type=float,default=2.0);ap.add_argument('--build',action='store_true');ap.add_argument('--exploratory',action='store_true',help='Execute during contention but exclude timings from accepted results');a=ap.parse_args()
+ ap=argparse.ArgumentParser(description=__doc__);ap.add_argument('--out',type=P,required=True);ap.add_argument('--repo',type=P,default=P(__file__).resolve().parents[1]);ap.add_argument('--anchor-root',type=P);ap.add_argument('--contexts',default='2047,4095,8191,16382');ap.add_argument('--rounds',type=int,default=2);ap.add_argument('--repeats',type=int,default=3);ap.add_argument('--steps',type=int,default=4);ap.add_argument('--suffix',type=int,default=8);ap.add_argument('--arms',default='8k,16k,lazy16k');ap.add_argument('--idle-wait',type=int,default=60);ap.add_argument('--post-settle',type=float,default=2.0);ap.add_argument('--build',action='store_true');ap.add_argument('--exploratory',action='store_true',help='Execute during contention but exclude timings from accepted results');a=ap.parse_args()
  a.out.mkdir(parents=True,exist_ok=False);records=[]
  if a.build:
-  with (a.out/'build.log').open('w') as f:subprocess.run(['make','-C','metal_infer','gpu-kv-performance'],cwd=a.repo,stdout=f,stderr=subprocess.STDOUT,check=True)
+  with (a.out/'build.log').open('w') as f:subprocess.run(['make','-C','metal_infer','gpu-kv-performance']+(['gpu-kv-performance-32k'] if 'lazy32k' in a.arms.split(',') else []),cwd=a.repo,stdout=f,stderr=subprocess.STDOUT,check=True)
  manifest={'base':subprocess.check_output(['git','rev-parse','HEAD'],cwd=a.repo,text=True).strip(),'started':datetime.datetime.now().astimezone().isoformat(),'driver_sha256':sha(P(__file__)),
   'sources':{str(p.relative_to(a.repo)):sha(p) for p in (a.repo/'metal_infer').iterdir() if p.suffix in ('.m','.inc','.metal','.h') or p.name=='Makefile'},
   'machine':subprocess.check_output(['sw_vers'],text=True).strip(),
   'settings':{'rounds':a.rounds,'repeats':a.repeats,'steps':a.steps,'suffix':a.suffix,'post_settle_seconds':a.post_settle,'expert_cache':'disabled; OS pages warmed by an untimed pass for each mode','cold_prefill':'not measured; suffix prefill from exact saved state','idle_gate':'median<=10%, maximum<30% before and after process; during-run utilization includes own work'},'runs':records}
  for round_id in range(a.rounds):
   for ci,pos in enumerate(map(int,a.contexts.split(','))):
-   fixture=UP if pos==16382 else LOW/str(pos)/'anchor.state'
+   fixture=(a.anchor_root/str(pos)/'anchor.state') if a.anchor_root and (a.anchor_root/str(pos)/'anchor.state').exists() else (UP if pos==16382 else LOW/str(pos)/'anchor.state')
    arms=a.arms.split(',');offset=(round_id+ci)%len(arms);arms=arms[offset:]+arms[:offset]
    if round_id%2:arms.reverse()
    for arm in arms:
@@ -83,7 +83,7 @@ def main():
     finally:done.set();thread.join(timeout=10)
     time.sleep(a.post_settle);post=samples()
     if r.returncode:raise RuntimeError(f'{name} exit={r.returncode}; see {log}')
-    data=parse(log);cap=8192 if arm=='8k' else 16384
+    data=parse(log);cap=8192 if arm=='8k' else (32768 if arm=='lazy32k' else 16384)
     for row in data['step']:
      if row['gpu_layers']!=(10 if row['len']<=cap else 0):raise RuntimeError(f'Bad route {name} {row}')
      if row['observer']==1 and row['gpu_layers'] and (not data['meta'][0]['counters'] or row['attention_gpu_ms']<=0):raise RuntimeError(f'Missing GPU counter samples: {name}')

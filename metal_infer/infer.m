@@ -8583,7 +8583,7 @@ typedef struct {
 
 #define TOOL_PREFIX_CACHE_SLOTS 5
 #ifdef FLASH_GPU_KV_QUALIFICATION
-#define TOOL_PREFIX_CACHE_MAX_TOKENS 16384
+#define TOOL_PREFIX_CACHE_MAX_TOKENS 32771 // qualification fixtures only; serving cap unchanged
 #else
 #define TOOL_PREFIX_CACHE_MAX_TOKENS 8192
 #endif
@@ -14286,7 +14286,7 @@ static void fused_layer_forward(
     if(kv_perf_active&&is_full)kv_perf_gpu_route[layer_idx]=!!gpu_attn_fuse;
 #endif
 #ifdef FLASH_GPU_KV_QUALIFICATION
-    if (is_full && getenv("FLASH_QUAL_ANCHOR") && !getenv("FLASH_PERF_RUN"))
+    if (is_full && getenv("FLASH_QUAL_ANCHOR") && !getenv("FLASH_PERF_RUN") && !getenv("FLASH_QUAL_EXTEND_TO"))
         fprintf(stderr, "[qual-route] pos=%d layer=%d len=%d gpu=%d chain=%d\n",
             pos, layer_idx, kv->len, !!gpu_attn_fuse, !!cmd12_full_chain_this_layer);
 #endif

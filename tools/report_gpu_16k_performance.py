@@ -41,7 +41,7 @@ def main():
     report["accepted_processes"] = sum(r["accepted"] for r in records)
     report["decode_and_suffix_tokens_match"] = True
     for row in report["table"]:
-        pos = 16382 if row["context"] == 16384 else row["context"] - 1
+        pos = row["context"] - (2 if row["context"] in (16384, 24576, 32768) else 1)
         row["accepted_processes"] = sum(r["accepted"] and r["pos"] == pos and r["arm"] == row["arm"] for r in records)
     (args.out / "summary.json").write_text(json.dumps(report, indent=2) + "\n")
     fields = ["context", "arm", "decode_tps", "token_ms_cv_percent", "attention_ms_per_layer", "backend", "physical_mib", "peak_physical_mib", "peak_rss_mib", "suffix_prefill_tps", "checkpoint_ttft_ms", "processes", "samples", "confidence"]

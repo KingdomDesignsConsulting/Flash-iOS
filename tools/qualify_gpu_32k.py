@@ -29,7 +29,7 @@ def main():
  ap.add_argument('--anchor',type=P,required=True);ap.add_argument('--pos',type=int,required=True)
  ap.add_argument('--arms',default='8k,16k,lazy16k,lazy32k,lazy32k-nochain');ap.add_argument('--timeout',type=int,default=240)
  ap.add_argument('--keep-arrays',action='store_true');a=ap.parse_args()
- assert a.pos in (8191,16382,32766)
+ assert a.pos in (8191,16382,24574,32766)
  out=a.out.resolve();out.mkdir(parents=True,exist_ok=False)
  report={'started':datetime.datetime.now().astimezone().isoformat(),'pos':a.pos,'fixture':str(a.anchor),'fixture_sha256':sha(a.anchor),
    'hidden_sha256':sha(a.anchor.with_name('hidden.bin')),'driver_sha256':sha(P(__file__)), 'head':subprocess.check_output(['git','rev-parse','HEAD'],cwd=a.repo,text=True).strip(),
