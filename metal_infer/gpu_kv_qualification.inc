@@ -46,7 +46,7 @@ static int qual_mirror(KVCache **kv) {
     return 1;
 }
 static int qual_lifetime(void) {
-#ifdef FLASH_EXPERIMENTAL_LAZY_SHARED_GPU_KV
+#if defined(FLASH_EXPERIMENTAL_LAZY_SHARED_GPU_KV) || defined(FLASH_EXPERIMENTAL_LAZY_SHARED_GPU_KV_32K)
     id<MTLBuffer> oldk=g_metal->buf_kv_k[0],oldv=g_metal->buf_kv_v[0];
     int capacity=g_kv_seq_len; g_kv_seq_len=64;
     for(int repeat=0;repeat<3;repeat++) {@autoreleasepool {
