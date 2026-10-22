@@ -412,7 +412,9 @@ static int validate_target_architecture(void) {
 #define MAX_SEQ_LEN 262144
 // Experimental expansion is opt-in; production/default builds retain 8K.
 // Run isolated correctness and persistence qualification before promotion.
-#if defined(FLASH_EXPERIMENTAL_LAZY_SHARED_GPU_KV)
+#if defined(FLASH_EXPERIMENTAL_LAZY_SHARED_GPU_KV_32K)
+#define GPU_KV_SEQ  32768
+#elif defined(FLASH_EXPERIMENTAL_LAZY_SHARED_GPU_KV)
 #define GPU_KV_SEQ  16384
 #elif defined(FLASH_EXPERIMENTAL_GPU_KV_16K)
 #define GPU_KV_SEQ  16384
@@ -5008,7 +5010,7 @@ static MetalCtx *metal_setup(void) {
 		int gpu_kv = (g_kv_seq_len < GPU_KV_SEQ) ? g_kv_seq_len : GPU_KV_SEQ;
 		size_t kv_cache_size = (size_t)gpu_kv * kv_dim * sizeof(float);
 		for (int i = 0; i < g_cfg.num_full_attn_layers; i++) {
-			#ifndef FLASH_EXPERIMENTAL_LAZY_SHARED_GPU_KV
+			#if !defined(FLASH_EXPERIMENTAL_LAZY_SHARED_GPU_KV) && !defined(FLASH_EXPERIMENTAL_LAZY_SHARED_GPU_KV_32K)
 			ctx->buf_kv_k[i] = [ctx->device newBufferWithLength:kv_cache_size
 														options:MTLResourceStorageModeShared];
 			ctx->buf_kv_v[i] = [ctx->device newBufferWithLength:kv_cache_size
@@ -8432,7 +8434,7 @@ typedef struct {
 	float *k_cache;  // [max_seq, num_kv_heads * head_dim]
 	float *v_cache;  // [max_seq, num_kv_heads * head_dim]
 	int len;         // current number of cached entries
-#ifdef FLASH_EXPERIMENTAL_LAZY_SHARED_GPU_KV
+#if defined(FLASH_EXPERIMENTAL_LAZY_SHARED_GPU_KV) || defined(FLASH_EXPERIMENTAL_LAZY_SHARED_GPU_KV_32K)
 	size_t mapped_bytes; // Metal deallocators own the complete mmap lifetime
 	id<MTLBuffer> k_view, v_view;
 	int fa_idx;
@@ -8446,7 +8448,7 @@ static KVCache *kv_cache_new(int fa_idx) {
 		return NULL;
 	}
 	int seq = g_kv_seq_len;
-#ifdef FLASH_EXPERIMENTAL_LAZY_SHARED_GPU_KV
+#if defined(FLASH_EXPERIMENTAL_LAZY_SHARED_GPU_KV) || defined(FLASH_EXPERIMENTAL_LAZY_SHARED_GPU_KV_32K)
 	if (!g_metal || fa_idx < 0 || fa_idx >= g_cfg.num_full_attn_layers ||
 		seq <= 0) {
 		fprintf(stderr, "ERROR: lazy shared KV requires Metal and positive context capacity\n");
@@ -8479,7 +8481,7 @@ static KVCache *kv_cache_new(int fa_idx) {
 	if (!c->k_cache || !c->v_cache) {
 		fprintf(stderr, "ERROR: KV cache alloc failed (seq=%d, %.1f MB each)\n",
 				seq, (double)seq * NUM_KV_HEADS * HEAD_DIM * sizeof(float) / 1e6);
-		#ifdef FLASH_EXPERIMENTAL_LAZY_SHARED_GPU_KV
+		#if defined(FLASH_EXPERIMENTAL_LAZY_SHARED_GPU_KV) || defined(FLASH_EXPERIMENTAL_LAZY_SHARED_GPU_KV_32K)
 		if (c->k_cache) munmap(c->k_cache, c->mapped_bytes);
 		if (c->v_cache) munmap(c->v_cache, c->mapped_bytes);
 		#else
@@ -8489,7 +8491,7 @@ static KVCache *kv_cache_new(int fa_idx) {
 		free(c);
 		return NULL;
 	}
-#ifdef FLASH_EXPERIMENTAL_LAZY_SHARED_GPU_KV
+#if defined(FLASH_EXPERIMENTAL_LAZY_SHARED_GPU_KV) || defined(FLASH_EXPERIMENTAL_LAZY_SHARED_GPU_KV_32K)
 	// A command buffer may retain its resources beyond KVCache destruction.
 	// Let the final Metal reference release the mmap, including CPU-only tail.
 	const size_t mapped_bytes = c->mapped_bytes;
@@ -8514,7 +8516,7 @@ static KVCache *kv_cache_new(int fa_idx) {
 
 static void kv_cache_free(KVCache *c) {
 	if (c) {
-#ifdef FLASH_EXPERIMENTAL_LAZY_SHARED_GPU_KV
+#if defined(FLASH_EXPERIMENTAL_LAZY_SHARED_GPU_KV) || defined(FLASH_EXPERIMENTAL_LAZY_SHARED_GPU_KV_32K)
 		// Do not detach a newer session's views when freeing an older cache.
 		if (g_metal && c->fa_idx >= 0 && c->fa_idx < g_cfg.num_full_attn_layers) {
 			if (g_metal->buf_kv_k[c->fa_idx] == c->k_view)
@@ -8871,7 +8873,7 @@ static int serve_state_snapshot_restore(const ServeStateSnapshot *snap,
                     size_t gpu_tokens = (size_t)len;
                     if (gpu_tokens > GPU_KV_SEQ) gpu_tokens = GPU_KV_SEQ;
                     size_t gpu_sz = gpu_tokens * kv_dim * sizeof(float);
-#ifndef FLASH_EXPERIMENTAL_LAZY_SHARED_GPU_KV
+#if !defined(FLASH_EXPERIMENTAL_LAZY_SHARED_GPU_KV) && !defined(FLASH_EXPERIMENTAL_LAZY_SHARED_GPU_KV_32K)
                     if (gpu_sz > 0) {
                         memcpy([g_metal->buf_kv_k[fa_idx] contents],
                                snap->k_snapshot[i], gpu_sz);
@@ -11546,7 +11548,7 @@ static void encode_full_attn_prepare(
 }
 
 static void sync_full_attn_cpu_kv_from_gpu(KVCache *kv, int fa_idx, int cache_pos) {
-#ifdef FLASH_EXPERIMENTAL_LAZY_SHARED_GPU_KV
+#if defined(FLASH_EXPERIMENTAL_LAZY_SHARED_GPU_KV) || defined(FLASH_EXPERIMENTAL_LAZY_SHARED_GPU_KV_32K)
 	(void)kv; (void)fa_idx; (void)cache_pos;
 	// Caller has already awaited GPU command completion. Shared KV needs no copy.
 	return;
@@ -13936,7 +13938,7 @@ static void fused_layer_forward(
 		memcpy(kv->v_cache + cache_pos * kv_dim, v_out, kv_dim * sizeof(float));
 
 		int fa_idx = (layer_idx + 1) / FULL_ATTN_INTERVAL - 1;
-		#ifndef FLASH_EXPERIMENTAL_LAZY_SHARED_GPU_KV
+		#if !defined(FLASH_EXPERIMENTAL_LAZY_SHARED_GPU_KV) && !defined(FLASH_EXPERIMENTAL_LAZY_SHARED_GPU_KV_32K)
 		if (g_metal && g_metal->attn_scores_pipe && fa_idx >= 0 && fa_idx < g_cfg.num_full_attn_layers && cache_pos < GPU_KV_SEQ) {
 			memcpy((float *)[g_metal->buf_kv_k[fa_idx] contents] + cache_pos * kv_dim,
 				   k_out, kv_dim * sizeof(float));
