@@ -13132,6 +13132,10 @@ static int init_layer_scratch(void) {
 	return 0;
 }
 
+#ifdef FLASH_GPU_KV_PERFORMANCE
+#include "gpu_kv_perf_timing.inc"
+#endif
+
 static void fused_layer_forward(
 	WeightFile *wf,
 	int layer_idx,
@@ -13968,6 +13972,9 @@ static void fused_layer_forward(
 			// attn_out_for_oproj will be set to NULL below — CMD2 reads buf_attn_out
 		} else {
 			// CPU fallback
+#ifdef FLASH_GPU_KV_PERFORMANCE
+            double kv_perf_cpu_start=kv_perf_active?now_ms():0.0;
+#endif
 			for (int h = 0; h < NUM_ATTN_HEADS; h++) {
 				int kv_h = h / heads_per_kv;
 				float *qh = q + h * HEAD_DIM;
@@ -14003,6 +14010,9 @@ static void fused_layer_forward(
 				float g = 1.0f / (1.0f + expf(-q_gate[i]));
 				attn_out[i] *= g;
 			}
+#ifdef FLASH_GPU_KV_PERFORMANCE
+            if(kv_perf_active)kv_perf_cpu_ms[layer_idx]+=now_ms()-kv_perf_cpu_start;
+#endif
 		}
 
 		if (gpu_attn_ready) {
@@ -14270,8 +14280,11 @@ static void fused_layer_forward(
 		g_metal->residual_add && g_metal->rms_norm_sum &&
 		g_metal->rms_norm_apply_bf16 && lc->post_attn_norm_w;
 
+#ifdef FLASH_GPU_KV_PERFORMANCE
+    if(kv_perf_active&&is_full)kv_perf_gpu_route[layer_idx]=!!gpu_attn_fuse;
+#endif
 #ifdef FLASH_GPU_KV_QUALIFICATION
-    if (is_full && getenv("FLASH_QUAL_ANCHOR"))
+    if (is_full && getenv("FLASH_QUAL_ANCHOR") && !getenv("FLASH_PERF_RUN"))
         fprintf(stderr, "[qual-route] pos=%d layer=%d len=%d gpu=%d chain=%d\n",
             pos, layer_idx, kv->len, !!gpu_attn_fuse, !!cmd12_full_chain_this_layer);
 #endif
@@ -14394,7 +14407,12 @@ static void fused_layer_forward(
 
 			// Enc A1: attn_scores_batched
 			{
-				id<MTLComputeCommandEncoder> enc = [cmd_fused computeCommandEncoder];
+				id<MTLComputeCommandEncoder> enc =
+#ifdef FLASH_GPU_KV_PERFORMANCE
+                    kv_perf_encoder(cmd_fused,1,layer_idx,kv->len);
+#else
+                    [cmd_fused computeCommandEncoder];
+#endif
 				[enc setComputePipelineState:g_metal->attn_scores_pipe];
 				[enc setBuffer:g_metal->buf_attn_q          offset:0 atIndex:0];
 				[enc setBuffer:g_metal->buf_kv_k[fa_idx]    offset:0 atIndex:1];
@@ -14443,7 +14461,12 @@ static void fused_layer_forward(
 			// Enc A4: sigmoid_gate
 			{
 				uint32_t qdim = NUM_ATTN_HEADS * HEAD_DIM;
-				id<MTLComputeCommandEncoder> enc = [cmd_fused computeCommandEncoder];
+				id<MTLComputeCommandEncoder> enc =
+#ifdef FLASH_GPU_KV_PERFORMANCE
+                    kv_perf_encoder(cmd_fused,0,layer_idx,kv->len);
+#else
+                    [cmd_fused computeCommandEncoder];
+#endif
 				[enc setComputePipelineState:g_metal->sigmoid_gate_pipe];
 				[enc setBuffer:g_metal->buf_attn_out  offset:0 atIndex:0];
 				[enc setBuffer:g_metal->buf_attn_gate offset:0 atIndex:1];
@@ -14451,7 +14474,10 @@ static void fused_layer_forward(
 				uint32_t tgs = (qdim + 255) / 256;
 				[enc dispatchThreadgroups:MTLSizeMake(tgs, 1, 1)
 					threadsPerThreadgroup:MTLSizeMake(256, 1, 1)];
-				[enc endEncoding];
+				#ifdef FLASH_GPU_KV_PERFORMANCE
+                kv_perf_encoder_end(enc);
+#endif
+                [enc endEncoding];
 			}
 		}
 
@@ -15810,12 +15836,18 @@ static int run_all_layers_checked(
 	g_forward_error = 0;
 	for (int layer = 0; layer < NUM_LAYERS; layer++) {
 		int is_full = ((layer + 1) % FULL_ATTN_INTERVAL == 0);
+#ifdef FLASH_GPU_KV_PERFORMANCE
+        double kv_layer_start=(kv_perf_active&&is_full)?now_ms():0.0;
+#endif
 		fused_layer_forward(wf, layer, hidden,
 							is_full ? kv_caches[layer] : NULL,
 							is_full ? NULL : layer_states[layer],
 							pos,
 							layer_mmaps[layer] != MAP_FAILED ? layer_mmaps[layer] : NULL,
 							K, layer_fds[layer]);
+#ifdef FLASH_GPU_KV_PERFORMANCE
+        if(kv_perf_active&&is_full)kv_perf_layer_ms[layer]+=now_ms()-kv_layer_start;
+#endif
 		if (g_forward_error) {
 			discard_deferred_experts();
 			return 0;
@@ -21943,6 +21975,9 @@ printf("[serve] Tool API revision 9.4 — bounded cache + malformed-tool recover
 #include "target_verify_bench.inc"
 #ifdef FLASH_GPU_KV_QUALIFICATION
 #include "gpu_kv_qualification.inc"
+#ifdef FLASH_GPU_KV_PERFORMANCE
+#include "gpu_kv_performance.inc"
+#endif
 #endif
 #ifdef FLASH_PREFILL_NROW_ENABLED
 #ifdef FLASH_PREFILL_NROW_ASYNC
@@ -23343,8 +23378,13 @@ if (g_temperature <= 0.0f) {
 
 #ifdef FLASH_GPU_KV_QUALIFICATION
         if (getenv("FLASH_QUAL_ANCHOR")) {
-            int result = gpu_kv_qualification(wf, kv_caches, layer_states,
-                (void **)layer_mmaps, layer_fds, K, hidden, logits, final_norm_w);
+            int result =
+#ifdef FLASH_GPU_KV_PERFORMANCE
+                getenv("FLASH_PERF_RUN") ? gpu_kv_performance(wf,kv_caches,layer_states,
+                    (void **)layer_mmaps,layer_fds,K,hidden,logits,final_norm_w) :
+#endif
+                gpu_kv_qualification(wf, kv_caches, layer_states,
+                    (void **)layer_mmaps, layer_fds, K, hidden, logits, final_norm_w);
             complete_deferred_experts();
             io_pool_shutdown();
             for (int i = 0; i < NUM_LAYERS; i++) {
