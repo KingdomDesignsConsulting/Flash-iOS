@@ -40,9 +40,10 @@ def stream_request(url,body,timeout):
  assert any(c.get('choices') and c['choices'][0].get('finish_reason') for c in chunks)
  return dict(choices=[dict(message=text)],usage=chunks[-1]['usage'],flash_timings=next(c['flash_timings'] for c in reversed(chunks) if 'flash_timings' in c),sse_chunks=chunks)
 class Server:
- def __init__(self,repo,out,arm,model=MODEL,extra=(),memory_gib=12,work_project=None):
+ def __init__(self,repo,out,arm,model=MODEL,extra=(),memory_gib=12,work_project=None,integration_candidates=False):
   self.repo,self.out,self.arm,self.model,self.extra,self.memory_gib=repo,out,arm,model,extra,memory_gib
   self.work_project=work_project
+  self.binary_name=(f'infer-candidate-{arm}' if integration_candidates else f'infer-{arm}-experiment')
   self.records=[];self.memory=[];self.stop=threading.Event();self.failure=None
  def __enter__(self):
   self.out.mkdir(parents=True,exist_ok=True)
@@ -56,10 +57,10 @@ class Server:
   exe_dir=self.repo/'metal_infer'
   if self.work_project:
    exe_dir=self.work_project/'metal_infer';exe_dir.mkdir(parents=True,exist_ok=True)
-   shutil.copy2(self.repo/'metal_infer'/f'infer-{self.arm}-experiment',exe_dir/f'infer-{self.arm}-experiment')
+   shutil.copy2(self.repo/'metal_infer'/self.binary_name,exe_dir/self.binary_name)
    for name in ('shaders.metal','gguf_iq_shared.h','prefill_probe'):
     if not (exe_dir/name).exists():(exe_dir/name).symlink_to(self.repo/'metal_infer'/name,target_is_directory=name=='prefill_probe')
-  self.command=[str(exe_dir/f'infer-{self.arm}-experiment'),'--model',self.model,'--tiered','--cache-telemetry','--serve',str(self.port),*self.extra]
+  self.command=[str(exe_dir/self.binary_name),'--model',self.model,'--tiered','--cache-telemetry','--serve',str(self.port),*self.extra]
   self.log=(self.out/'server.log').open('w');self.started=datetime.datetime.now().astimezone().isoformat()
   print('SERVER_START',self.started,self.arm,' '.join(self.command),flush=True)
   self.proc=subprocess.Popen(self.command,cwd=exe_dir,stdin=subprocess.DEVNULL,stdout=self.log,stderr=subprocess.STDOUT,start_new_session=True,env=dict(os.environ,FLASH_TRACE_GPU_KV_BOUNDARY='1',FLASH_HTTP_QUALIFICATION='1'))
@@ -111,13 +112,13 @@ class Server:
   if not args or args[0] is None:assert self.proc.returncode in (0,-signal.SIGTERM) and not self.failure,result
   with socket.socket() as s:assert s.connect_ex(('127.0.0.1',self.port))!=0,'orphan listener'
 def main():
- ap=argparse.ArgumentParser();ap.add_argument('--repo',type=P,default=P(__file__).resolve().parents[1]);ap.add_argument('--out',type=P,required=True);ap.add_argument('--rounds',type=int,default=3);ap.add_argument('--build',action='store_true');a=ap.parse_args()
+ ap=argparse.ArgumentParser();ap.add_argument('--repo',type=P,default=P(__file__).resolve().parents[1]);ap.add_argument('--out',type=P,required=True);ap.add_argument('--rounds',type=int,default=3);ap.add_argument('--build',action='store_true');ap.add_argument('--integration-candidates',action='store_true');a=ap.parse_args()
  a.out.mkdir(parents=True,exist_ok=False)
  if a.build:
-  with (a.out/'build.log').open('w') as f:subprocess.run(['make','-C','metal_infer','lazy16k-experiment','lazy32k-experiment'],cwd=a.repo,stdout=f,stderr=subprocess.STDOUT,check=True)
+  with (a.out/'build.log').open('w') as f:subprocess.run((['make','-C','metal_infer','integration-kv-candidates'] if a.integration_candidates else ['make','-C','metal_infer','lazy16k-experiment','lazy32k-experiment']),cwd=a.repo,stdout=f,stderr=subprocess.STDOUT,check=True)
  outputs={}
  for arm in ('lazy16k','lazy32k'):
-  with Server(a.repo,a.out/arm,arm) as server:
+  with Server(a.repo,a.out/arm,arm,integration_candidates=a.integration_candidates) as server:
    assert request(server.url+'/v1/models')[1]['data'][0]['id']=='qwen3.5'
    base=[dict(role='system',content='Answer briefly. Do not explain your reasoning.'),dict(role='user',content='Reply with exactly ORBIT.')]
    first=server.chat('nonstream',payload(base));outputs[arm]=[canonical(first)]
