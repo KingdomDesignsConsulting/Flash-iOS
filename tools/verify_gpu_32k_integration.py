@@ -21,8 +21,11 @@ def main():
  try:
   branch=subprocess.check_output(['git','branch','--show-current'],cwd=repo,text=True).strip()
   if branch!='experiment/gqa-32k-lazy-kv-20261022':raise RuntimeError('Wrong branch: '+branch)
-  changes=subprocess.check_output(['git','status','--porcelain'],cwd=repo,text=True).strip()
-  if changes:raise RuntimeError('Local Git worktree is not clean; refusing build')
+  # Ignore untracked benchmark artifacts and local test outputs, but never build
+  # with modified tracked sources or staged changes that differ from HEAD.
+  tracked=subprocess.check_output(['git','status','--porcelain','--untracked-files=no'],cwd=repo,text=True).strip()
+  if tracked:raise RuntimeError('Tracked changes are present; refusing build:\\n'+tracked)
+  result['untracked_files_ignored']=True
   command=[sys.executable,str(repo/'tools/soak_gpu_32k_http.py'),'--repo',str(repo),'--build','--integration-candidates','--rounds','2','--out',str(out/'http')]
   result['command']=command;save()
   with (out/'runner.log').open('w') as log:
