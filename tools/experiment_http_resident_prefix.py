@@ -11,7 +11,7 @@ import uuid
 import urllib.error
 import urllib.request
 
-def request(base, messages, session=None, max_tokens=80):
+def request(base, messages, session=None, max_tokens=80, create=False):
     payload = {
         "model": "qwen3.5", "messages": messages, "stream": False,
         "temperature": 0, "reasoning_effort": "off",
@@ -19,6 +19,8 @@ def request(base, messages, session=None, max_tokens=80):
     }
     if session is not None:
         payload["session_id"] = session
+    if create:
+        payload["flash_session_create"] = True
     started = time.monotonic()
     data = json.dumps(payload, ensure_ascii=False).encode("utf-8")
     req = urllib.request.Request(
@@ -58,7 +60,7 @@ def main():
     session = "prefix-probe-" + uuid.uuid4().hex[:20]
     # Sequence is intentional: the full-history control runs LAST so it cannot
     # evict the resident checkpoint before the continuation is tested.
-    initial = request(args.base, [first], session=session, max_tokens=args.max_tokens)
+    initial = request(args.base, [first], session=session, max_tokens=args.max_tokens, create=True)
     assistant = {"role": "assistant", "content": initial["content"]}
     continued = request(args.base, [follow], session=session, max_tokens=args.max_tokens)
     control = request(args.base, [first, assistant, follow], max_tokens=args.max_tokens)
