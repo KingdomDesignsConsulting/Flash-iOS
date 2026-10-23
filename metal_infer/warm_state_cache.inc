@@ -11,7 +11,7 @@
  * WARM_STATE_EXECUTION_VERSION.
  * Do not bump for HTTP, tool, logging, or UI-only changes.
  */
-#define WARM_STATE_EXECUTION_VERSION 1U
+#define WARM_STATE_EXECUTION_VERSION 2U // N128 library repair can replace prior scalar fallback state
 #define WARM_STATE_MAX_BYTES (UINT64_C(1) << 31)
 
 typedef struct {

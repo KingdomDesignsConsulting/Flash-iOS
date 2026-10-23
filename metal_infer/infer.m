@@ -410,7 +410,46 @@ static int validate_target_architecture(void) {
 // The current macOS CPU KV allocation remains intentionally capped below the
 // model-native limit; context_preflight() rejects requests before overflow.
 #define MAX_SEQ_LEN 262144
+// Experimental expansion is opt-in; production/default builds retain 8K.
+// Run isolated correctness and persistence qualification before promotion.
+#if defined(FLASH_EXPERIMENTAL_LAZY_SHARED_GPU_KV_32K)
+#define GPU_KV_SEQ  32768
+#elif defined(FLASH_EXPERIMENTAL_LAZY_SHARED_GPU_KV)
+#define GPU_KV_SEQ  16384
+#elif defined(FLASH_EXPERIMENTAL_GPU_KV_16K)
+#define GPU_KV_SEQ  16384
+#else
 #define GPU_KV_SEQ  8192
+#endif
+
+// Opt-in diagnostics for exact GPU/CPU attention routing near the 8K/16K boundary.
+// Reports at most once per (context, route) when FLASH_TRACE_GPU_KV_BOUNDARY=1.
+static void trace_gpu_kv_boundary(int seq_len, int layer_idx, int gpu_path, const char *route) {
+    static unsigned char seen[12][MAX_LAYERS][2] = {{{0}}};
+    if (seq_len < 8191 || seq_len > 32771) return;
+    int slot = -1;
+    switch (seq_len) {
+        case 8191: slot = 0; break;
+        case 8192: slot = 1; break;
+        case 8193: slot = 2; break;
+        case 12288: slot = 3; break;
+        case 16384: slot = 4; break;
+        case 16385: slot = 5; break;
+        case 24576: slot = 6; break;
+        case 32767: slot = 7; break;
+        case 32768: slot = 8; break;
+        case 32769: slot = 9; break;
+        case 32770: slot = 10; break;
+        case 32771: slot = 11; break;
+        default: return;
+    }
+    if (layer_idx < 0 || layer_idx >= MAX_LAYERS || seen[slot][layer_idx][!!gpu_path]) return;
+    const char *flag = getenv("FLASH_TRACE_GPU_KV_BOUNDARY");
+    if (!flag || strcmp(flag, "1") != 0) return;
+    seen[slot][layer_idx][!!gpu_path] = 1;
+    fprintf(stderr, "[gpu-kv-boundary] seq=%d layer=%d cap=%d backend=%s route=%s\n",
+            seq_len, layer_idx, GPU_KV_SEQ, gpu_path ? "GPU" : "CPU", route);
+}
 
 // Runtime CPU KV sequence limit used by kv_cache_new().
 static int g_kv_seq_len = 65536;
@@ -4977,6 +5016,7 @@ static MetalCtx *metal_setup(void) {
 		int gpu_kv = (g_kv_seq_len < GPU_KV_SEQ) ? g_kv_seq_len : GPU_KV_SEQ;
 		size_t kv_cache_size = (size_t)gpu_kv * kv_dim * sizeof(float);
 		for (int i = 0; i < g_cfg.num_full_attn_layers; i++) {
+			#if !defined(FLASH_EXPERIMENTAL_LAZY_SHARED_GPU_KV) && !defined(FLASH_EXPERIMENTAL_LAZY_SHARED_GPU_KV_32K)
 			ctx->buf_kv_k[i] = [ctx->device newBufferWithLength:kv_cache_size
 														options:MTLResourceStorageModeShared];
 			ctx->buf_kv_v[i] = [ctx->device newBufferWithLength:kv_cache_size
@@ -4987,6 +5027,12 @@ static MetalCtx *metal_setup(void) {
 				return NULL;
 			}
 		}
+#else
+			// Canonical KV memory is allocated with the per-layer CPU state and wrapped below.
+			ctx->buf_kv_k[i] = nil;
+			ctx->buf_kv_v[i] = nil;
+		}
+#endif
 		ctx->buf_attn_q      = [ctx->device newBufferWithLength:NUM_ATTN_HEADS * HEAD_DIM * sizeof(float)
 														options:MTLResourceStorageModeShared];
 		ctx->buf_attn_scores = [ctx->device newBufferWithLength:(size_t)NUM_ATTN_HEADS * gpu_kv * sizeof(float)
@@ -8394,33 +8440,101 @@ typedef struct {
 	float *k_cache;  // [max_seq, num_kv_heads * head_dim]
 	float *v_cache;  // [max_seq, num_kv_heads * head_dim]
 	int len;         // current number of cached entries
+#if defined(FLASH_EXPERIMENTAL_LAZY_SHARED_GPU_KV) || defined(FLASH_EXPERIMENTAL_LAZY_SHARED_GPU_KV_32K)
+	size_t mapped_bytes; // Metal deallocators own the complete mmap lifetime
+	id<MTLBuffer> k_view, v_view;
+	int fa_idx;
+#endif
 } KVCache;
 
-static KVCache *kv_cache_new(void) {
+static KVCache *kv_cache_new(int fa_idx) {
 	KVCache *c = calloc(1, sizeof(KVCache));
 	if (!c) {
 		fprintf(stderr, "ERROR: KVCache structure allocation failed\n");
 		return NULL;
 	}
 	int seq = g_kv_seq_len;
+#if defined(FLASH_EXPERIMENTAL_LAZY_SHARED_GPU_KV) || defined(FLASH_EXPERIMENTAL_LAZY_SHARED_GPU_KV_32K)
+	if (!g_metal || fa_idx < 0 || fa_idx >= g_cfg.num_full_attn_layers ||
+		seq <= 0) {
+		fprintf(stderr, "ERROR: lazy shared KV requires Metal and positive context capacity\n");
+		free(c); return NULL;
+	}
+	size_t bytes = (size_t)seq * NUM_KV_HEADS * HEAD_DIM * sizeof(float);
+	size_t page = (size_t)getpagesize();
+	if (bytes > SIZE_MAX - (page - 1)) { free(c); return NULL; }
+	c->mapped_bytes = ((bytes + page - 1) / page) * page;
+	c->fa_idx = fa_idx;
+	size_t gpu_bytes = (size_t)(seq < GPU_KV_SEQ ? seq : GPU_KV_SEQ) *
+		NUM_KV_HEADS * HEAD_DIM * sizeof(float);
+	gpu_bytes = ((gpu_bytes + page - 1) / page) * page;
+	if (gpu_bytes > [g_metal->device maxBufferLength]) {
+		fprintf(stderr, "ERROR: lazy KV buffer exceeds Metal maxBufferLength\n");
+		free(c); return NULL;
+	}
+	c->k_cache = mmap(NULL, c->mapped_bytes, PROT_READ | PROT_WRITE,
+		MAP_PRIVATE | MAP_ANON, -1, 0);
+	c->v_cache = mmap(NULL, c->mapped_bytes, PROT_READ | PROT_WRITE,
+		MAP_PRIVATE | MAP_ANON, -1, 0);
+	if (c->k_cache == MAP_FAILED) c->k_cache = NULL;
+	if (c->v_cache == MAP_FAILED) c->v_cache = NULL;
+#else
+	(void)fa_idx;
 	c->k_cache = calloc((size_t)seq * NUM_KV_HEADS * HEAD_DIM, sizeof(float));
 	c->v_cache = calloc((size_t)seq * NUM_KV_HEADS * HEAD_DIM, sizeof(float));
+#endif
 	c->len = 0;
 	if (!c->k_cache || !c->v_cache) {
 		fprintf(stderr, "ERROR: KV cache alloc failed (seq=%d, %.1f MB each)\n",
 				seq, (double)seq * NUM_KV_HEADS * HEAD_DIM * sizeof(float) / 1e6);
+		#if defined(FLASH_EXPERIMENTAL_LAZY_SHARED_GPU_KV) || defined(FLASH_EXPERIMENTAL_LAZY_SHARED_GPU_KV_32K)
+		if (c->k_cache) munmap(c->k_cache, c->mapped_bytes);
+		if (c->v_cache) munmap(c->v_cache, c->mapped_bytes);
+		#else
 		free(c->k_cache);
 		free(c->v_cache);
+		#endif
 		free(c);
 		return NULL;
 	}
+#if defined(FLASH_EXPERIMENTAL_LAZY_SHARED_GPU_KV) || defined(FLASH_EXPERIMENTAL_LAZY_SHARED_GPU_KV_32K)
+	// A command buffer may retain its resources beyond KVCache destruction.
+	// Let the final Metal reference release the mmap, including CPU-only tail.
+	const size_t mapped_bytes = c->mapped_bytes;
+	c->k_view = [g_metal->device newBufferWithBytesNoCopy:c->k_cache
+		length:gpu_bytes options:MTLResourceStorageModeShared
+		deallocator:^(void *ptr, NSUInteger length) { (void)length; munmap(ptr, mapped_bytes); }];
+	c->v_view = [g_metal->device newBufferWithBytesNoCopy:c->v_cache
+		length:gpu_bytes options:MTLResourceStorageModeShared
+		deallocator:^(void *ptr, NSUInteger length) { (void)length; munmap(ptr, mapped_bytes); }];
+	if (!c->k_view || !c->v_view) {
+		fprintf(stderr, "ERROR: lazy KV Metal wrapping failed at full-attn slot %d\n", fa_idx);
+		if (!c->k_view) munmap(c->k_cache, mapped_bytes);
+		if (!c->v_view) munmap(c->v_cache, mapped_bytes);
+		c->k_view = nil; c->v_view = nil;
+		free(c); return NULL;
+	}
+	g_metal->buf_kv_k[fa_idx] = c->k_view;
+	g_metal->buf_kv_v[fa_idx] = c->v_view;
+#endif
 	return c;
 }
 
 static void kv_cache_free(KVCache *c) {
 	if (c) {
+#if defined(FLASH_EXPERIMENTAL_LAZY_SHARED_GPU_KV) || defined(FLASH_EXPERIMENTAL_LAZY_SHARED_GPU_KV_32K)
+		// Do not detach a newer session's views when freeing an older cache.
+		if (g_metal && c->fa_idx >= 0 && c->fa_idx < g_cfg.num_full_attn_layers) {
+			if (g_metal->buf_kv_k[c->fa_idx] == c->k_view)
+				g_metal->buf_kv_k[c->fa_idx] = nil;
+			if (g_metal->buf_kv_v[c->fa_idx] == c->v_view)
+				g_metal->buf_kv_v[c->fa_idx] = nil;
+		}
+		c->k_view = nil; c->v_view = nil;
+#else
 		free(c->k_cache);
 		free(c->v_cache);
+#endif
 		free(c);
 	}
 }
@@ -8474,7 +8588,11 @@ typedef struct {
 } ServeStateSnapshot;
 
 #define TOOL_PREFIX_CACHE_SLOTS 5
+#ifdef FLASH_GPU_KV_QUALIFICATION
+#define TOOL_PREFIX_CACHE_MAX_TOKENS 32771 // qualification fixtures only; serving cap unchanged
+#else
 #define TOOL_PREFIX_CACHE_MAX_TOKENS 8192
+#endif
 #define TOOL_PREFIX_CACHE_DEFAULT_MB 768
 static size_t g_tool_prefix_cache_budget_bytes =
     (size_t)TOOL_PREFIX_CACHE_DEFAULT_MB * 1024 * 1024;
@@ -8636,6 +8754,9 @@ static int tool_prefix_cache_reserve(ToolPrefixCacheEntry cache[TOOL_PREFIX_CACH
     return slot;
 }
 
+static int complete_deferred_experts(void);
+static int state_snapshot_restore_fence(void);
+
 static int serve_state_snapshot_capture(ServeStateSnapshot *snap,
                                         KVCache **kv_caches,
                                         void **layer_states,
@@ -8646,6 +8767,7 @@ static int serve_state_snapshot_capture(ServeStateSnapshot *snap,
                 NUM_LAYERS, MAX_LAYERS);
         return 0;
     }
+    if (!complete_deferred_experts()) return 0;
     serve_state_snapshot_free(snap);
 
     const size_t kv_dim = (size_t)NUM_KV_HEADS * HEAD_DIM;
@@ -8719,6 +8841,26 @@ static int serve_state_snapshot_restore(const ServeStateSnapshot *snap,
     const size_t ssm_state_size =
         LINEAR_NUM_V_HEADS * LINEAR_VALUE_DIM * LINEAR_KEY_DIM * sizeof(float);
 
+    // A latched forward error must not prevent restoration of a valid anchor.
+    // Wait for actual pending work independently of that error latch.
+    if (!state_snapshot_restore_fence()) return 0;
+    // Validate the complete transaction before touching any live state.
+    for (int i = 0; i < NUM_LAYERS; i++) {
+        if (kv_caches[i]) {
+            int len = snap->kv_len[i];
+            if (len < 0 || len > g_kv_seq_len ||
+                (len && (!snap->k_snapshot[i] || !snap->v_snapshot[i]))) return 0;
+        }
+        if (layer_states[i] &&
+            (!snap->la_conv_snapshot[i] || !snap->la_ssm_snapshot[i])) return 0;
+    }
+    if (snapshot_uses_gpu_linear_state()) {
+        for (int i = 0; i < g_cfg.num_linear_layers && i < 48; i++) {
+            if (g_metal->buf_delta_state[i] && !snap->gpu_delta_snapshot[i]) return 0;
+            if (g_metal->buf_conv_state[i] && !snap->gpu_conv_snapshot[i]) return 0;
+        }
+    }
+
     for (int i = 0; i < NUM_LAYERS; i++) {
         if (kv_caches[i]) {
             int len = snap->kv_len[i];
@@ -8737,12 +8879,16 @@ static int serve_state_snapshot_restore(const ServeStateSnapshot *snap,
                     size_t gpu_tokens = (size_t)len;
                     if (gpu_tokens > GPU_KV_SEQ) gpu_tokens = GPU_KV_SEQ;
                     size_t gpu_sz = gpu_tokens * kv_dim * sizeof(float);
+#if !defined(FLASH_EXPERIMENTAL_LAZY_SHARED_GPU_KV) && !defined(FLASH_EXPERIMENTAL_LAZY_SHARED_GPU_KV_32K)
                     if (gpu_sz > 0) {
                         memcpy([g_metal->buf_kv_k[fa_idx] contents],
                                snap->k_snapshot[i], gpu_sz);
                         memcpy([g_metal->buf_kv_v[fa_idx] contents],
                                snap->v_snapshot[i], gpu_sz);
                     }
+#else
+                    (void)gpu_sz; // CPU restore already populated canonical Metal-visible KV memory.
+#endif
                 }
             }
         }
@@ -8772,6 +8918,12 @@ static int serve_state_snapshot_restore(const ServeStateSnapshot *snap,
         }
     }
     return 1;
+}
+
+// Raw GPU DeltaNet state footprint, shared by snapshot persistence and verifier.
+// Must match the fixed per-linear-layer Metal allocation above.
+static inline size_t gpu_delta_state_bytes(void) {
+    return 64ULL * 128 * 128 * sizeof(float);
 }
 
 static int g_warm_state_zstd_enabled = 1;
@@ -11402,6 +11554,11 @@ static void encode_full_attn_prepare(
 }
 
 static void sync_full_attn_cpu_kv_from_gpu(KVCache *kv, int fa_idx, int cache_pos) {
+#if defined(FLASH_EXPERIMENTAL_LAZY_SHARED_GPU_KV) || defined(FLASH_EXPERIMENTAL_LAZY_SHARED_GPU_KV_32K)
+	(void)kv; (void)fa_idx; (void)cache_pos;
+	// Caller has already awaited GPU command completion. Shared KV needs no copy.
+	return;
+#endif
 	if (!kv || !g_metal || fa_idx < 0 || fa_idx >= g_cfg.num_full_attn_layers || cache_pos < 0)
 		return;
 	size_t kv_dim = (size_t)NUM_KV_HEADS * HEAD_DIM;
@@ -12701,6 +12858,15 @@ static int complete_deferred_experts(void) {
 	return !g_forward_error;
 }
 
+// Restore is recovery: a pre-existing error latch does not itself imply
+// outstanding GPU work. Still reject an actual command-buffer wait failure.
+static int state_snapshot_restore_fence(void) {
+    if (!g_deferred.active) return 1;
+    if (!wait_deferred_experts_gpu()) return 0;
+    finalize_deferred_experts();
+    return 1;
+}
+
 // Discard the deferred GPU expert result: wait for GPU to finish (for buffer safety)
 // but skip the CPU readback/combine. Used during prefill for intermediate tokens
 // where the hidden state will be immediately overwritten by the next token's embedding.
@@ -12974,6 +13140,10 @@ static int init_layer_scratch(void) {
 	return 0;
 }
 
+#ifdef FLASH_GPU_KV_PERFORMANCE
+#include "gpu_kv_perf_timing.inc"
+#endif
+
 static void fused_layer_forward(
 	WeightFile *wf,
 	int layer_idx,
@@ -13186,6 +13356,7 @@ static void fused_layer_forward(
 		if (cache_pos >= 0 && cache_pos < g_kv_seq_len && cache_pos < GPU_KV_SEQ &&
 			seq_len >= 32 && seq_len <= GPU_KV_SEQ &&
 			fa_idx >= 0 && fa_idx < g_cfg.num_full_attn_layers) {
+			trace_gpu_kv_boundary(seq_len, layer_idx, 1, "cmd12-chain");
 			can_cmd12_full_chain = 1;
 			cmd12_full_chain_cache_pos = cache_pos;
 			cmd12_full_chain_fa_idx = fa_idx;
@@ -13773,12 +13944,14 @@ static void fused_layer_forward(
 		memcpy(kv->v_cache + cache_pos * kv_dim, v_out, kv_dim * sizeof(float));
 
 		int fa_idx = (layer_idx + 1) / FULL_ATTN_INTERVAL - 1;
+		#if !defined(FLASH_EXPERIMENTAL_LAZY_SHARED_GPU_KV) && !defined(FLASH_EXPERIMENTAL_LAZY_SHARED_GPU_KV_32K)
 		if (g_metal && g_metal->attn_scores_pipe && fa_idx >= 0 && fa_idx < g_cfg.num_full_attn_layers && cache_pos < GPU_KV_SEQ) {
 			memcpy((float *)[g_metal->buf_kv_k[fa_idx] contents] + cache_pos * kv_dim,
 				   k_out, kv_dim * sizeof(float));
 			memcpy((float *)[g_metal->buf_kv_v[fa_idx] contents] + cache_pos * kv_dim,
 				   v_out, kv_dim * sizeof(float));
 		}
+		#endif
 		kv->len++;
 #ifdef FLASH_PREFILL_NROW_ENABLED
 		if (g_prefill_nrow_capture)
@@ -13799,6 +13972,7 @@ static void fused_layer_forward(
 							  fa_idx >= 0 && fa_idx < g_cfg.num_full_attn_layers &&
 							  kv->len >= 32 && kv->len <= GPU_KV_SEQ);
 
+		trace_gpu_kv_boundary(kv->len, layer_idx, gpu_attn_ready, "standalone-attn");
 		if (gpu_attn_ready) {
 			// Copy Q and gate to GPU; attention dispatches will be in CMD2
 			memcpy([g_metal->buf_attn_q contents], q, q_dim * sizeof(float));
@@ -13806,6 +13980,9 @@ static void fused_layer_forward(
 			// attn_out_for_oproj will be set to NULL below — CMD2 reads buf_attn_out
 		} else {
 			// CPU fallback
+#ifdef FLASH_GPU_KV_PERFORMANCE
+            double kv_perf_cpu_start=kv_perf_active?now_ms():0.0;
+#endif
 			for (int h = 0; h < NUM_ATTN_HEADS; h++) {
 				int kv_h = h / heads_per_kv;
 				float *qh = q + h * HEAD_DIM;
@@ -13841,6 +14018,9 @@ static void fused_layer_forward(
 				float g = 1.0f / (1.0f + expf(-q_gate[i]));
 				attn_out[i] *= g;
 			}
+#ifdef FLASH_GPU_KV_PERFORMANCE
+            if(kv_perf_active)kv_perf_cpu_ms[layer_idx]+=now_ms()-kv_perf_cpu_start;
+#endif
 		}
 
 		if (gpu_attn_ready) {
@@ -14108,6 +14288,14 @@ static void fused_layer_forward(
 		g_metal->residual_add && g_metal->rms_norm_sum &&
 		g_metal->rms_norm_apply_bf16 && lc->post_attn_norm_w;
 
+#ifdef FLASH_GPU_KV_PERFORMANCE
+    if(kv_perf_active&&is_full)kv_perf_gpu_route[layer_idx]=!!gpu_attn_fuse;
+#endif
+#ifdef FLASH_GPU_KV_QUALIFICATION
+    if (is_full && getenv("FLASH_QUAL_ANCHOR") && !getenv("FLASH_PERF_RUN") && !getenv("FLASH_QUAL_EXTEND_TO"))
+        fprintf(stderr, "[qual-route] pos=%d layer=%d len=%d gpu=%d chain=%d\n",
+            pos, layer_idx, kv->len, !!gpu_attn_fuse, !!cmd12_full_chain_this_layer);
+#endif
 	if (cmd12_chain_pending && !cmd12_chain_this_layer) {
 		// Safety fallback: finish CMD1 before taking any non-fused/CPU path.
 		if (g_timing_enabled) { t0 = now_ms(); }
@@ -14221,12 +14409,18 @@ static void fused_layer_forward(
 			uint32_t hd = HEAD_DIM;
 			uint32_t kvd = (uint32_t)kv_dim;
 			uint32_t sl = (uint32_t)kv->len;
-			uint32_t seq_stride = GPU_KV_SEQ;
+			uint32_t seq_stride = (uint32_t)([g_metal->buf_attn_scores length] /
+				(NUM_ATTN_HEADS * sizeof(float)));
 			uint32_t hpkv = (uint32_t)heads_per_kv;
 
 			// Enc A1: attn_scores_batched
 			{
-				id<MTLComputeCommandEncoder> enc = [cmd_fused computeCommandEncoder];
+				id<MTLComputeCommandEncoder> enc =
+#ifdef FLASH_GPU_KV_PERFORMANCE
+                    kv_perf_encoder(cmd_fused,1,layer_idx,kv->len);
+#else
+                    [cmd_fused computeCommandEncoder];
+#endif
 				[enc setComputePipelineState:g_metal->attn_scores_pipe];
 				[enc setBuffer:g_metal->buf_attn_q          offset:0 atIndex:0];
 				[enc setBuffer:g_metal->buf_kv_k[fa_idx]    offset:0 atIndex:1];
@@ -14275,7 +14469,12 @@ static void fused_layer_forward(
 			// Enc A4: sigmoid_gate
 			{
 				uint32_t qdim = NUM_ATTN_HEADS * HEAD_DIM;
-				id<MTLComputeCommandEncoder> enc = [cmd_fused computeCommandEncoder];
+				id<MTLComputeCommandEncoder> enc =
+#ifdef FLASH_GPU_KV_PERFORMANCE
+                    kv_perf_encoder(cmd_fused,0,layer_idx,kv->len);
+#else
+                    [cmd_fused computeCommandEncoder];
+#endif
 				[enc setComputePipelineState:g_metal->sigmoid_gate_pipe];
 				[enc setBuffer:g_metal->buf_attn_out  offset:0 atIndex:0];
 				[enc setBuffer:g_metal->buf_attn_gate offset:0 atIndex:1];
@@ -14283,7 +14482,10 @@ static void fused_layer_forward(
 				uint32_t tgs = (qdim + 255) / 256;
 				[enc dispatchThreadgroups:MTLSizeMake(tgs, 1, 1)
 					threadsPerThreadgroup:MTLSizeMake(256, 1, 1)];
-				[enc endEncoding];
+				#ifdef FLASH_GPU_KV_PERFORMANCE
+                kv_perf_encoder_end(enc);
+#endif
+                [enc endEncoding];
 			}
 		}
 
@@ -15642,12 +15844,18 @@ static int run_all_layers_checked(
 	g_forward_error = 0;
 	for (int layer = 0; layer < NUM_LAYERS; layer++) {
 		int is_full = ((layer + 1) % FULL_ATTN_INTERVAL == 0);
+#ifdef FLASH_GPU_KV_PERFORMANCE
+        double kv_layer_start=(kv_perf_active&&is_full)?now_ms():0.0;
+#endif
 		fused_layer_forward(wf, layer, hidden,
 							is_full ? kv_caches[layer] : NULL,
 							is_full ? NULL : layer_states[layer],
 							pos,
 							layer_mmaps[layer] != MAP_FAILED ? layer_mmaps[layer] : NULL,
 							K, layer_fds[layer]);
+#ifdef FLASH_GPU_KV_PERFORMANCE
+        if(kv_perf_active&&is_full)kv_perf_layer_ms[layer]+=now_ms()-kv_layer_start;
+#endif
 		if (g_forward_error) {
 			discard_deferred_experts();
 			return 0;
@@ -20392,7 +20600,7 @@ printf("[serve] Tool API revision 9.4 — bounded cache + malformed-tool recover
             if (is_continuation) {
                 // Session state already contains the original tools/system definition.
                 // Render only the new user/tool turn, never repeat the tools block.
-                NSString *turn = render_chat_prompt_with_tools(messages, nil, YES, YES);
+                NSString *turn = render_chat_prompt_with_tools(messages, nil, YES, request_enable_thinking);
                 NSString *prefix = session_ended_with_eos == EOS_TOKEN_1 ? @"\n" : @"<|im_end|>\n";
                 pt = turn ? encode_prompt_text_to_tokens([[prefix stringByAppendingString:turn] UTF8String]) : NULL;
 
@@ -20405,7 +20613,7 @@ printf("[serve] Tool API revision 9.4 — bounded cache + malformed-tool recover
                     pt = turn ? encode_prompt_text_to_tokens([[prefix stringByAppendingString:turn] UTF8String]) : NULL;
                 }
             } else {
-                pt = tokenize_rendered_messages_with_tools(render_messages, request_tools, YES, YES);
+                pt = tokenize_rendered_messages_with_tools(render_messages, request_tools, YES, request_enable_thinking);
                 if (pt && !request_think_budget_explicit &&
                     automatic_no_think_for_prompt(pt->count, max_gen)) {
                     free(pt->ids); free(pt);
@@ -20718,6 +20926,48 @@ printf("[serve] Tool API revision 9.4 — bounded cache + malformed-tool recover
                 ? tool_prefix_cache[tool_prefix_cache_hit_slot].snapshot.pos
                 : ((explicit_system || has_tools) ? 0 : sys_prompt_len);
 			int preflight_pos = is_continuation ? session_pos : start_pos;
+            // Opt-in qualification observer: render/count without advancing KV.
+            // Disabled in ordinary serving; no checkpoint validation is bypassed.
+            if (getenv("FLASH_HTTP_QUALIFICATION") &&
+                strcmp(getenv("FLASH_HTTP_QUALIFICATION"),"1")==0 &&
+                [request[@"flash_qual_count_only"] isKindOfClass:[NSNumber class]] &&
+                [request[@"flash_qual_count_only"] boolValue]) {
+                NSMutableDictionary *lens=[NSMutableDictionary dictionary];
+                uint64_t hash=UINT64_C(14695981039346656037);
+                BOOL hash_state=[request[@"flash_qual_hash"] isKindOfClass:[NSNumber class]] &&
+                    [request[@"flash_qual_hash"] boolValue] && session_pos<=512;
+                for(int l=0;l<NUM_LAYERS;l++) {
+                    if(kv_caches[l]) {
+                        lens[[NSString stringWithFormat:@"%d",l]]=@(kv_caches[l]->len);
+                        if(hash_state) {
+                            size_t bytes=(size_t)kv_caches[l]->len*NUM_KV_HEADS*HEAD_DIM*sizeof(float);
+                            hash=warm_hash_bytes(hash,kv_caches[l]->k_cache,bytes);
+                            hash=warm_hash_bytes(hash,kv_caches[l]->v_cache,bytes);
+                        }
+                    }
+                    if(hash_state && layer_states[l]) {
+                        LinearAttnState *la=layer_states[l];
+                        hash=warm_hash_bytes(hash,la->conv_state,(CONV_KERNEL_SIZE-1)*LINEAR_CONV_DIM*sizeof(float));
+                        hash=warm_hash_bytes(hash,la->ssm_state,LINEAR_NUM_V_HEADS*LINEAR_VALUE_DIM*LINEAR_KEY_DIM*sizeof(float));
+                    }
+                }
+                if(hash_state && snapshot_uses_gpu_linear_state())for(int l=0;l<g_cfg.num_linear_layers;l++) {
+                    hash=warm_hash_bytes(hash,g_metal->buf_delta_state[l].contents,gpu_delta_state_bytes());
+                    hash=warm_hash_bytes(hash,g_metal->buf_conv_state[l].contents,3ULL*12288*sizeof(float));
+                }
+                NSDictionary *observer=@{@"context_tokens":@(preflight_pos+pt->count),
+                    @"prefill_tokens":@(pt->count),@"resident_pos":@(session_pos),
+                    @"session_reused":@(is_continuation),@"kv_lengths":lens,
+                    @"gpu_capacity":@(GPU_KV_SEQ),@"cpu_capacity":@(g_kv_seq_len),
+                    @"metal_allocated_bytes":@(g_metal->device.currentAllocatedSize),
+                    @"state_hash":hash_state?[NSString stringWithFormat:@"%016llx",(unsigned long long)hash]:@"not_requested"};
+                NSData *json=[NSJSONSerialization dataWithJSONObject:observer options:0 error:NULL];
+                char header[256];int n=snprintf(header,sizeof(header),"HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: %lu\r\nConnection: close\r\n\r\n",(unsigned long)json.length);
+                http_write(client_fd,header,n);http_write(client_fd,json.bytes,(int)json.length);
+                if(request_prefix_pt){free(request_prefix_pt->ids);free(request_prefix_pt);}
+                free(pt->ids);free(pt);free(reqbuf);close(client_fd);continue;
+            }
+
 
 			// Deterministic capacity validation must happen before replacing the
 			// resident session or mutating/restoring model state. A rejected new
@@ -21773,6 +22023,12 @@ printf("[serve] Tool API revision 9.4 — bounded cache + malformed-tool recover
 // ============================================================================
 
 #include "target_verify_bench.inc"
+#ifdef FLASH_GPU_KV_QUALIFICATION
+#include "gpu_kv_qualification.inc"
+#ifdef FLASH_GPU_KV_PERFORMANCE
+#include "gpu_kv_performance.inc"
+#endif
+#endif
 #ifdef FLASH_PREFILL_NROW_ENABLED
 #ifdef FLASH_PREFILL_NROW_ASYNC
 #include "prefill_nrow_grouped_async.inc"
@@ -22615,6 +22871,14 @@ if (g_use_tiered) {
 		}
 
 		// ---- Initialize Metal ----
+#ifdef FLASH_GPU_KV_QUALIFICATION
+        const char *qual_capacity = getenv("FLASH_QUAL_CONTEXT");
+        if (qual_capacity) {
+            int capacity = atoi(qual_capacity);
+            if (capacity < 128 || capacity > 65536) return 1;
+            g_kv_seq_len = capacity;
+        }
+#endif
 		g_metal = metal_setup();
 		if (!g_metal) {
 			if (g_gpu_resident_moe_enabled || g_cmd12_chain_enabled || g_cmd12_full_chain_enabled ||
@@ -23116,7 +23380,7 @@ if (g_temperature <= 0.0f) {
 		for (int i = 0; i < NUM_LAYERS; i++) {
 			int is_full = ((i + 1) % FULL_ATTN_INTERVAL == 0);
 			if (is_full) {
-				kv_caches[i] = kv_cache_new();
+				kv_caches[i] = kv_cache_new((i + 1) / FULL_ATTN_INTERVAL - 1);
 				if (!kv_caches[i]) {
 					fprintf(stderr, "ERROR: unable to allocate KV state for layer %d\n", i);
 					for (int j = 0; j < NUM_LAYERS; j++) {
@@ -23162,6 +23426,25 @@ if (g_temperature <= 0.0f) {
 			return 1;
 		}
 
+#ifdef FLASH_GPU_KV_QUALIFICATION
+        if (getenv("FLASH_QUAL_ANCHOR")) {
+            int result =
+#ifdef FLASH_GPU_KV_PERFORMANCE
+                getenv("FLASH_PERF_RUN") ? gpu_kv_performance(wf,kv_caches,layer_states,
+                    (void **)layer_mmaps,layer_fds,K,hidden,logits,final_norm_w) :
+#endif
+                gpu_kv_qualification(wf, kv_caches, layer_states,
+                    (void **)layer_mmaps, layer_fds, K, hidden, logits, final_norm_w);
+            complete_deferred_experts();
+            io_pool_shutdown();
+            for (int i = 0; i < NUM_LAYERS; i++) {
+                kv_cache_free(kv_caches[i]);
+                if (layer_states[i]) linear_attn_state_free(layer_states[i]);
+            }
+            free(kv_caches); free(layer_states); free(hidden); free(logits);
+            return result;
+        }
+#endif
 		if (target_verify_bench)
 			return run_target_verify_benchmark(wf, kv_caches, layer_states,
 				(void **)layer_mmaps, layer_fds, K, hidden, logits, final_norm_w,

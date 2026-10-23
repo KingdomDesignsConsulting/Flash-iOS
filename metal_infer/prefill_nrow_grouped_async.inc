@@ -882,6 +882,8 @@ static __attribute__((unused)) int prefill_nrow_full_attention_batch(PrefillNRow
         return 0;
     }
 
+    for(int row=0;row<PREFILL_NROW_ROWS;row++)
+        trace_gpu_kv_boundary(base_cache_pos+row+1,layer,1,"nrow-attention");
     fprintf(stderr,
         "[prefill-nrow-attn128] layer=%d base=%d prep=%.3fms gpu=%.3fms\n",
         layer, base_cache_pos,

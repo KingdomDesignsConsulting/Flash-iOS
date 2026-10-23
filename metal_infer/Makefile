@@ -38,6 +38,21 @@ INFER_SRC = infer.m
 # --no-prefill-nrow keeps the established scalar prefill available at runtime.
 INFER_CFLAGS = $(CFLAGS) -DFLASH_PREFILL_NROW_PRODUCTION -DFLASH_PREFILL_NROW_ASYNC -DFLASH_PREFILL_NROW_GATEUP_M4_8ROW_BITSPLIT
 
+# Isolated opt-in 16K GPU KV attention experiment. Never overwrites ./infer.
+# The 8K control and 16K variant share all other compile flags.
+GPU16K_EXPERIMENT_TARGET = infer-gpu16k-experiment
+GPU8K_CONTROL_TARGET = infer-gpu8k-control
+
+.PHONY: gpu16k-experiment gpu8k-control
+
+gpu16k-experiment: $(INFER_SRC) $(INFER_DEPS)
+	$(CC) $(INFER_CFLAGS) -DFLASH_EXPERIMENTAL_GPU_KV_16K $(FRAMEWORKS) $(LDFLAGS) $(INFER_SRC) -o $(GPU16K_EXPERIMENT_TARGET)
+	@echo "Isolated 16K experiment built: ./$(GPU16K_EXPERIMENT_TARGET); production ./infer unchanged."
+
+gpu8k-control: $(INFER_SRC) $(INFER_DEPS)
+	$(CC) $(INFER_CFLAGS) $(FRAMEWORKS) $(LDFLAGS) $(INFER_SRC) -o $(GPU8K_CONTROL_TARGET)
+	@echo "Isolated 8K control built: ./$(GPU8K_CONTROL_TARGET); production ./infer unchanged."
+
 # Chat TUI (interactive multi-turn)
 CHAT_TARGET = chat
 CHAT_SRC = chat.m
@@ -289,7 +304,7 @@ $(CHAT_TARGET): $(CHAT_SRC) linenoise.c linenoise.h
 	$(CC) -O2 -Wall -fobjc-arc -framework Foundation $(CHAT_SRC) linenoise.c -o $(CHAT_TARGET)
 
 clean:
-	rm -f $(TARGET) $(INFER_TARGET) "$(N128_BENCH_TARGET)" "$(N128_GATEUP8_TARGET)" "$(N128_GATEUP4ROW_TARGET)" "$(N128_GATEUP8ROW_TARGET)" "$(N128_GATEUP8CACHE_TARGET)" "$(N128_GATEUP8BITS_TARGET)" "$(N128_DOWNBITS_TARGET)" "$(N128_DOWNBITS_DIAG_TARGET)" "$(N128_DOWNCONTROL_DIAG_TARGET)" "$(N128_GATEUP16ROW_TARGET)" "$(N128_SERVE8ROW_TARGET)" "$(N128_SERVE8BITS_TARGET)" $(CHAT_TARGET) $(SHADER_AIR) $(SHADER_LIB)
+	rm -f $(TARGET) $(INFER_TARGET) "$(N128_BENCH_TARGET)" "$(N128_GATEUP8_TARGET)" "$(N128_GATEUP4ROW_TARGET)" "$(N128_GATEUP8ROW_TARGET)" "$(N128_GATEUP8CACHE_TARGET)" "$(N128_GATEUP8BITS_TARGET)" "$(N128_DOWNBITS_TARGET)" "$(N128_DOWNBITS_DIAG_TARGET)" "$(N128_DOWNCONTROL_DIAG_TARGET)" "$(N128_GATEUP16ROW_TARGET)" "$(N128_SERVE8ROW_TARGET)" "$(N128_SERVE8BITS_TARGET)" $(CHAT_TARGET) $(SHADER_AIR) $(SHADER_LIB) infer-lazy16k-experiment infer-qual-8k infer-qual-16k infer-qual-lazy16k infer-perf-8k infer-perf-16k infer-perf-lazy16k infer-lazy32k-experiment infer-qual-lazy32k infer-perf-lazy32k
 
 # Run targets
 run: $(TARGET)
@@ -326,3 +341,41 @@ infer-run: $(INFER_TARGET)
 
 chat-run: $(CHAT_TARGET)
 	./$(CHAT_TARGET) --k 4
+
+# Current-source boundary qualification; binaries remain separate from infer.
+.PHONY: gpu-kv-qualification
+gpu-kv-qualification: $(INFER_SRC) $(INFER_DEPS) gpu_kv_qualification.inc
+	$(CC) $(INFER_CFLAGS) -DFLASH_GPU_KV_QUALIFICATION $(FRAMEWORKS) $(LDFLAGS) $(INFER_SRC) -o infer-qual-8k
+	$(CC) $(INFER_CFLAGS) -DFLASH_GPU_KV_QUALIFICATION -DFLASH_EXPERIMENTAL_GPU_KV_16K $(FRAMEWORKS) $(LDFLAGS) $(INFER_SRC) -o infer-qual-16k
+	$(CC) $(INFER_CFLAGS) -DFLASH_GPU_KV_QUALIFICATION -DFLASH_EXPERIMENTAL_LAZY_SHARED_GPU_KV $(FRAMEWORKS) $(LDFLAGS) $(INFER_SRC) -o infer-qual-lazy16k
+
+# Lazy-shared 16K candidate; preserves the legacy 16K and 8K controls.
+.PHONY: lazy16k-experiment
+lazy16k-experiment: $(INFER_SRC) $(INFER_DEPS)
+	$(CC) $(INFER_CFLAGS) -DFLASH_EXPERIMENTAL_LAZY_SHARED_GPU_KV $(FRAMEWORKS) $(LDFLAGS) $(INFER_SRC) -o infer-lazy16k-experiment
+
+# Performance-only instrumentation. Counter passes are separate from throughput.
+.PHONY: gpu-kv-performance
+gpu-kv-performance: $(INFER_SRC) $(INFER_DEPS) gpu_kv_qualification.inc gpu_kv_performance.inc gpu_kv_perf_timing.inc
+	$(CC) $(INFER_CFLAGS) -DFLASH_GPU_KV_QUALIFICATION -DFLASH_GPU_KV_PERFORMANCE $(FRAMEWORKS) $(LDFLAGS) $(INFER_SRC) -o infer-perf-8k
+	$(CC) $(INFER_CFLAGS) -DFLASH_GPU_KV_QUALIFICATION -DFLASH_GPU_KV_PERFORMANCE -DFLASH_EXPERIMENTAL_GPU_KV_16K $(FRAMEWORKS) $(LDFLAGS) $(INFER_SRC) -o infer-perf-16k
+	$(CC) $(INFER_CFLAGS) -DFLASH_GPU_KV_QUALIFICATION -DFLASH_GPU_KV_PERFORMANCE -DFLASH_EXPERIMENTAL_LAZY_SHARED_GPU_KV $(FRAMEWORKS) $(LDFLAGS) $(INFER_SRC) -o infer-perf-lazy16k
+
+# Separate 32K shared-KV candidate; production and qualified 16K remain unchanged.
+.PHONY: lazy32k-experiment gpu-kv-qualification-32k
+lazy32k-experiment: $(INFER_SRC) $(INFER_DEPS)
+	$(CC) $(INFER_CFLAGS) -DFLASH_EXPERIMENTAL_LAZY_SHARED_GPU_KV_32K $(FRAMEWORKS) $(LDFLAGS) $(INFER_SRC) -o infer-lazy32k-experiment
+
+gpu-kv-qualification-32k: $(INFER_SRC) $(INFER_DEPS) gpu_kv_qualification.inc
+	$(CC) $(INFER_CFLAGS) -DFLASH_GPU_KV_QUALIFICATION -DFLASH_EXPERIMENTAL_LAZY_SHARED_GPU_KV_32K $(FRAMEWORKS) $(LDFLAGS) $(INFER_SRC) -o infer-qual-lazy32k
+
+.PHONY: gpu-kv-performance-32k
+gpu-kv-performance-32k: $(INFER_SRC) $(INFER_DEPS) gpu_kv_qualification.inc gpu_kv_performance.inc gpu_kv_perf_timing.inc
+	$(CC) $(INFER_CFLAGS) -DFLASH_GPU_KV_QUALIFICATION -DFLASH_GPU_KV_PERFORMANCE -DFLASH_EXPERIMENTAL_LAZY_SHARED_GPU_KV_32K $(FRAMEWORKS) $(LDFLAGS) $(INFER_SRC) -o infer-perf-lazy32k
+
+# Controlled integration candidates: explicit targets, never overwrite ./infer.
+.PHONY: integration-kv-candidates
+integration-kv-candidates: $(INFER_SRC) $(INFER_DEPS)
+	$(CC) $(INFER_CFLAGS) -DFLASH_EXPERIMENTAL_LAZY_SHARED_GPU_KV $(FRAMEWORKS) $(LDFLAGS) $(INFER_SRC) -o infer-candidate-lazy16k
+	$(CC) $(INFER_CFLAGS) -DFLASH_EXPERIMENTAL_LAZY_SHARED_GPU_KV_32K $(FRAMEWORKS) $(LDFLAGS) $(INFER_SRC) -o infer-candidate-lazy32k
+	@echo "Opt-in binaries ready. Production ./infer is unchanged."

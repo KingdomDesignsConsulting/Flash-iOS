@@ -978,7 +978,6 @@ kernel void grouped_tiered_gate_up_m1_q4x4(
     constant uint &count [[buffer(11)]],
     constant uint &bits [[buffer(12)]],
     uint3 tg [[threadgroup_position_in_grid]],
-    uint lid [[thread_position_in_threadgroup]],
     uint lane [[thread_index_in_simdgroup]],
     uint simd [[simdgroup_index_in_threadgroup]]) {
     if (count != 1u || bits != 4u || in_dim != 2048u) return;
