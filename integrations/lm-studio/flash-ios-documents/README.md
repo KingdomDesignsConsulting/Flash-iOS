@@ -1,22 +1,33 @@
-# Flash-iOS LM Studio document generator — experimental 0.1.0
+# Flash-iOS document generator for LM Studio
 
-This integration intercepts text attachments through LM Studio's documented plugin SDK message APIs and includes their parsed content in the user turn forwarded to Flash-iOS's OpenAI-compatible Chat Completions API.
+This LM Studio plugin sends attached documents with the user message to Flash-iOS's OpenAI-compatible chat endpoint. It uses the LM Studio prompt preprocessor to parse each non-image attachment, inserts the filename and extracted text in the message, and consumes the file handle so history does not inject it twice.
 
-## Mac installation (after verifying against installed SDK)
+## Install
+
+From this directory, with Node.js 22 and LM Studio installed:
+
 ```sh
-cd '/Users/knagel/My Drive/Flash-iOS/LMStudioGenerator'
-npm install
+npm ci
 npm run build
-lms dev
+npm test
+lms dev --install --yes
 ```
 
-Generator: flash-ios/openai-compat-documents. Set model qwen3.5; Base URL http://127.0.0.1:11242/v1 to capture the outbound JSON or http://127.0.0.1:11241/v1 for production Flash-iOS. Existing generators remain untouched.
+Select `flash-ios/openai-compat-documents` in LM Studio. Set the model ID to `qwen3.5` and the Base URL to `http://127.0.0.1:11241/v1`. To inspect outbound JSON, run `node test/capture-server.cjs` and temporarily use `http://127.0.0.1:11242/v1`.
 
-Inputs: txt, log, md, json, csv, tsv, yaml, xml, ini, conf. Non-image files are parsed with ctl.client.files.parseDocument, consumed and converted to filename-delimited text within their original user turn. On parse failure the preprocessor rejects rather than silently omitting text. Repeated turn handling keeps the text in history without re-injecting consumed file handles.
+The plugin was built against LM Studio SDK 1.4.0. It uses the SDK document parser for text, PDF, and Word attachments. Parser failures and empty or overlong extracted text produce visible errors; the attachment is not consumed on those failures. Images stay attached for other LM Studio handling and are not forwarded by this plugin.
 
-Context: No tokenizer qualified yet. A conservative serialized-character rejection threshold is a safety cap, NOT verified token accounting. Large input is rejected, never silently truncated.
+## Context and cancellation
 
-## Validation status
-NOT QUALIFIED. Source created for review; this session did not complete npm installation/typecheck, LM Studio GUI registration, 11242 capture, or Flash-iOS 11241 live run.
+The generator assumes Flash-iOS's qualified 32K context. It reserves the configured output tokens plus 2,048 tokens for chat framing and rejects a request if serialized messages and tool definitions exceed the remaining budget **in UTF-8 bytes**. This deliberately overestimates prompt tokens. It does not silently truncate a document. This is a safety bound, not exact Qwen token accounting.
 
-SDK examples: https://lmstudio.ai/ceveyne/gemini-compat-endpoint/files/src/preprocessor.ts and https://lmstudio.ai/killerrr777/rag-v2/files/src/promptPreprocessor.ts.
+LM Studio's cancel action aborts the upstream HTTP stream. The HTTP request timeout is ten minutes to allow long local prefill.
+
+## Verified on the user's Mac
+
+- `npm run build` and `npm test` pass with the installed SDK 1.4.0 and OpenAI client 5.23.2.
+- LM Studio loaded the plugin and sent `crash-oct1-1854-cutoff.txt` to the capture server with its filename and all 9,789 source characters in the user message.
+- A follow-up turn preserved one copy of the attachment in history.
+- Capture-server streaming produced a visible LM Studio response.
+
+The live Flash-iOS result and UI cancellation test are recorded separately in the validation report included with the release package.

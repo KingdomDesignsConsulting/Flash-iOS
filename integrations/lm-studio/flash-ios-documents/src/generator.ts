@@ -12,14 +12,15 @@ export async function generate(ctl:GeneratorController, chat:Chat) {
    messages.push({role:"assistant",content:message.getText(),...(calls.length?{tool_calls:calls}:{})});
   } else if(role==="tool") for(const r of message.getToolCallResults()) messages.push({role:"tool",tool_call_id:r.toolCallId||"",content:r.content});
  }
- const chars=messages.reduce((n,m)=>n+JSON.stringify(m).length,0);
  const maxOutputTokens=settings.get("maxOutputTokens");
- if(chars > (32768-maxOutputTokens-2048)*2) throw new Error(`Context safety cap exceeded (${chars} serialized chars). Split or shorten attachments; none were silently truncated.`);
- const api=new OpenAI({baseURL:global.get("baseUrl"),apiKey:global.get("apiKey")||"local",timeout:120000});
  const tools=ctl.getToolDefinitions().map(t=>({type:"function" as const,function:{name:t.function.name,description:t.function.description,parameters:t.function.parameters||{}}}));
+ const inputBytes=Buffer.byteLength(JSON.stringify({messages,tools}),"utf8");
+ const maxInputBytes=32768-maxOutputTokens-2048;
+ if(inputBytes > maxInputBytes) throw new Error(`Context safety cap exceeded (${inputBytes} serialized bytes; limit ${maxInputBytes}). Split or shorten attachments; none were silently truncated.`);
+ const api=new OpenAI({baseURL:global.get("baseUrl"),apiKey:global.get("apiKey")||"local",timeout:600000});
  const controller=new AbortController();
  ctl.onAborted(()=>controller.abort());
- if(settings.get("debug")) console.info("[flash-ios-documents]",{messages:messages.length,serializedChars:chars,model:settings.get("model")});
+ if(settings.get("debug")) console.info("[flash-ios-documents]",{messages:messages.length,serializedBytes:inputBytes,model:settings.get("model")});
  try {
   const stream=await api.chat.completions.create({model:settings.get("model"),messages,stream:true,stream_options:{include_usage:true},temperature:settings.get("temperature"),max_tokens:maxOutputTokens,...(tools.length?{tools}:{})},{signal:controller.signal});
   let active: {id:string;name:string;args:string}|undefined;

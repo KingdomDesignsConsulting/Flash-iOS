@@ -9,8 +9,13 @@ export async function injectDocuments(ctl: PromptPreprocessorController, message
   for (const file of files) {
     if (ctl.abortSignal.aborted) throw new Error("Attachment parsing cancelled");
     const name = file.name || "unnamed-document";
-    if (!/\.(txt|log|md|json|csv|tsv|yaml|yml|xml|ini|conf|cfg)$/i.test(name)) throw new Error(`Unsupported attachment: ${name}`);
-    const {content} = await ctl.client.files.parseDocument(file,{signal:ctl.abortSignal});
+    let content: string;
+    try {
+      ({content} = await ctl.client.files.parseDocument(file,{signal:ctl.abortSignal}));
+    } catch (error) {
+      if (ctl.abortSignal.aborted) throw error;
+      throw new Error(`Cannot parse attachment: ${name}`, {cause:error});
+    }
     if (typeof content !== "string" || !content.length) throw new Error(`Empty or unreadable attachment: ${name}`);
     if (content.length > MAX_CHARS) throw new Error(`Attachment ${name} exceeds ${MAX_CHARS} characters; split it before sending.`);
     parsed.push({name,content});
