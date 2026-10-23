@@ -20391,22 +20391,30 @@ printf("[serve] Tool API revision 9.4 — bounded cache + malformed-tool recover
             // corresponding exactly (and in order) to the pending tool calls.
             int same_session = has_session && active_session_id[0] &&
                 strcmp(req_session_id, active_session_id) == 0;
-            // Opt-in strict continuation. A stale resident session must never
-            // silently begin a new thin-history conversation. Clients omit this
-            // field on initial creation and set it on later single-turn requests.
-            id strict_resume = request[@"flash_require_session_resume"];
-            if (strict_resume && ![strict_resume isKindOfClass:[NSNumber class]]) {
+            // Explicit lifecycle contract: a new session must declare creation;
+            // any other unknown session ID is a stale continuation, not a new chat.
+            // Stateless requests (no session_id) remain supported.
+            id create_value = request[@"flash_session_create"];
+            if (create_value && ![create_value isKindOfClass:[NSNumber class]]) {
                 http_write_str(client_fd,
                     "HTTP/1.1 400 Bad Request\r\nContent-Type: application/json\r\n"
                     "Connection: close\r\n\r\n"
-                    "{\"error\":\"flash_require_session_resume must be boolean\"}\n");
+                    "{\"error\":\"flash_session_create must be boolean\"}\n");
                 free(reqbuf); close(client_fd); continue;
             }
-            if ([strict_resume boolValue] && !same_session) {
-                fprintf(stderr, "[serve] strict session continuation rejected: no resident session match\n");
+            BOOL create_session = [create_value boolValue];
+            if (create_session && !has_session) {
+                http_write_str(client_fd,
+                    "HTTP/1.1 400 Bad Request\r\nContent-Type: application/json\r\n"
+                    "Connection: close\r\n\r\n"
+                    "{\"error\":\"flash_session_create requires session_id\"}\n");
+                free(reqbuf); close(client_fd); continue;
+            }
+            if (has_session && !same_session && !create_session) {
+                fprintf(stderr, "[serve] rejected stale/unknown session_id; full-history replay required\n");
                 if (stream_response) {
                     send_session_invalidated_error(client_fd, 1,
-                        @"resident session unavailable; resend full history");
+                        @"resident session unavailable; resend full history with flash_session_create");
                 } else {
                     http_write_str(client_fd,
                         "HTTP/1.1 409 Conflict\r\nContent-Type: application/json\r\n"
@@ -20415,6 +20423,13 @@ printf("[serve] Tool API revision 9.4 — bounded cache + malformed-tool recover
                         "\"message\":\"resident session unavailable; resend full history\"},"
                         "\"session_invalidated\":true,\"resend_full_history\":true}\n");
                 }
+                free(reqbuf); close(client_fd); continue;
+            }
+            if (same_session && create_session) {
+                http_write_str(client_fd,
+                    "HTTP/1.1 409 Conflict\r\nContent-Type: application/json\r\n"
+                    "Connection: close\r\n\r\n"
+                    "{\"error\":\"session_id already active; cannot create over resident session\"}\n");
                 free(reqbuf); close(client_fd); continue;
             }
             if (same_session && !explicit_profile_selector)
