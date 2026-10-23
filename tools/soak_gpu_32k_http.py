@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Real HTTP qualification, normal malloc cache/prefetch, guarded memory use."""
-import argparse, datetime, hashlib, json, os, pathlib, signal, socket, subprocess, threading, time, shutil, urllib.request, urllib.error
+import argparse, copy, datetime, hashlib, json, os, pathlib, signal, socket, subprocess, threading, time, shutil, urllib.request, urllib.error
 from benchmark_gpu_16k import samples
 P=pathlib.Path
 MODEL='/Users/Shared/Main Hard Drive/AI Storage/AI Models/Reasoning/alexintosh/Qwen3.5-35B-A3B-Q4-Tiered-FlashMoE'
@@ -15,7 +15,7 @@ def request(url,payload=None,timeout=180):
   with urllib.request.urlopen(req,timeout=timeout) as r:return r.status,json.loads(r.read())
  except urllib.error.HTTPError as e:return e.code,json.loads(e.read())
 def payload(messages,session=None,max_tokens=24,stream=False):
- d=dict(model='qwen3.5',messages=messages,max_tokens=max_tokens,temperature=0,reasoning_effort='off',stream=stream)
+ d=dict(model='qwen3.5',messages=copy.deepcopy(messages),max_tokens=max_tokens,temperature=0,reasoning_effort='off',stream=stream)
  if session:d['session_id']=session
  if stream:d['stream_options']={'include_usage':True}
  return d
