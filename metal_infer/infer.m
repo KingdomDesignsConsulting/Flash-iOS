@@ -20391,6 +20391,32 @@ printf("[serve] Tool API revision 9.4 — bounded cache + malformed-tool recover
             // corresponding exactly (and in order) to the pending tool calls.
             int same_session = has_session && active_session_id[0] &&
                 strcmp(req_session_id, active_session_id) == 0;
+            // Opt-in strict continuation. A stale resident session must never
+            // silently begin a new thin-history conversation. Clients omit this
+            // field on initial creation and set it on later single-turn requests.
+            id strict_resume = request[@"flash_require_session_resume"];
+            if (strict_resume && ![strict_resume isKindOfClass:[NSNumber class]]) {
+                http_write_str(client_fd,
+                    "HTTP/1.1 400 Bad Request\r\nContent-Type: application/json\r\n"
+                    "Connection: close\r\n\r\n"
+                    "{\"error\":\"flash_require_session_resume must be boolean\"}\n");
+                free(reqbuf); close(client_fd); continue;
+            }
+            if ([strict_resume boolValue] && !same_session) {
+                fprintf(stderr, "[serve] strict session continuation rejected: no resident session match\n");
+                if (stream_response) {
+                    send_session_invalidated_error(client_fd, 1,
+                        @"resident session unavailable; resend full history");
+                } else {
+                    http_write_str(client_fd,
+                        "HTTP/1.1 409 Conflict\r\nContent-Type: application/json\r\n"
+                        "Connection: close\r\n\r\n"
+                        "{\"error\":{\"type\":\"session_invalidated\","
+                        "\"message\":\"resident session unavailable; resend full history\"},"
+                        "\"session_invalidated\":true,\"resend_full_history\":true}\n");
+                }
+                free(reqbuf); close(client_fd); continue;
+            }
             if (same_session && !explicit_profile_selector)
                 request_profile_name = active_session_profile;
             if (same_session && !(active_session_profile == request_profile_name ||
