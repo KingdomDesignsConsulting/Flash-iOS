@@ -425,8 +425,8 @@ static int validate_target_architecture(void) {
 // Opt-in diagnostics for exact GPU/CPU attention routing near the 8K/16K boundary.
 // Reports at most once per (context, route) when FLASH_TRACE_GPU_KV_BOUNDARY=1.
 static void trace_gpu_kv_boundary(int seq_len, int layer_idx, int gpu_path, const char *route) {
-    static unsigned char seen[6][MAX_LAYERS][2] = {{{0}}};
-    if (seq_len < 8191 || seq_len > 16385) return;
+    static unsigned char seen[12][MAX_LAYERS][2] = {{{0}}};
+    if (seq_len < 8191 || seq_len > 32771) return;
     int slot = -1;
     switch (seq_len) {
         case 8191: slot = 0; break;
@@ -435,6 +435,12 @@ static void trace_gpu_kv_boundary(int seq_len, int layer_idx, int gpu_path, cons
         case 12288: slot = 3; break;
         case 16384: slot = 4; break;
         case 16385: slot = 5; break;
+        case 24576: slot = 6; break;
+        case 32767: slot = 7; break;
+        case 32768: slot = 8; break;
+        case 32769: slot = 9; break;
+        case 32770: slot = 10; break;
+        case 32771: slot = 11; break;
         default: return;
     }
     if (layer_idx < 0 || layer_idx >= MAX_LAYERS || seen[slot][layer_idx][!!gpu_path]) return;
@@ -20594,7 +20600,7 @@ printf("[serve] Tool API revision 9.4 — bounded cache + malformed-tool recover
             if (is_continuation) {
                 // Session state already contains the original tools/system definition.
                 // Render only the new user/tool turn, never repeat the tools block.
-                NSString *turn = render_chat_prompt_with_tools(messages, nil, YES, YES);
+                NSString *turn = render_chat_prompt_with_tools(messages, nil, YES, request_enable_thinking);
                 NSString *prefix = session_ended_with_eos == EOS_TOKEN_1 ? @"\n" : @"<|im_end|>\n";
                 pt = turn ? encode_prompt_text_to_tokens([[prefix stringByAppendingString:turn] UTF8String]) : NULL;
 
@@ -20607,7 +20613,7 @@ printf("[serve] Tool API revision 9.4 — bounded cache + malformed-tool recover
                     pt = turn ? encode_prompt_text_to_tokens([[prefix stringByAppendingString:turn] UTF8String]) : NULL;
                 }
             } else {
-                pt = tokenize_rendered_messages_with_tools(render_messages, request_tools, YES, YES);
+                pt = tokenize_rendered_messages_with_tools(render_messages, request_tools, YES, request_enable_thinking);
                 if (pt && !request_think_budget_explicit &&
                     automatic_no_think_for_prompt(pt->count, max_gen)) {
                     free(pt->ids); free(pt);
@@ -20920,6 +20926,48 @@ printf("[serve] Tool API revision 9.4 — bounded cache + malformed-tool recover
                 ? tool_prefix_cache[tool_prefix_cache_hit_slot].snapshot.pos
                 : ((explicit_system || has_tools) ? 0 : sys_prompt_len);
 			int preflight_pos = is_continuation ? session_pos : start_pos;
+            // Opt-in qualification observer: render/count without advancing KV.
+            // Disabled in ordinary serving; no checkpoint validation is bypassed.
+            if (getenv("FLASH_HTTP_QUALIFICATION") &&
+                strcmp(getenv("FLASH_HTTP_QUALIFICATION"),"1")==0 &&
+                [request[@"flash_qual_count_only"] isKindOfClass:[NSNumber class]] &&
+                [request[@"flash_qual_count_only"] boolValue]) {
+                NSMutableDictionary *lens=[NSMutableDictionary dictionary];
+                uint64_t hash=UINT64_C(14695981039346656037);
+                BOOL hash_state=[request[@"flash_qual_hash"] isKindOfClass:[NSNumber class]] &&
+                    [request[@"flash_qual_hash"] boolValue] && session_pos<=512;
+                for(int l=0;l<NUM_LAYERS;l++) {
+                    if(kv_caches[l]) {
+                        lens[[NSString stringWithFormat:@"%d",l]]=@(kv_caches[l]->len);
+                        if(hash_state) {
+                            size_t bytes=(size_t)kv_caches[l]->len*NUM_KV_HEADS*HEAD_DIM*sizeof(float);
+                            hash=warm_hash_bytes(hash,kv_caches[l]->k_cache,bytes);
+                            hash=warm_hash_bytes(hash,kv_caches[l]->v_cache,bytes);
+                        }
+                    }
+                    if(hash_state && layer_states[l]) {
+                        LinearAttnState *la=layer_states[l];
+                        hash=warm_hash_bytes(hash,la->conv_state,(CONV_KERNEL_SIZE-1)*LINEAR_CONV_DIM*sizeof(float));
+                        hash=warm_hash_bytes(hash,la->ssm_state,LINEAR_NUM_V_HEADS*LINEAR_VALUE_DIM*LINEAR_KEY_DIM*sizeof(float));
+                    }
+                }
+                if(hash_state && snapshot_uses_gpu_linear_state())for(int l=0;l<g_cfg.num_linear_layers;l++) {
+                    hash=warm_hash_bytes(hash,g_metal->buf_delta_state[l].contents,gpu_delta_state_bytes());
+                    hash=warm_hash_bytes(hash,g_metal->buf_conv_state[l].contents,3ULL*12288*sizeof(float));
+                }
+                NSDictionary *observer=@{@"context_tokens":@(preflight_pos+pt->count),
+                    @"prefill_tokens":@(pt->count),@"resident_pos":@(session_pos),
+                    @"session_reused":@(is_continuation),@"kv_lengths":lens,
+                    @"gpu_capacity":@(GPU_KV_SEQ),@"cpu_capacity":@(g_kv_seq_len),
+                    @"metal_allocated_bytes":@(g_metal->device.currentAllocatedSize),
+                    @"state_hash":hash_state?[NSString stringWithFormat:@"%016llx",(unsigned long long)hash]:@"not_requested"};
+                NSData *json=[NSJSONSerialization dataWithJSONObject:observer options:0 error:NULL];
+                char header[256];int n=snprintf(header,sizeof(header),"HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: %lu\r\nConnection: close\r\n\r\n",(unsigned long)json.length);
+                http_write(client_fd,header,n);http_write(client_fd,json.bytes,(int)json.length);
+                if(request_prefix_pt){free(request_prefix_pt->ids);free(request_prefix_pt);}
+                free(pt->ids);free(pt);free(reqbuf);close(client_fd);continue;
+            }
+
 
 			// Deterministic capacity validation must happen before replacing the
 			// resident session or mutating/restoring model state. A rejected new
