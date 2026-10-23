@@ -5,11 +5,11 @@ Demonstrates whether a reused session_id after eviction can silently lose
 prior context. This is an expected-vulnerability test, not an enablement switch.
 """
 import argparse, json, time, uuid, urllib.request, urllib.error
-def send(base, messages, sid=None, require_resume=False):
+def send(base, messages, sid=None, create=False):
     data={"model":"qwen3.5","messages":messages,"stream":False,
           "max_tokens":60,"temperature":0,"reasoning_effort":"off"}
     if sid: data["session_id"]=sid
-    if require_resume: data["flash_require_session_resume"]=True
+    if create: data["flash_session_create"]=True
     t=time.monotonic()
     req=urllib.request.Request(base.rstrip("/")+"/chat/completions",
              json.dumps(data).encode(),{"Content-Type":"application/json"})
@@ -36,9 +36,9 @@ def main():
     b="fault-probe-b-"+uuid.uuid4().hex[:12]
     initial={"role":"user","content":"Remember this secret experimental code exactly: "+sentinel+". Acknowledge briefly."}
     follow={"role":"user","content":"What is the secret experimental code I gave earlier? If no earlier code is in context, say UNKNOWN."}
-    first=send(args.base,[initial],a)
-    second=send(args.base,[{"role":"user","content":"Say READY."}],b) # replaces active session
-    stale=send(args.base,[follow],a,require_resume=True) # MUST fail with replay signal
+    first=send(args.base,[initial],a,create=True)
+    second=send(args.base,[{"role":"user","content":"Say READY."}],b,create=True) # replaces active session
+    stale=send(args.base,[follow],a) # MUST fail with replay signal
     full=send(args.base,[initial,{"role":"assistant","content":first["content"]},follow])
     lost=(sentinel not in stale["content"])
     signaled=(stale["status"]!=200 or stale["session_invalidated"] is True
