@@ -372,3 +372,10 @@ gpu-kv-qualification-32k: $(INFER_SRC) $(INFER_DEPS) gpu_kv_qualification.inc
 .PHONY: gpu-kv-performance-32k
 gpu-kv-performance-32k: $(INFER_SRC) $(INFER_DEPS) gpu_kv_qualification.inc gpu_kv_performance.inc gpu_kv_perf_timing.inc
 	$(CC) $(INFER_CFLAGS) -DFLASH_GPU_KV_QUALIFICATION -DFLASH_GPU_KV_PERFORMANCE -DFLASH_EXPERIMENTAL_LAZY_SHARED_GPU_KV_32K $(FRAMEWORKS) $(LDFLAGS) $(INFER_SRC) -o infer-perf-lazy32k
+
+# Controlled integration candidates: explicit targets, never overwrite ./infer.
+.PHONY: integration-kv-candidates
+integration-kv-candidates: $(INFER_SRC) $(INFER_DEPS)
+	$(CC) $(INFER_CFLAGS) -DFLASH_EXPERIMENTAL_LAZY_SHARED_GPU_KV $(FRAMEWORKS) $(LDFLAGS) $(INFER_SRC) -o infer-candidate-lazy16k
+	$(CC) $(INFER_CFLAGS) -DFLASH_EXPERIMENTAL_LAZY_SHARED_GPU_KV_32K $(FRAMEWORKS) $(LDFLAGS) $(INFER_SRC) -o infer-candidate-lazy32k
+	@echo "Opt-in binaries ready. Production ./infer is unchanged."
