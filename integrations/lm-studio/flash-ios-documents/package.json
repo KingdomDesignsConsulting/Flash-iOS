@@ -1,1 +1,19 @@
-{"name":"flash-ios-openai-compat-documents","version":"0.1.0","private":true,"main":"dist/index.js","scripts":{"build":"tsc -p tsconfig.json","dev":"lms dev"},"dependencies":{"@lmstudio/sdk":"1.4.0","openai":"^5.2.0"},"devDependencies":{"typescript":"^5.9.3","@types/node":"^20.14.8"}}
+{
+  "name": "flash-ios-openai-compat-documents",
+  "version": "0.1.0",
+  "private": true,
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "dev": "lms dev",
+    "test": "node --test test/*.test.cjs"
+  },
+  "dependencies": {
+    "@lmstudio/sdk": "1.4.0",
+    "openai": "^5.2.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.3",
+    "@types/node": "^20.14.8"
+  }
+}
