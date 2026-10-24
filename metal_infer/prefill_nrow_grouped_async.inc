@@ -835,14 +835,22 @@ static __attribute__((unused)) int prefill_nrow_full_attention_batch(PrefillNRow
         !g_metal->buf_kv_k[fa_idx] || !g_metal->buf_kv_v[fa_idx])
         return 0;
 
-    memcpy((float *)[g_metal->buf_kv_k[fa_idx] contents] +
-            (size_t)base_cache_pos * kv_dim,
-        k_rows,
+    // In lazy shared-KV builds, the Metal buffer aliases the canonical CPU
+    // cache: the row loop above has already published K/V to both views.
+    // Preserve the mirror writes for legacy separate-buffer configurations.
+    float *metal_k = (float *)[g_metal->buf_kv_k[fa_idx] contents];
+    float *metal_v = (float *)[g_metal->buf_kv_v[fa_idx] contents];
+#if defined(FLASH_EXPERIMENTAL_LAZY_SHARED_GPU_KV) || defined(FLASH_EXPERIMENTAL_LAZY_SHARED_GPU_KV_32K)
+    if (metal_k != kv->k_cache || metal_v != kv->v_cache) {
+        fprintf(stderr, "[prefill-nrow] ERROR: lazy K/V view alias mismatch\n");
+        return 0;
+    }
+#else
+    memcpy(metal_k + (size_t)base_cache_pos * kv_dim, k_rows,
         (size_t)PREFILL_NROW_ROWS * kv_dim * sizeof(float));
-    memcpy((float *)[g_metal->buf_kv_v[fa_idx] contents] +
-            (size_t)base_cache_pos * kv_dim,
-        v_rows,
+    memcpy(metal_v + (size_t)base_cache_pos * kv_dim, v_rows,
         (size_t)PREFILL_NROW_ROWS * kv_dim * sizeof(float));
+#endif
     kv->len = base_cache_pos + PREFILL_NROW_ROWS;
 
     const double gpu_started = now_ms();
