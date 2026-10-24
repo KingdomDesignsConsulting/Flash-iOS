@@ -176,7 +176,7 @@ def main():
                 for m in range(args.measure):
                     result = ask(args.port, body, args.request_timeout)
                     (root / (prefix + f"-measurement-{m+1:02d}.json")).write_text(
-                        json.dumps(result, indent=2) + "\\n")
+                        json.dumps(result, indent=2) + "\n")
                     item = {
                         "measurement": m + 1,
                         "timings": result.get("flash_timings", {}),
