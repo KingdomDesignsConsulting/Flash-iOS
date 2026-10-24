@@ -64,3 +64,28 @@ server logs, prefill metrics and swap/memory status, and writes each run under
 terminate services on 11241 or 11243. Stop existing test server and avoid
 running another active model concurrently before invocation. This is a
 follow-up repeatability screen, not full idle/thermal qualification.
+
+
+## Idle-GPU ABBA crossover (2026-10-24, Drive run 20261024-152541)
+
+Source manifest: `Flash-iOS/Testing/N128-Lazy-KV-Copy-Elision/20261024-152541/manifest.json`
+(synchronized Drive folder `1GUyRqWTbD6sBjbdsI91BG1X7ZfKrV96s`).
+
+Control prefill durations: 45,269.890 and 40,602.940 ms.
+Modified: 40,038.413 and 40,320.963 ms. All trials used 1,372 prefill tokens
+with 13 cached-prefix tokens, no warm-prefix reuse, and identical response text.
+Control median 42,936.415 ms; modified median 40,179.688 ms, apparent 6.42%
+prefill reduction. Control's first trial differs from its second by 4.67s,
+whereas modified trials differ by 0.28s. The last control is only 0.42s
+slower than modified median. Reported swap remained ~5.51 GiB and
+`vm.memory_pressure` was nonzero in one modified trial. Thus keep status
+**inconclusive, candidate only**; the original negative 1-shot A/B is also
+confounded by background GPU work.
+
+Next trial script: `tools/benchmark_n128_kv_copy_abba.py` now accepts
+`--warmup 1 --measure 2` (defaults). Fresh server in each ABBA slot;
+warmup excluded and individual repeated requests logged, with all sample-level
+prefill token counts and cached-prefix counts. This helps distinguish per-server
+first-request effects from stable throughput. Results go to fresh timestamped
+Testing subdirectory. No merges until persistent benefit and correctness
+under 8K/16K/32K/cache/continuation conditions.
