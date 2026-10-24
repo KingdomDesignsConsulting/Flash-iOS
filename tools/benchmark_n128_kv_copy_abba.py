@@ -111,8 +111,12 @@ def main():
     p.add_argument("--port", default=11243, type=int)
     p.add_argument("--out", default="Testing/N128-Lazy-KV-Copy-Elision", type=Path)
     p.add_argument("--request-timeout", default=600, type=int)
+    p.add_argument("--warmup", default=1, type=int, help="Untimed requests per fresh server")
+    p.add_argument("--measure", default=2, type=int, help="Timed requests per fresh server")
     p.add_argument("--startup-timeout", default=180, type=int)
     args = p.parse_args()
+    if args.warmup < 0 or args.measure < 1:
+        p.error("--warmup must be >= 0 and --measure must be >= 1")
     args.control = args.control.expanduser().resolve()
     args.modified = args.modified.expanduser().resolve()
     args.model = args.model.expanduser().resolve()
@@ -137,8 +141,10 @@ def main():
         "modified": {"path": str(args.modified), "sha256": sha256_file(args.modified)},
         "start_memory": memory_status(),
         "schedule": ["control", "modified", "modified", "control"],
+        "warmup_requests_per_server": args.warmup,
+        "measured_requests_per_server": args.measure,
         "steps": [],
-        "notes": ["Each step starts a fresh server, runs one identical stateless request, then terminates only that server.",
+        "notes": ["Each step starts a fresh server, performs configurable warmups and measured stateless requests, then terminates only that server.",
                   "Execution without --timing. Idle / thermal / Metal contention are not independently gated.",
                   "A response-text match is not a numerical hidden-state equality check."]
     }
@@ -158,17 +164,31 @@ def main():
             try:
                 record = {"order": index, "variant": variant,
                           "memory_before": memory_status(),
-                          "server_pid": proc.pid}
-                result = ask(args.port, body, args.request_timeout)
-                (root / (prefix + "-response.json")).write_text(
-                    json.dumps(result, indent=2) + "\n")
-                record["timings"] = result.get("flash_timings", {})
-                record["content"] = result.get("choices", [{}])[0].get("message", {}).get("content")
-                record["finish_reason"] = result.get("choices", [{}])[0].get("finish_reason")
-                record["client_wall_ms"] = result["_client_wall_ms"]
+                          "server_pid": proc.pid, "warmups": [], "measurements": []}
+                for w in range(args.warmup):
+                    warm = ask(args.port, body, args.request_timeout)
+                    warm_info = {"prefill_ms": warm.get("flash_timings", {}).get("prefill_ms"),
+                                 "prefill_tokens": warm.get("flash_timings", {}).get("prefill_tokens"),
+                                 "cached_prefix_tokens": warm.get("flash_timings", {}).get("cached_prefix_tokens"),
+                                 "content": warm.get("choices", [{}])[0].get("message", {}).get("content")}
+                    record["warmups"].append(warm_info)
+                    print(f"  warmup {w+1}: prefill={warm_info['prefill_ms']}ms", flush=True)
+                for m in range(args.measure):
+                    result = ask(args.port, body, args.request_timeout)
+                    (root / (prefix + f"-measurement-{m+1:02d}.json")).write_text(
+                        json.dumps(result, indent=2) + "\\n")
+                    item = {
+                        "measurement": m + 1,
+                        "timings": result.get("flash_timings", {}),
+                        "content": result.get("choices", [{}])[0].get("message", {}).get("content"),
+                        "finish_reason": result.get("choices", [{}])[0].get("finish_reason"),
+                        "client_wall_ms": result["_client_wall_ms"],
+                    }
+                    record["measurements"].append(item)
+                    print(f"  measurement {m+1}: prefill={item['timings'].get('prefill_ms')}ms "
+                          f"tokens={item['timings'].get('prefill_tokens')} "
+                          f"cached={item['timings'].get('cached_prefix_tokens')}", flush=True)
                 info["steps"].append(record)
-                print(f"  prefill={record['timings'].get('prefill_ms')}ms "
-                      f"tokens={record['timings'].get('prefill_tokens')}", flush=True)
             finally:
                 stop_server(proc, log)
             for _ in range(60):
@@ -178,13 +198,16 @@ def main():
             else:
                 raise RuntimeError("Test port remained occupied after child exited")
             (root / "manifest.json").write_text(json.dumps(info, indent=2) + "\n")
+        observations = [(r["variant"], m) for r in info["steps"]
+                        for m in r["measurements"]]
         groups = {
-            name: [r["timings"]["prefill_ms"] for r in info["steps"]
-                   if r["variant"] == name]
+            name: [m["timings"]["prefill_ms"] for variant, m in observations
+                   if variant == name]
             for name in ("control", "modified")
         }
-        answers = [r["content"] for r in info["steps"]]
-        counts = [r["timings"].get("prefill_tokens") for r in info["steps"]]
+        answers = [m["content"] for _, m in observations]
+        counts = [m["timings"].get("prefill_tokens") for _, m in observations]
+        cached = [m["timings"].get("cached_prefix_tokens") for _, m in observations]
         info["summary"] = {
             "control_prefill_ms": groups["control"],
             "modified_prefill_ms": groups["modified"],
@@ -195,6 +218,8 @@ def main():
                        statistics.median(groups["control"])), 2),
             "all_responses_match": all(a == answers[0] for a in answers),
             "all_prefill_counts_match": all(n == counts[0] for n in counts),
+            "cached_prefix_counts": cached,
+            "note": "Warmup requests excluded; descriptive statistics, not proof of causality.",
         }
         info["end_memory"] = memory_status()
         (root / "manifest.json").write_text(json.dumps(info, indent=2) + "\n")
