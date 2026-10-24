@@ -38,3 +38,29 @@ All output belongs in `Testing/N128-Lazy-KV-Copy-Elision/<run-id>/` (Google-Driv
 ## Important note
 
 This does **not** solve redundant multi-turn prefill. Independent resident-session prefix reuse PR #2 addresses that. The K/V copy-elision experiment addresses per-token prefill cost only.
+
+
+## Preliminary result (2026-10-24)
+
+Observed with identical 1,372-token prefill and exact-match generated response:
+
+| Candidate | Prefill ms | Prefill tok/s |
+|---|---:|---:|
+| Lazy K/V copy elision | 56,453.669 | 24.303 |
+| Unmodified 32K control | 48,453.3 | 28.32 |
+
+**Preliminary verdict: no speedup; modified run is 16.5% slower by elapsed
+time.** Single A/B order not thermally, memory or contention controlled. One
+control server launch failed `bind: Address already in use`; its failed startup
+is not a benchmark result. Later run returned control measurements. No production
+promotion recommended.
+
+A sequential crossover harness is now at
+`tools/benchmark_n128_kv_copy_abba.py`. It uses the order **control,
+modified, modified, control**, restarts only servers it spawned on an
+otherwise-free port, records executable SHA-256, input payload, actual response,
+server logs, prefill metrics and swap/memory status, and writes each run under
+`Testing/N128-Lazy-KV-Copy-Elision/<timestamp>/`. It does not automatically
+terminate services on 11241 or 11243. Stop existing test server and avoid
+running another active model concurrently before invocation. This is a
+follow-up repeatability screen, not full idle/thermal qualification.
