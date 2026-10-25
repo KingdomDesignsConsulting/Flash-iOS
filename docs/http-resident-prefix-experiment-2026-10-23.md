@@ -1,69 +1,76 @@
-# HTTP resident-prefix reuse — isolated experiment (2026-10-23)
+# Flash-iOS HTTP resident-session continuity — experiment status (2026-10-25)
 
-**Status:** implemented, **not yet run on the user's Mac**. Branch `experiment/http-resident-prefix-reuse-20261023`. Production left untouched.
+**Branch:** `experiment/http-resident-prefix-reuse-20261023`  
+**Production:** unchanged. Draft [PR #2](https://github.com/KingdomDesignsConsulting/Flash-iOS/pull/2) remains unmerged.  
+**Verdict:** server-side live functional tests PASS for the tested cases; client integration and deeper correctness qualification remain open. **Do not merge yet.**
 
-## Why
+## Motivation and original defect
 
-The current HTTP server caches the exact system/tools prefix but only supports full
-conversation reuse when the client provides an active `session_id` and sends a
-**single new user turn**. LM Studio's generator currently sends full history;
-therefore successive attached-document requests re-prefill ~5K tokens at ~21 tok/s.
-Never assume a session survives restart, replacement, cancellation, or another
-stateless client. The bundled `chat.m` resume problem (audit F32K-01) is a
-warning about this behavior.
+Flash-iOS can retain inference state for an active resident session, allowing the next turn to prefill only newly submitted tokens rather than replaying the entire conversation. The original HTTP server could accept an unknown or evicted `session_id` as a fresh conversation without explicitly notifying the client. A single-turn client could therefore silently lose prior history. Separately, the terminal client `chat.m` displays saved `--resume` transcripts without replaying them into a newly started server.
 
-## Test
+## Implemented experimental server behavior
 
-```sh
-cd "/Users/Shared/Main Hard Drive/AI Storage/Apps/Flash-iOS"
-git fetch origin experiment/http-resident-prefix-reuse-20261023
-git show origin/experiment/http-resident-prefix-reuse-20261023:tools/experiment_http_resident_prefix.py > /tmp/experiment_http_resident_prefix.py
-python3 /tmp/experiment_http_resident_prefix.py --base http://127.0.0.1:11241/v1 > ~/prefix-reuse-probe.json
-cat ~/prefix-reuse-probe.json
-```
+- A request that names a **new** resident `session_id` must explicitly set `"flash_session_create": true`; requests without `session_id` remain stateless.
+- Continuing a matching active session uses its saved resident context.
+- An unknown, evicted or post-restart session ID without the creation flag is rejected with `session_invalidated:true` and `resend_full_history:true`.
+- Non-streaming stale-session requests receive HTTP **409 Conflict**.
+- Streaming stale-session requests receive valid **HTTP SSE response headers first**, then an explicit invalidation SSE event. The initial live test exposed a missing-header `BadStatusLine` defect, fixed at commit `f6ccd9c`.
+- Creating a resident session over an already-active matching session ID is rejected to avoid inadvertent replacement.
 
-**Run against a disposable server on a dedicated port if possible**: the test will
-replace the server's active resident session. Do not run alongside LM Studio's active
-chat on the same server. No model or cache files are deliberately modified.
+These are **experimental breaking protocol changes** for session-aware clients; clients must be updated before production rollout.
 
-Optional document test:
-```sh
-python3 /tmp/experiment_http_resident_prefix.py --base http://127.0.0.1:11241/v1 --context-file /path/to/crash.log > ~/prefix-reuse-document-probe.json
-```
+## Live tests performed on the Mac mini M4
 
-The probe first establishes a uniquely named resident session. It then sends
-**only** one follow-up question with the same session ID, and finally sends a
-stateless full-history control with the first assistant reply embedded.
-Output includes both responses, `flash_timings`, token usage, duration and
-comparison. Exit 2 means content mismatch; exit 3 means no prefill saving.
+### Resident continuation versus full-history control (2026-10-23)
 
-## Acceptance gates
+The early short-context probe observed 31 new prefill tokens and 2,725.6 ms for active continuation, versus 105 new prefill tokens and 9,891.6 ms for the full-history stateless control. Exact generated-text match observed. This is roughly 70.5% fewer new prefill tokens and 72.4% less prefill time in that specific test, **not** an all-layer state-equivalence proof.
 
-1. Identical generated text on the resident continuation versus the stateless
-   full-history control, with deterministic decoding and identical reasoning policy.
-2. Continued response prefill is dramatically smaller than the control (ideally
-   <100 tokens for the short test); record actual `prefill_tokens`.
-3. No unintended session mixing after a replacement, restart, or abort. **Not yet
-   tested** by this first probe.
-4. Same continuation answer and hybrid state equivalence (KV, GDN, convolution)
-   in a later qualified build; mere identical text is not sufficient for promotion.
-5. Repeat with attached crash log after the short test to measure user-visible gain.
+### Deliberate eviction (2026-10-24)
 
-## Critical caveat
+An experimental session A remembered a unique code. Creating session B evicted A. Before the mandatory server guard, stale A could silently lose context. After the patch, the live non-streaming probe verified:
 
-Source inspection showed that when an unrecognized `session_id` arrives, the
-server can process the single user turn as a **new** conversation, rather than
-always returning `resend_full_history`. A production generator must never assume
-an unchanged ID proves the server retained history. Before enabling automatic
-LM Studio continuation, add a robust validated epoch/ack or exact-history
-checkpoint mechanism and a safe replay protocol, or modify server to reject
-unknown continuation IDs explicitly. A request/response failure only fallback
-does not catch **silent** context loss.
+- Initial A: HTTP 200.
+- Replacement B: HTTP 200.
+- Stale A continuation: **HTTP 409** with `session_invalidated:true`, `resend_full_history:true`; approximately 1 ms.
+- Stateless full-history recovery reproduced the original code `AXIOM-167CA515F8DA`.
+- `unsafe_silent_loss_observed:false`.
 
-## Next engineering stage (not implemented by this probe)
+### Active-session and streaming matrix (2026-10-25)
 
-Build opt-in server-side full-history token-LCP resume with exact position/
-rendering checks and a safe turn-boundary snapshot, or a continuity handshake
-with server-issued generation IDs. Validate failure, cancellation, eviction,
-model/thinking/tool-context mismatch, replay and transcript parity. Leave
-production default 8K and qualified lazy32K binaries untouched.
+`tools/experiment_http_live_session_matrix.py` passed **7/7** live checks:
+`create_a_200`, `active_session_reused`, `active_session_retains_code`,
+`create_b_200`, `stale_nonstream_409_signal`,
+`stale_stream_explicit_signal`, `stateless_replay_recovers_code`.
+
+The first streaming run failed with Python `http.client.BadStatusLine` because server-side early stale-session rejection emitted `data:` before the HTTP response headers. Commit `f6ccd9c` corrected this. The repeated live matrix then passed all seven checks.
+
+### Restart and safe recovery (2026-10-25)
+
+`tools/experiment_http_restart_recovery.py` passed **5/5** live checks:
+`initial_created`, `prior_session_reused`, `prior_context_retained`,
+`stale_after_restart_rejected`, `new_session_replay_recovers_code`.
+
+Before restart: active continuation reused 70 cached-prefix tokens, prefilled 26 new tokens in 2,981.1 ms, and recovered the exact `RESTART-82E103CE2403` identifier. After restart: stale ID received HTTP 409 with explicit invalidation/replay flags. Complete-history replay under a new ID succeeded (79 new prefill tokens, 10,121.3 ms). These are illustrative timings rather than a matched throughput benchmark.
+
+## Regression scripts and results
+
+Committed tests on this experimental branch:
+- `tools/experiment_http_resident_prefix.py`
+- `tools/experiment_http_session_eviction.py`
+- `tools/experiment_http_live_session_matrix.py`
+- `tools/experiment_http_restart_recovery.py`
+
+Result files from the user's Mac are stored separately in the Google Drive-synchronized `Flash-iOS/Testing/HTTP-Prefix-Reuse/` directory, including `2026-10-24/session-eviction-result.json`, `2026-10-24/live-session-matrix-result.json` and `2026-10-24/restart-recovery-result.json`. The remote GitHub repository backs up the source and scripts; the test outputs are not asserted to be committed in Git.
+
+## Outstanding blockers — do not merge
+
+1. **Terminal client `metal_infer/chat.m`:** currently sends only the latest user turn; does not request new resident-session creation using `flash_session_create`; lacks explicit SSE invalidation detection and automatic full-transcript replay; `--resume` displays history without reconstructing server-side context. This is pre-existing audit issue F32K-01 and related stream error-handling issue F32K-02.
+2. **LM Studio generator:** must be upgraded to maintain proper conversation IDs, safely create sessions, distinguish full history from incremental continuation, detect invalidation and replay all prior turns exactly. Do not enable incremental mode until client behavior is qualified.
+3. **More qualification:** interrupted/cancelled generation, streaming recovery, profile/tool-context changes, session replacement across clients, token-rendering parity and exact KV/GDN/convolution state equivalence. Matching text is not sufficient proof of identical internal state.
+4. **Mac runtime:** verify any additional changes by building in an isolated checkout and running the appropriate integration tests; preserve existing production binaries/cache format and 8K-default behavior.
+
+## Disposition
+
+**Server correctness for tested resident-session eviction, continuation, streaming invalidation, restart and recovery: PASS. Production rollout: BLOCKED pending client implementation and additional qualification.**
+
+This page supersedes the initial 2026-10-23 experiment plan, which incorrectly remained marked "not yet run" after the tests completed.
