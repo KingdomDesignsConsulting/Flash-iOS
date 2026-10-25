@@ -117,3 +117,19 @@ retains a unique prior factual identifier without sending only the last turn.
 Evict the active server-side ID using a separate test client and verify the next
 TUI turn detects invalidation, replays complete history, and recovers the exact
 identifier. Save build and test logs beneath `Flash-iOS/Testing/HTTP-Prefix-Reuse/`.
+
+### chat.m Mac compile result (2026-10-25)
+
+The user compiled `make -C ../Flash-iOS-session-test/metal_infer chat`
+from commit `fb746cb` successfully using Apple Clang with ARC. It emitted
+three non-fatal warnings: two for the pre-existing `MdState` aggregate
+initializer and one for an unused `t_start` variable. Follow-up commit
+`dead7a9` uses a designated initializer and the actual request-start clock
+to report TTFT, addressing these warnings. This follow-up commit is **not yet
+compiled or live-tested on the user's Mac**. No production changes.
+
+Next live client check: with hardened server on port 11243, launch the isolated
+`chat --port 11243`, provide an identifier, ask it back in a second turn,
+quit, relaunch with `--resume <local-id>`, ask it again, then evict its active
+resident session using a distinct session-creation request and verify automatic
+replay. Preserve isolated logs in `Testing/HTTP-Prefix-Reuse/`.
