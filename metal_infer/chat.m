@@ -299,7 +299,7 @@ typedef struct {
     int pending_len;
 } MdState;
 
-static MdState g_md = {0, 0, 0, 0, 1, {0}, 0};
+static MdState g_md = {.line_start = 1};
 
 static void md_reset(void) {
     memset(&g_md, 0, sizeof(g_md));
@@ -546,7 +546,7 @@ static char *stream_response(int sock, int show_thinking) {
     if (gen_tokens > 0 && gen_time > 0)
         printf("[%d tokens, %.1f tok/s, TTFT %.1fs]\n\n",
                tokens, gen_tokens * 1000.0 / gen_time,
-               t_first > 0 ? (t_first - now_ms() + gen_time + (t_first - (now_ms() - gen_time))) / 1000.0 : 0);
+               (t_first - t_start) / 1000.0);
 
     return response;
 }
