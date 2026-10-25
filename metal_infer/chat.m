@@ -485,14 +485,15 @@ static char *stream_response(int sock, int show_thinking) {
             continue;
         }
         if (status != 200) {
-            if (strstr(line, "\\"session_invalidated\\"") || strstr(line, "\\"resend_full_history\\"")) g_stream_invalidated = 1;
+            if (strstr(line, "session_invalidated") ||
+                strstr(line, "resend_full_history")) g_stream_invalidated = 1;
             continue;
         }
         if (strncmp(line, "data: ", 6) != 0) continue;
         if (strncmp(line + 6, "[DONE]", 6) == 0) { finished = 1; break; }
-        if (strstr(line + 6, "\\"session_invalidated\\":true") ||
-            strstr(line + 6, "\\"resend_full_history\\":true") ||
-            strstr(line + 6, "\\"error\\":{")) {
+        if (strstr(line + 6, "session_invalidated") ||
+            strstr(line + 6, "resend_full_history") ||
+            strstr(line + 6, "\"error\"")) {
             g_stream_invalidated = 1;
             continue;
         }
