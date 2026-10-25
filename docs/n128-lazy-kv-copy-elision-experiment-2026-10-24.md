@@ -89,3 +89,30 @@ prefill token counts and cached-prefix counts. This helps distinguish per-server
 first-request effects from stable throughput. Results go to fresh timestamped
 Testing subdirectory. No merges until persistent benefit and correctness
 under 8K/16K/32K/cache/continuation conditions.
+
+
+## Warmup-controlled ABBA conclusion (2026-10-24)
+
+Data: `Flash-iOS/Testing/N128-Lazy-KV-Copy-Elision/20261024-153747/`,
+Drive folder `1oHvxbkSXNCfPQ039ju1ksm20yrPhVCAv`.
+
+Protocol: fresh server per ABBA leg, one warmup excluded per server, two
+measurements per leg, identical request payload; no `--timing`.
+
+| Leg | Variant | Warmup (ms) | Timed prefill (ms) |
+|---|---|---:|---:|
+| 1 | control | 39,202.707 | 38,984.986; 40,702.271 |
+| 2 | modified | 40,870.302 | 40,539.578; 40,734.515 |
+| 3 | modified | 41,128.756 | 41,021.550; 40,479.820 |
+| 4 | control | 40,934.613 | 40,547.751; 40,621.129 |
+
+Control median **40,584.440 ms**. Modified median **40,637.046 ms**.
+Copy elision **0.13% slower**, effectively no gain versus observed
+sample variation. All eight measured outputs identical, 1,372 prefill tokens,
+13 cached-prefix tokens, no reported warm-prefix reuse.
+
+**Disposition: reject optimization for now; DO NOT merge source change to
+production.** Preserve experimental branch and all measurements. Focus
+next on session-history prefill avoidance; no further copy-elision throughput
+runs unless GPU profiling identifies material memcpy costs. Output equality
+alone does not prove hidden-state/KV state equality.
