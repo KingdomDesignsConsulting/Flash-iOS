@@ -74,3 +74,46 @@ Result files from the user's Mac are stored separately in the Google Drive-synch
 **Server correctness for tested resident-session eviction, continuation, streaming invalidation, restart and recovery: PASS. Production rollout: BLOCKED pending client implementation and additional qualification.**
 
 This page supersedes the initial 2026-10-23 experiment plan, which incorrectly remained marked "not yet run" after the tests completed.
+
+
+## Experimental terminal client implementation (2026-10-25)
+
+`metal_infer/chat.m` now includes a source-level implementation of
+session creation and recovery, committed after the server live-test matrix:
+
+- Creates a fresh remote resident-session ID for each terminal client process.
+  The persistent local JSONL session ID is deliberately separate. The first
+  prompt sends `flash_session_create:true` along with complete local transcript
+  and the pending user turn. This also protects `--resume` after a restart.
+- A successful subsequent turn normally transmits only the new turn with its
+  active server session ID.
+- On HTTP 409 or streamed `session_invalidated` / `resend_full_history`,
+  it generates a new remote session ID and replays the complete validated
+  local JSONL transcript plus pending message. Only one automatic retry
+  is permitted.
+- Pending user/assistant turns are saved only after a completed SSE response.
+  Corrupt JSONL transcript blocks replay rather than silently discarding history.
+- Tool follow-up output is preserved as a user turn only after successful model
+  response, and is replayed without rerunning the command.
+
+**Qualification status: SOURCE IMPLEMENTED, NOT YET COMPILED OR LIVE-TESTED
+ON THE USER'S MAC.** This client patch is on the experimental branch only.
+The parser is still a lightweight TUI/SSE implementation; cancellation,
+SSE end-of-stream truncation, JSON Unicode handling, and tool transcript parity
+need live tests. The LM Studio generator remains a separate client to update.
+No production merge until client build and end-to-end tests pass.
+
+Isolated qualification:
+```sh
+cd "/Users/Shared/Main Hard Drive/AI Storage/Apps/Flash-iOS"
+git fetch origin experiment/http-resident-prefix-reuse-20261023
+git -C ../Flash-iOS-session-test checkout --detach origin/experiment/http-resident-prefix-reuse-20261023
+make -C ../Flash-iOS-session-test/metal_infer chat
+../Flash-iOS-session-test/metal_infer/chat --port 11243
+```
+
+Run `--resume <local-session-id>` after restarting the TUI; check that it
+retains a unique prior factual identifier without sending only the last turn.
+Evict the active server-side ID using a separate test client and verify the next
+TUI turn detects invalidation, replays complete history, and recovers the exact
+identifier. Save build and test logs beneath `Flash-iOS/Testing/HTTP-Prefix-Reuse/`.
