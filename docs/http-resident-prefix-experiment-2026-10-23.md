@@ -133,3 +133,13 @@ Next live client check: with hardened server on port 11243, launch the isolated
 quit, relaunch with `--resume <local-id>`, ask it again, then evict its active
 resident session using a distinct session-creation request and verify automatic
 replay. Preserve isolated logs in `Testing/HTTP-Prefix-Reuse/`.
+
+### chat.m live end-to-end validation (2026-10-25)
+
+**PASS on Mac mini M4** using isolated hardened server port 11243 and experimental terminal client. The earlier source-only qualification caveat above is superseded for these tested paths.
+
+1. New terminal session `chat-66251-1792966230716937`: asked to remember `ORBIT-73941`; following turn correctly recalled the exact string (TTFT 3.7s first / 1.7s continuation).
+2. Quit and run `chat --port 11243 --resume chat-66251-1792966230716937`: loaded four stored turns; new follow-up correctly recalled `ORBIT-73941` (TTFT 10.5s).
+3. While resumed client remained open, independently created `forced-eviction-test-20261025` via non-streaming HTTP with `flash_session_create:true`, returning HTTP 200, `session_reused:0` and `OK`. On next terminal question, client printed `[chat] Session invalidated; replaying full local history.` and recovered the exact `ORBIT-73941` (23 output tokens, 13.7 tok/s, TTFT 11.7s).
+
+These results qualify basic new session, active continuation, fresh-process transcript reconstruction and automatic live forced-eviction replay. The observations do **not** yet prove local transcript turn counts post-retry, interruption behavior, edge-case SSE decoding, transport-failure handling, full KV/GDN/convolution parity or LM Studio generator safety. Production merge remains blocked.
