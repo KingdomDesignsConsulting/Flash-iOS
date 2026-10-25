@@ -20413,8 +20413,13 @@ printf("[serve] Tool API revision 9.4 — bounded cache + malformed-tool recover
             if (has_session && !same_session && !create_session) {
                 fprintf(stderr, "[serve] rejected stale/unknown session_id; full-history replay required\n");
                 if (stream_response) {
-                    send_session_invalidated_error(client_fd, 1,
-                        @"resident session unavailable; resend full history with flash_session_create");
+                    // Early rejection occurs before the ordinary SSE response
+                    // headers have been sent. Write HTTP framing first; the
+                    // helper below emits only event data because later failures
+                    // may occur after streaming headers were already written.
+                    if (http_write_str(client_fd, SSE_HEADERS) == 0)
+                        send_session_invalidated_error(client_fd, 1,
+                            @"resident session unavailable; resend full history with flash_session_create");
                 } else {
                     http_write_str(client_fd,
                         "HTTP/1.1 409 Conflict\r\nContent-Type: application/json\r\n"
