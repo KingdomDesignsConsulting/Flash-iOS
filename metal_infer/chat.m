@@ -215,60 +215,60 @@ static int write_all(int fd, const void *buf, size_t len) {
     return 0;
 }
 
-static int send_chat_request(int port, const char *user_message, int max_tokens, const char *session_id) {
+
+static NSMutableArray *read_transcript(const char *session_id) {
+    char path[1024];
+    if (!session_path(session_id, path, sizeof(path))) return nil;
+    if (access(path, F_OK) != 0) return errno == ENOENT ? [NSMutableArray array] : nil;
+    NSError *error = nil;
+    NSString *raw = [NSString stringWithContentsOfFile:@(path)
+                                             encoding:NSUTF8StringEncoding error:&error];
+    if (!raw) return nil;
+    NSMutableArray *turns = [NSMutableArray array];
+    for (NSString *line in [raw componentsSeparatedByString:@"\n"]) {
+        if (!line.length) continue;
+        id item = [NSJSONSerialization JSONObjectWithData:
+                  [line dataUsingEncoding:NSUTF8StringEncoding] options:0 error:&error];
+        if (![item isKindOfClass:[NSDictionary class]] ||
+            ![@[@"user", @"assistant"] containsObject:item[@"role"]] ||
+            ![item[@"content"] isKindOfClass:[NSString class]]) {
+            fprintf(stderr, "[chat] Corrupt transcript; refusing partial replay.\n");
+            return nil;
+        }
+        [turns addObject:@{@"role":item[@"role"], @"content":item[@"content"]}];
+    }
+    return turns;
+}
+
+// When create=1 send full history. Otherwise send only the new turn.
+static int send_chat_request(int port, NSArray *messages, int max_tokens,
+                             const char *session_id, int create) {
+    if (!session_id_valid(session_id)) return -1;
+    NSDictionary *payload = @{@"model":@"qwen3.5", @"messages":messages,
+        @"max_tokens":@(max_tokens), @"stream":@YES,
+        @"session_id":@(session_id), @"flash_session_create":@(create != 0)};
+    NSData *data = [NSJSONSerialization dataWithJSONObject:payload options:0 error:NULL];
+    if (!data) return -1;
     int sock = socket(AF_INET, SOCK_STREAM, 0);
     if (sock < 0) { perror("socket"); return -1; }
-
     struct sockaddr_in addr = {0};
     addr.sin_family = AF_INET;
     addr.sin_port = htons(port);
     addr.sin_addr.s_addr = inet_addr("127.0.0.1");
-
     if (connect(sock, (struct sockaddr *)&addr, sizeof(addr)) < 0) {
-        fprintf(stderr, "\n[error] Cannot connect to server on port %d.\n", port);
-        close(sock);
-        return -1;
+        fprintf(stderr, "[chat] Cannot connect on port %d.\n", port);
+        close(sock); return -1;
     }
-
-    char escaped[MAX_INPUT_LINE * 2];
-    json_escape(user_message, escaped, sizeof(escaped));
-
-    if (!session_id_valid(session_id)) {
-        fprintf(stderr, "\n[error] Invalid session ID.\n");
-        close(sock);
-        return -1;
-    }
-
-    char body[MAX_INPUT_LINE * 3];
-    int body_len = snprintf(body, sizeof(body),
-        "{\"messages\":[{\"role\":\"user\",\"content\":\"%s\"}],"
-        "\"max_tokens\":%d,\"stream\":true,\"session_id\":\"%s\"}",
-        escaped, max_tokens, session_id);
-    if (body_len < 0 || (size_t)body_len >= sizeof(body)) {
-        fprintf(stderr, "\n[error] Request body is too large.\n");
-        close(sock);
-        return -1;
-    }
-
-    char request[MAX_INPUT_LINE * 4];
-    int req_len = snprintf(request, sizeof(request),
+    char header[512];
+    int n = snprintf(header, sizeof(header),
         "POST /v1/chat/completions HTTP/1.1\r\n"
-        "Host: localhost:%d\r\n"
-        "Content-Type: application/json\r\n"
-        "Content-Length: %d\r\n"
-        "Connection: close\r\n"
-        "\r\n"
-        "%s",
-        port, body_len, body);
-    if (req_len < 0 || (size_t)req_len >= sizeof(request)) {
-        fprintf(stderr, "\n[error] HTTP request is too large.\n");
-        close(sock);
-        return -1;
-    }
-    if (write_all(sock, request, (size_t)req_len) != 0) {
-        perror("write");
-        close(sock);
-        return -1;
+        "Host: localhost:%d\r\nContent-Type: application/json\r\n"
+        "Content-Length: %lu\r\nConnection: close\r\n\r\n",
+        port, (unsigned long)data.length);
+    if (n <= 0 || n >= (int)sizeof(header) ||
+        write_all(sock, header, n) < 0 ||
+        write_all(sock, data.bytes, data.length) < 0) {
+        close(sock); return -1;
     }
     return sock;
 }
@@ -463,11 +463,14 @@ static void md_print(const char *text) {
 }
 
 // Stream SSE response, accumulate text, return malloc'd response string
+static int g_stream_invalidated = 0;
+static int g_stream_ok = 0;
 static char *stream_response(int sock, int show_thinking) {
+    g_stream_invalidated = 0; g_stream_ok = 0;
     FILE *stream = fdopen(sock, "r");
     if (!stream) { close(sock); return NULL; }
 
-    int header_done = 0, in_think = 0, tokens = 0;
+    int header_done = 0, in_think = 0, tokens = 0, status = 0, finished = 0;
     double t_start = now_ms(), t_first = 0;
     md_reset();  // fresh markdown state for each response
 
@@ -477,11 +480,22 @@ static char *stream_response(int sock, int show_thinking) {
     char line[65536];
     while (fgets(line, sizeof(line), stream)) {
         if (!header_done) {
+            if (!status) { if (sscanf(line, "HTTP/1.1 %d", &status) != 1) break; continue; }
             if (strcmp(line, "\r\n") == 0 || strcmp(line, "\n") == 0) header_done = 1;
             continue;
         }
+        if (status != 200) {
+            if (strstr(line, "\\"session_invalidated\\"") || strstr(line, "\\"resend_full_history\\"")) g_stream_invalidated = 1;
+            continue;
+        }
         if (strncmp(line, "data: ", 6) != 0) continue;
-        if (strncmp(line + 6, "[DONE]", 6) == 0) break;
+        if (strncmp(line + 6, "[DONE]", 6) == 0) { finished = 1; break; }
+        if (strstr(line + 6, "\\"session_invalidated\\":true") ||
+            strstr(line + 6, "\\"resend_full_history\\":true") ||
+            strstr(line + 6, "\\"error\\":{")) {
+            g_stream_invalidated = 1;
+            continue;
+        }
 
         char *ck = strstr(line + 6, "\"content\":\"");
         if (!ck) continue;
@@ -521,6 +535,8 @@ static char *stream_response(int sock, int show_thinking) {
         fflush(stdout);
     }
     fclose(stream);
+    g_stream_ok = (status == 200 && finished && !g_stream_invalidated);
+    if (!g_stream_ok) { free(response); response = NULL; }
 
     printf(ANSI_RESET);  // ensure no style leaks
     double gen_time = t_first > 0 ? now_ms() - t_first : 0;
@@ -631,6 +647,9 @@ int main(int argc, char **argv) {
     linenoiseHistoryLoad(history_path);
     linenoiseHistorySetMaxLen(500);
 
+    char server_session_id[65];
+    generate_session_id(server_session_id, sizeof(server_session_id));
+    int server_session_live = 0;
     for (;;) {
         char *line = linenoise("> ");
         if (!line) {
@@ -656,6 +675,8 @@ int main(int argc, char **argv) {
         }
         if (strcmp(input_line, "/clear") == 0) {
             generate_session_id(session_id, sizeof(session_id));
+            generate_session_id(server_session_id, sizeof(server_session_id));
+            server_session_live = 0;
             printf("[new session: %s]\n\n", session_id);
             continue;
         }
@@ -664,19 +685,34 @@ int main(int argc, char **argv) {
             continue;
         }
 
-        // Save user turn
-        session_save_turn(session_id, "user", input_line);
-
-        sock = send_chat_request(port, input_line, max_tokens, session_id);
-        if (sock < 0) continue;
-
-        printf("\n");
-        char *response = stream_response(sock, show_thinking);
-
-        // Save assistant turn
-        if (response && strlen(response) > 0) {
-            session_save_turn(session_id, "assistant", response);
+        NSMutableArray *history = read_transcript(session_id);
+        if (!history) { fprintf(stderr, "[chat] Failed to load transcript; request blocked.\n"); continue; }
+        NSDictionary *turn = @{@"role":@"user", @"content":@(input_line)};
+        [history addObject:turn];
+        int create = !server_session_live;
+        int retried = 0;
+        char *response = NULL;
+        while (1) {
+            NSArray *outgoing = create ? history : @[turn];
+            sock = send_chat_request(port, outgoing, max_tokens, server_session_id, create);
+            if (sock < 0) break;
+            printf("\n");
+            response = stream_response(sock, show_thinking);
+            if (g_stream_ok) { server_session_live = 1; break; }
+            free(response); response = NULL;
+            if (!g_stream_invalidated || retried) break;
+            // Generate a fresh remote ID: never risk overwriting another session.
+            generate_session_id(server_session_id, sizeof(server_session_id));
+            create = 1; retried = 1; server_session_live = 0;
+            fprintf(stderr, "[chat] Session invalidated; replaying full local history.\n");
         }
+        if (!g_stream_ok || !response) {
+            fprintf(stderr, "[chat] Request failed; no local turns saved.\n");
+            free(response);
+            continue;
+        }
+        session_save_turn(session_id, "user", input_line);
+        if (*response) session_save_turn(session_id, "assistant", response);
 
         // ---- Tool call handling ----
         // Detect <tool_call>{"name":"bash","arguments":{"command":"..."}}
@@ -794,17 +830,33 @@ int main(int argc, char **argv) {
             char *tool_msg = malloc(out_len + 256);
             snprintf(tool_msg, out_len + 256, "<tool_response>\n%s</tool_response>", output);
 
-            free(response);
-            sock = send_chat_request(port, tool_msg, max_tokens, session_id);
-            free(tool_msg);
-            if (sock < 0) { response = NULL; break; }
-
-            printf("\n");
-            response = stream_response(sock, show_thinking);
-
-            if (response && strlen(response) > 0) {
-                session_save_turn(session_id, "assistant", response);
+            // Tool output becomes a user turn, and is replayed at most once
+            // after invalidation. Never re-execute a shell command on retry.
+            NSMutableArray *tool_history = read_transcript(session_id);
+            if (!tool_history) { free(tool_msg); free(response); response = NULL; break; }
+            NSDictionary *tool_turn = @{@"role":@"user", @"content":@(tool_msg)};
+            [tool_history addObject:tool_turn];
+            free(response); response = NULL;
+            int replay_tool = !server_session_live, tool_retried = 0;
+            while (1) {
+                NSArray *outgoing = replay_tool ? tool_history : @[tool_turn];
+                sock = send_chat_request(port, outgoing, max_tokens, server_session_id, replay_tool);
+                if (sock < 0) break;
+                printf("\n");
+                response = stream_response(sock, show_thinking);
+                if (g_stream_ok) { server_session_live = 1; break; }
+                free(response); response = NULL;
+                if (!g_stream_invalidated || tool_retried) break;
+                generate_session_id(server_session_id, sizeof(server_session_id));
+                replay_tool = 1; tool_retried = 1; server_session_live = 0;
             }
+            if (g_stream_ok && response) {
+                session_save_turn(session_id, "user", tool_msg);
+                if (*response) session_save_turn(session_id, "assistant", response);
+            } else {
+                fprintf(stderr, "[chat] Tool follow-up failed; no transcript turns saved.\n");
+            }
+            free(tool_msg);
         }
 
         free(response);
