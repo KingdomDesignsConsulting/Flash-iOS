@@ -191,3 +191,11 @@ User ran `tools/experiment_session_token_exact.py` successfully against instrume
 **Scope:** full-history canonical and explicit replay tokenize identically, and the resident delta matches the canonical suffix **in this test**. This does not establish equivalence of the complete effective token history, generated EOS/think tokens or KV/GDN/convolution state. Keep PR draft and production unchanged.
 
 **Next:** optional generated-token and position trace on the isolated experimental branch to reconstruct the sequence actually fed to forward() rather than inferring it from canonical rendering. Internal-state parity requires matched-position state instrumentation, not answer matching.
+
+### Second-stage generated-token trace (2026-10-26, unqualified)
+
+Commits `16c0f6c` and `32ff71b` extend opt-in token diagnostics. With `FLASH_SESSION_TOKEN_TRACE_DIR` set, the isolated server writes per-request `chatcmpl-N-generated.json` alongside the original request-prefill trace, containing generated token IDs (including EOS), request-failure and session-reuse indicators, and final session position. The Python harness now records generated-token count/hash/position metadata and avoids treating a generated trace as a prefill trace.
+
+**Important:** these are attempted generated token IDs and final aggregate flags, not a state snapshot or proof that every token's forward() completed. Matching resident-vs-canonical state remains NOT ESTABLISHED; the next step is to inspect generated EOS/boundary behavior and identify matched positions before adding any KV/GDN/convolution checkpoint hash. No production changes.
+
+**Validation status:** committed to experimental branch but **NOT yet built or run on the Mac**. To run, stop experimental port 11243, fetch/reset the isolated checkout to the latest experimental head, build `make -C ../Flash-iOS-session-test/metal_infer lazy32k-experiment`, relaunch with the same `FLASH_SESSION_TOKEN_TRACE_DIR`, and rerun `tools/experiment_session_token_exact.py`. Keep token-ID trace files private; they may reveal prompt text.
