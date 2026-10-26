@@ -20686,7 +20686,7 @@ printf("[serve] Tool API revision 9.4 — bounded cache + malformed-tool recover
                     for (int ti = 0; ti < pt->count; ++ti)
                         [ids addObject:@(pt->ids[ti])];
                     NSDictionary *trace = @{
-                        @"request_id": @(request_id),
+                        @"request_id": [NSString stringWithUTF8String:request_id],
                         @"session_mode": is_continuation ? @"delta" : @"full",
                         @"session_reused": @(is_continuation),
                         @"session_ended_with_eos": @(session_ended_with_eos),
