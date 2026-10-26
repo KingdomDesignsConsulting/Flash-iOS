@@ -20673,6 +20673,40 @@ printf("[serve] Tool API revision 9.4 — bounded cache + malformed-tool recover
                 free(reqbuf); close(client_fd); continue;
             }
 
+            // Diagnostic-only: record exact requested token IDs without prompt text.
+            // Opt in via FLASH_SESSION_TOKEN_TRACE_DIR; never enabled by default.
+            // Each file is written before inference and is unique per request.
+            const char *token_trace_dir = getenv("FLASH_SESSION_TOKEN_TRACE_DIR");
+            if (token_trace_dir && token_trace_dir[0]) {
+                NSString *trace_dir = [NSString stringWithUTF8String:token_trace_dir];
+                BOOL trace_is_dir = NO;
+                if ([[NSFileManager defaultManager] fileExistsAtPath:trace_dir
+                    isDirectory:&trace_is_dir] && trace_is_dir) {
+                    NSMutableArray *ids = [NSMutableArray arrayWithCapacity:(NSUInteger)pt->count];
+                    for (int ti = 0; ti < pt->count; ++ti)
+                        [ids addObject:@(pt->ids[ti])];
+                    NSDictionary *trace = @{
+                        @"request_id": @(request_id),
+                        @"session_mode": is_continuation ? @"delta" : @"full",
+                        @"session_reused": @(is_continuation),
+                        @"session_ended_with_eos": @(session_ended_with_eos),
+                        @"thinking_enabled": @(request_enable_thinking),
+                        @"prompt_tokens": @(pt->count),
+                        @"token_ids": ids
+                    };
+                    NSError *trace_error = nil;
+                    NSData *trace_bytes = [NSJSONSerialization dataWithJSONObject:trace
+                        options:0 error:&trace_error];
+                    NSString *trace_path = [trace_dir stringByAppendingPathComponent:
+                        [NSString stringWithFormat:@"%@.json", @(request_id)]];
+                    if (trace_bytes && ![trace_bytes writeToFile:trace_path
+                        options:NSDataWritingAtomic error:&trace_error]) {
+                        fprintf(stderr, "[session-token-trace] write failed: %s\n",
+                            trace_error.localizedDescription.UTF8String);
+                    }
+                }
+            }
+
             // Temporary DSH request diagnostics: expose exactly which rendered
             // messages account for the uncached suffix without dumping whole
             // prompts. Cumulative tokenization uses the same renderer and tool
