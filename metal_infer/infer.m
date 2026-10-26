@@ -21490,6 +21490,11 @@ printf("[serve] Tool API revision 9.4 — bounded cache + malformed-tool recover
 			int session_reusable = 1;
 			int request_client_disconnected = 0;
             session_ended_with_eos = 0;
+            // Opt-in diagnostic sequence of tokens fed through decode forward.
+            // Stored separately from requested prefill tokens; never modifies inference.
+            const char *generated_trace_dir = getenv("FLASH_SESSION_TOKEN_TRACE_DIR");
+            NSMutableArray *generated_token_ids = (generated_trace_dir &&
+                generated_trace_dir[0]) ? [NSMutableArray array] : nil;
 			int in_think = tokens_end_in_think(pt->ids, pt->count);
 			int think_tokens = 0;
 			uint32_t *think_stop_seq = NULL;
@@ -21560,6 +21565,8 @@ printf("[serve] Tool API revision 9.4 — bounded cache + malformed-tool recover
                         ? TOOL_CALL_END_TOKEN : (int)exact_read_tokens[exact_read_index];
                     exact_read_index++;
                 }
+                if (generated_token_ids)
+                    [generated_token_ids addObject:@(next_token)];
 				if (next_token == EOS_TOKEN_1 || next_token == EOS_TOKEN_2) {
 					completion_tokens++; // The emitted stop token belongs to completion usage.
 					session_ended_with_eos = next_token;
@@ -21713,7 +21720,10 @@ printf("[serve] Tool API revision 9.4 — bounded cache + malformed-tool recover
 						if (piece) [(in_think ? reasoning_text : content_text) appendString:piece];
 					}
 				}
-				free(tok_str);
+                free(tok_str);
+                // A token may be sampled but fail during a later forward pass.
+                // Its inclusion here records the attempted decode token, not
+                // proof that the subsequent state update completed.
 				completion_tokens++;
 
 				// Generate next
@@ -22067,6 +22077,29 @@ printf("[serve] Tool API revision 9.4 — bounded cache + malformed-tool recover
 			} else {
 				session_pos = pos;
 			}
+            if (generated_token_ids) {
+                NSString *trace_dir = [NSString stringWithUTF8String:generated_trace_dir];
+                BOOL is_dir = NO;
+                if ([[NSFileManager defaultManager] fileExistsAtPath:trace_dir
+                    isDirectory:&is_dir] && is_dir) {
+                    NSString *trace_path = [trace_dir stringByAppendingPathComponent:
+                        [NSString stringWithFormat:@"%@-generated.json",
+                            [NSString stringWithUTF8String:request_id]]];
+                    NSDictionary *trace = @{
+                        @"request_id": [NSString stringWithUTF8String:request_id],
+                        @"generated_token_ids": generated_token_ids,
+                        @"generated_count": @(generated_token_ids.count),
+                        @"completion_tokens": @(completion_tokens),
+                        @"request_state_failed": @(request_state_failed),
+                        @"session_reusable": @(session_reusable),
+                        @"end_pos": @(session_pos),
+                        @"ended_with_eos": @(session_ended_with_eos)
+                    };
+                    NSData *bytes = [NSJSONSerialization dataWithJSONObject:trace
+                        options:0 error:NULL];
+                    if (bytes) [bytes writeToFile:trace_path options:NSDataWritingAtomic error:NULL];
+                }
+            }
 			fprintf(stderr, "[serve] %s session_pos=%d (session=%s)\n",
 					request_id, session_pos,
 					active_session_id[0] ? active_session_id : "(none)");
