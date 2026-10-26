@@ -183,3 +183,11 @@ python3 ../Flash-iOS-session-test/tools/experiment_session_token_exact.py \
 ```
 
 The script refuses any endpoint except loopback :11243. It neither launches nor stops the inference server. Each test session replaces the active experimental resident session; do not share :11243 with another concurrent chat. Preserve JSON result and server log on Google Drive. **PR #2 remains draft / production NO-GO.**
+
+### Live token request-prefix parity (2026-10-26)
+
+User ran `tools/experiment_session_token_exact.py` successfully against instrumented experimental server on port 11243. All five checks returned true: `resident_retains_identifier`, `canonical_recalls_identifier`, `replay_recalls_identifier`, `canonical_and_replay_token_ids_identical`, `canonical_and_replay_answers_identical`. Additionally, `resident_delta_matches_canonical_suffix=true`, `functional_passed=true`. Full report: private Google Drive-synchronized `Testing/HTTP-Prefix-Reuse/2026-10-26/token-exact-result.json`. A representative full canonical prefill logged 72 new tokens, 4,304 ms; explicit replay likewise 72 new tokens, 3,374 ms. Differences in latency are not correctness evidence.
+
+**Scope:** full-history canonical and explicit replay tokenize identically, and the resident delta matches the canonical suffix **in this test**. This does not establish equivalence of the complete effective token history, generated EOS/think tokens or KV/GDN/convolution state. Keep PR draft and production unchanged.
+
+**Next:** optional generated-token and position trace on the isolated experimental branch to reconstruct the sequence actually fed to forward() rather than inferring it from canonical rendering. Internal-state parity requires matched-position state instrumentation, not answer matching.
