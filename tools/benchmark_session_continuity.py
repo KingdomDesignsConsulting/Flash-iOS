@@ -46,14 +46,16 @@ def main():
   control=call(a.base,full)
   assert continued['timings']['session_reused'] and not control['timings']['session_reused']
   assert continued['content'].strip()==control['content'].strip()==code,(continued,control)
+  recovery=call(a.base,full,'recovery-'+uuid.uuid4().hex,True)
+  assert recovery['content']==control['content'] and not recovery['timings']['session_reused']
   # Exact resident replay after replacement, using the same actual first turn.
   new_id='replay-'+uuid.uuid4().hex
   anchor=call(a.base,[initial],new_id,True);replay=call(a.base,[follow],new_id)
   assert anchor['content']==created['content'] and replay['content']==continued['content']
   if a.document_lines:assert created['usage']['prompt_tokens']>=4800,created
-  records.append(dict(round=i,create=created,continuation=continued,stateless=control,replay_create=anchor,replay=replay,recovery_total_ms=anchor['elapsed_ms']+replay['elapsed_ms'],gpu_after=gpu()))
+  records.append(dict(round=i,create=created,continuation=continued,stateless=control,recovery=recovery,replay_create=anchor,replay=replay,recovery_total_ms=recovery['elapsed_ms'],gpu_after=gpu()))
   report=dict(result='PASS',pre_gpu=readings,document_lines=a.document_lines,records=records,confidence='exploratory; no uncontended performance claim',state_parity='NOT MEASURED: raw canonical and resident token histories may differ')
   for key in ('ttft_ms','elapsed_ms'):
-   report[key]={arm:{'median':statistics.median(r[arm][key] for r in records),'min':min(r[arm][key] for r in records),'max':max(r[arm][key] for r in records)} for arm in ('continuation','stateless','replay')}
+   report[key]={arm:{'median':statistics.median(r[arm][key] for r in records),'min':min(r[arm][key] for r in records),'max':max(r[arm][key] for r in records)} for arm in ('continuation','stateless','recovery','replay')}
   a.out.write_text(json.dumps(report,indent=2));print('PAIRED_PASS',i,created['usage']['prompt_tokens'],continued['timings']['prefill_tokens'],control['timings']['prefill_tokens'],flush=True)
 if __name__=='__main__':main()

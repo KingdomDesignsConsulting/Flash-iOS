@@ -102,7 +102,7 @@ cancelled prediction/UI state. Actual GUI behavior still needs validation.
   prepared and parsed by the actual SDK/file service, then forwarded unchanged
   once in each of two SDK Chat histories. The prediction controller/capture
   endpoint are mocks, so this is not GUI or model-output qualification. Reproduce
-  with `node test/live-sdk-documents.cjs --out /tmp/live-sdk-documents.json`.
+  with `node test/live-sdk-documents.cjs --out ../../benchmark-logs/live-sdk-documents.json`.
 - Earlier live server 7/7 and restart 5/5 matrices, plus terminal resume/eviction
   tests recorded in the prior report, are retained evidence. Those experiments
   were not needlessly repeated. Updated terminal failure semantics are mock-tested;
@@ -143,8 +143,7 @@ zero output equality is limited to these tested prompts, not a general guarantee
 Pre-run GPU samples were [0,22,0] percent; latency varied substantially. These are
 exploratory paired measurements, not uncontended throughput qualification.
 The earlier restart/resume timings remain illustrative; no new paired restart
-benchmark is claimed. A document-sized two-round paired test was also launched;
-its completed report is recorded separately before asserting any PASS.
+benchmark is claimed. A document-sized two-round paired test also passed; detailed results follow below.
 
 Native memory sample during document work: physical 2,497,539,784 bytes,
 process-lifetime physical peak 2,497,556,168 bytes, RSS 7,883,620,352 bytes.
@@ -187,7 +186,7 @@ the initial short run recorded replay-follow-up latency only, not complete recov
    `DOC-73941`, follow up, cancel, regenerate and verify full attachment retained
    exactly once. Inspect capture-server payloads if needed:
    `node test/capture-server.cjs`. SDK 1.4.0 entry point must remain stateless.
-2. Updated terminal live smoke with isolated state:
+2. Optional human terminal display smoke (automated updated native regression passed), with isolated state:
    ```sh
    continuity_state=$(mktemp -d /tmp/flash-chat-live.XXXXXX)
    printf 'State directory: %s\n' "$continuity_state"
@@ -209,3 +208,67 @@ the initial short run recorded replay-follow-up latency only, not complete recov
 **Gate status: source/build/mock work is implemented; basic server live tests are
 retained; short paired performance is measured. Production merge remains blocked
 on the listed live-client gates and unresolved exact-state contract.**
+
+## Completed final live regressions
+
+The updated native executable passed `tools/test_chat_live_continuity.py` against
+port 11243. A loopback relay fixed reasoning effort to off while preserving all
+session fields and SSE bytes. It checked new/continued requests, external
+resident eviction, exactly one automatic replay, fresh-process resume, correct
+`ORBIT-73941` recall, and exactly eight alternating JSONL turns. Full replay
+contained five messages; resumed creation contained seven. No shell tools ran.
+The script starts/stops only its own native client and relay, not the model.
+Reproduce after other inference tests have finished:
+
+```sh
+python3 tools/test_chat_live_continuity.py --base http://127.0.0.1:11243/v1 --out benchmark-logs/chat-continuity-live.json
+```
+
+Document-sized paired measurements completed twice with 7,692 initial prompt
+tokens. Resident follow-up context was 7,719 (7,694 cached + 25 prefill), versus
+canonical stateless context 7,715 (13 cached + 7,702 prefill). Both returned the
+exact identifier; resident replay after replacement returned the same answer.
+
+| Document measure | Resident follow-up | Stateless replay |
+| --- | --- | --- |
+| Prefill ms, round 0 / 1 | 2630.10 / 2520.33 | 304782.06 / 310513.00 |
+| TTFT median [min,max], ms | 2581.60 [2526.64,2636.57] | 307756.76 [304848.09,310665.44] |
+| End-to-end median [min,max], ms | 3688.38 [3638.22,3738.54] | 308799.93 [305949.79,311650.07] |
+| Decode tok/s, round 0 / 1 | 8.95 / 7.40 | 8.09 / 9.09 |
+
+The large prefill-token reduction is observed directly; the timings remain
+exploratory under possible background GPU load and different expert-cache warmth.
+No general throughput or all-state equivalence claim is inferred.
+
+### Fresh short recovery pair and final gate summary
+
+A final two-round short run additionally timed explicit complete canonical
+recovery with a new session ID. Median end-to-end [min,max] was 1,717.11
+[1,550.44,1,883.77] ms for resident continuation; 2,866.21 [2,799.29,2,933.14] ms
+for stateless replay; and 2,801.87 [2,791.72,2,812.03] ms for explicit full-history
+recovery. Recovery prefilled 52 tokens (65 logical, 13 cached), versus 25 new
+resident tokens. Recovery TTFT median was 2,365.58 ms. All answers matched.
+These are fresh short pairs, separate from the earlier colder short table.
+They measure explicit replay, not a newly repeated server-restart benchmark.
+
+| Final check | Status / evidence |
+| --- | --- |
+| Native client build | PASS, warning-free in isolated checkout |
+| Native transcript/fault suite | PASS, 20 tests including subtest fault matrices |
+| Legacy tool pipeline replay | PASS, actual pipeline with compile-time no-shell stub |
+| Native live continuation/eviction/resume | PASS, exactly 8 turns and one replay |
+| Generator TypeScript build | PASS, SDK 1.4.0 / Node 22.19.0 |
+| Generator/transport/scoped-protocol tests | PASS, 19 tests |
+| Real LM Studio document parsing and byte forwarding | PASS, local 0.4.26 build 4 service; mock prediction controller |
+| LM Studio new GUI package cancellation/regeneration | NOT TESTED |
+| LM Studio resident-mode entry point | DISABLED; no verified SDK conversation identity |
+| Short and 7,692-token document pairs | PASS, 2 rounds each; exploratory timings |
+| Exact canonical/resident KV/GDN/convolution equality | NOT ESTABLISHED; input token streams differ |
+| Independent new-client near-limit 8K/32K runs | NOT TESTED; existing engine qualification retained |
+| Production branch/binary | UNCHANGED; no request sent to 11241 |
+
+The existing experimental model on 11243 was left running as found. Every client,
+mock server, relay and SDK connection started by these tests was closed. No
+second inference model, production restart, plugin replacement or shell tool
+execution occurred. Full machine-readable data is in
+`docs/results/session-continuity-2026-10-25.json` and the Drive result bundle.
