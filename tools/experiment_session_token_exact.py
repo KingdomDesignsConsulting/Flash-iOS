@@ -42,7 +42,7 @@ def make_call(base, messages, sid=None, create=False):
 
 def collect(folder, previous, expected_id):
     for _ in range(50):
-        found = sorted(set(folder.glob("chatcmpl-*.json")) - previous,
+        found = sorted(set((p for p in folder.glob("chatcmpl-*.json") if not p.name.endswith("-generated.json"))) - previous,
                        key=lambda path: path.stat().st_mtime_ns)
         for path in found:
             try:
@@ -125,7 +125,20 @@ def main():
         before = set(folder.glob("chatcmpl-*.json"))
         reply = make_call(opts.base, messages, session, create)
         path, trace = collect(folder, before, reply["id"])
-        records[label] = {"response": reply, "trace": describe(trace, path)}
+        genpath = path.with_name(path.stem + "-generated.json")
+        generated = json.loads(genpath.read_text()) if genpath.is_file() else None
+        records[label] = {
+            "response": reply, "trace": describe(trace, path),
+            "generated": {
+                "file": str(genpath),
+                "count": len(generated["generated_token_ids"]),
+                "sha256_token_ids": digest(generated["generated_token_ids"]),
+                "end_pos": generated["end_pos"],
+                "ended_with_eos": generated["ended_with_eos"],
+                "request_state_failed": generated["request_state_failed"],
+                "session_reusable": generated["session_reusable"],
+            } if generated else None
+        }
         return trace, reply
 
     t1, r1 = invoke("resident_create", [first_turn], sid, True)
