@@ -151,3 +151,35 @@ replay. Preserve isolated logs in `Testing/HTTP-Prefix-Reuse/`.
 3. While resumed client remained open, independently created `forced-eviction-test-20261025` via non-streaming HTTP with `flash_session_create:true`, returning HTTP 200, `session_reused:0` and `OK`. On next terminal question, client printed `[chat] Session invalidated; replaying full local history.` and recovered the exact `ORBIT-73941` (23 output tokens, 13.7 tok/s, TTFT 11.7s).
 
 These results qualify basic new session, active continuation, fresh-process transcript reconstruction and automatic live forced-eviction replay. The observations do **not** yet prove local transcript turn counts post-retry, interruption behavior, edge-case SSE decoding, transport-failure handling, full KV/GDN/convolution parity or LM Studio generator safety. Production merge remains blocked.
+
+## Token-ID equivalence diagnostic (2026-10-26)
+
+**Implementation:** commit `69d1b83` adds opt-in token tracing directly after the server's final prompt-token preparation, before prefill. Commit `2be9c9e` adds `tools/experiment_session_token_exact.py`. Both changes are experimental only.
+
+For each HTTP request, the engine can write the complete **request prefill token ID array**, request ID, effective thinking flag, session continuation mode, and ending EOS marker to one JSON file. This is disabled unless `FLASH_SESSION_TOKEN_TRACE_DIR` names an existing directory. The log is sensitive: token IDs may reveal prompt content; keep traces in private Testing storage, not public GitHub. This diagnostic **does not** modify prompt construction, tokenization, generation, attention or state updates.
+
+The harness creates an initial resident conversation, continues it with a single user turn, compares canonical stateless full-history replay, and explicitly creates a replay session with the same canonical messages. It asserts identifier recall and bit-for-bit prompt token-ID equality between canonical stateless rendering and explicit full-history replay, and records whether the resident incremental prompt appears as the suffix of canonical full-history rendering.
+
+**Important limitation:** an HTTP request trace contains only prefill token IDs. Resident state also contains previously generated output tokens and the engine's EOS/boundary semantics; it cannot be reconstructed by simply concatenating the original and delta request IDs. Therefore this harness **does not** certify the complete resident effective token history or KV/GDN/convolution state equality. A future second-stage probe must capture generated token IDs and internal state checkpoints at matched logical positions. A differing canonical/delta suffix is a diagnostic finding, not necessarily an inference defect.
+
+**Mac validation: NOT RUN.** Build and execute with no production changes:
+
+```sh
+cd "/Users/Shared/Main Hard Drive/AI Storage/Apps/Flash-iOS"
+git fetch origin experiment/http-resident-prefix-reuse-20261023
+git -C ../Flash-iOS-session-test checkout --detach origin/experiment/http-resident-prefix-reuse-20261023
+make -C ../Flash-iOS-session-test/metal_infer lazy32k-experiment
+mkdir -p Testing/HTTP-Prefix-Reuse/2026-10-26/token-traces
+# Stop old experimental server on 11243 first; then Terminal 1:
+FLASH_SESSION_TOKEN_TRACE_DIR="$PWD/Testing/HTTP-Prefix-Reuse/2026-10-26/token-traces" \
+  ../Flash-iOS-session-test/metal_infer/infer-lazy32k-experiment \
+  --model "/Users/Shared/Main Hard Drive/AI Storage/AI Models/Reasoning/alexintosh/Qwen3.5-35B-A3B-Q4-Tiered-FlashMoE" \
+  --tiered --serve 11243 --prefill-nrow
+# Terminal 2, after server is listening:
+python3 ../Flash-iOS-session-test/tools/experiment_session_token_exact.py \
+  --base http://127.0.0.1:11243/v1 \
+  --trace-dir Testing/HTTP-Prefix-Reuse/2026-10-26/token-traces \
+  --out Testing/HTTP-Prefix-Reuse/2026-10-26/token-exact-result.json
+```
+
+The script refuses any endpoint except loopback :11243. It neither launches nor stops the inference server. Each test session replaces the active experimental resident session; do not share :11243 with another concurrent chat. Preserve JSON result and server log on Google Drive. **PR #2 remains draft / production NO-GO.**
