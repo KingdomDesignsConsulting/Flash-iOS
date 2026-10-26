@@ -1,3 +1,11 @@
+> Current engineering status (2026-10-25): see
+> [client hardening and qualification](session-continuity-engineering-2026-10-25.md).
+> Native JSON/SSE failure handling, atomic transcript commits and tool-output
+> recovery are now compiled and mock-tested. Generator 0.2.0 builds with safe
+> stateless fallback; scoped resident support is tested separately, not enabled
+> through guessed LM Studio identity. Historical source-only caveats below are
+> superseded only for the specifically documented tests. PR remains draft.
+
 # Flash-iOS HTTP resident-session continuity — experiment status (2026-10-25)
 
 **Branch:** `experiment/http-resident-prefix-reuse-20261023`  

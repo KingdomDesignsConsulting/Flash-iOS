@@ -300,8 +300,11 @@ n128densem2: $(INFER_SRC) $(INFER_DEPS)
 	@echo "Built benchmark-only $(N128_DENSE_M2_TARGET); production ./$(INFER_TARGET) was not replaced."
 
 # Build the chat client (thin HTTP/SSE client + linenoise line editor)
-$(CHAT_TARGET): $(CHAT_SRC) linenoise.c linenoise.h
+$(CHAT_TARGET): $(CHAT_SRC) chat_transport.inc linenoise.c linenoise.h
 	$(CC) -O2 -Wall -fobjc-arc -framework Foundation $(CHAT_SRC) linenoise.c -o $(CHAT_TARGET)
+
+chat-tool-fixture-test: $(CHAT_SRC) chat_transport.inc linenoise.c linenoise.h ../tools/chat_tool_fixture.m
+	$(CC) -O2 -Wall -fobjc-arc -framework Foundation ../tools/chat_tool_fixture.m linenoise.c -o $@
 
 clean:
 	rm -f $(TARGET) $(INFER_TARGET) "$(N128_BENCH_TARGET)" "$(N128_GATEUP8_TARGET)" "$(N128_GATEUP4ROW_TARGET)" "$(N128_GATEUP8ROW_TARGET)" "$(N128_GATEUP8CACHE_TARGET)" "$(N128_GATEUP8BITS_TARGET)" "$(N128_DOWNBITS_TARGET)" "$(N128_DOWNBITS_DIAG_TARGET)" "$(N128_DOWNCONTROL_DIAG_TARGET)" "$(N128_GATEUP16ROW_TARGET)" "$(N128_SERVE8ROW_TARGET)" "$(N128_SERVE8BITS_TARGET)" $(CHAT_TARGET) $(SHADER_AIR) $(SHADER_LIB) infer-lazy16k-experiment infer-qual-8k infer-qual-16k infer-qual-lazy16k infer-perf-8k infer-perf-16k infer-perf-lazy16k infer-lazy32k-experiment infer-qual-lazy32k infer-perf-lazy32k
