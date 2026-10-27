@@ -41,21 +41,33 @@ def make_call(base, messages, sid=None, create=False):
 
 
 def collect(folder, previous, expected_id):
-    for _ in range(50):
-        found = sorted(set((p for p in folder.glob("chatcmpl-*.json") if not p.name.endswith("-generated.json"))) - previous,
-                       key=lambda path: path.stat().st_mtime_ns)
-        for path in found:
-            try:
+    """Match a completed request by ID and changed file metadata, not filename novelty.
+
+    The server restarts its chatcmpl-N counter. A trace path may therefore be
+    overwritten and must be considered when its mtime/size has changed.
+    """
+    path = folder / (expected_id + ".json")
+    for _ in range(100):
+        try:
+            stat = path.stat()
+            fingerprint = (stat.st_mtime_ns, stat.st_size)
+            if fingerprint != previous.get(path):
                 item = json.loads(path.read_text())
-            except (ValueError, OSError):
-                continue
-            if item.get("request_id") == expected_id:
-                ids = item["token_ids"]
-                if item["prompt_tokens"] != len(ids):
-                    raise ValueError("Token-trace length mismatch")
-                return path, item
+                if item.get("request_id") == expected_id:
+                    ids = item["token_ids"]
+                    if item["prompt_tokens"] != len(ids):
+                        raise ValueError("Token-trace length mismatch")
+                    return path, item
+        except (FileNotFoundError, json.JSONDecodeError):
+            pass
         time.sleep(.1)
-    raise RuntimeError(f"Token trace missing for {expected_id}; was server started with FLASH_SESSION_TOKEN_TRACE_DIR?")
+    present = sorted(p.name for p in folder.glob("chatcmpl-*.json"))
+    raise RuntimeError(
+        f"Trace missing/stale for {expected_id}. Expected {path}; "
+        f"directory={folder}; files={present[-16:]}. "
+        "Check that FLASH_SESSION_TOKEN_TRACE_DIR in the RUNNING server "
+        "points to this exact directory and that its process can write there."
+    )
 
 
 def digest(ids):
@@ -122,7 +134,7 @@ def main():
     follow = {"role": "user", "content": "What identifier did I give you? Reply with identifier only."}
     records = {}
     def invoke(label, messages, session=None, create=False):
-        before = set(folder.glob("chatcmpl-*.json"))
+        before = {p: (p.stat().st_mtime_ns, p.stat().st_size) for p in folder.glob("chatcmpl-*.json")}
         reply = make_call(opts.base, messages, session, create)
         path, trace = collect(folder, before, reply["id"])
         genpath = path.with_name(path.stem + "-generated.json")
