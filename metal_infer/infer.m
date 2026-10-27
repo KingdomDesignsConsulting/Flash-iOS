@@ -19558,26 +19558,6 @@ static int flash_profile_self_test(const char *directory, const char *model_path
 }
 
 // The main serve loop. Model state must already be initialized.
-// Sync CPU linear attention state → GPU buffers
-static void sync_cpu_to_gpu_delta_state_serve(void **layer_states) {
-	if (!snapshot_uses_gpu_linear_state() || !layer_states) return;
-	int li = 0;
-	for (int i = 0; i < NUM_LAYERS; i++) {
-		if ((i + 1) % FULL_ATTN_INTERVAL == 0) continue;
-		if (!layer_states[i]) { li++; continue; }
-		LinearAttnState *la = (LinearAttnState *)layer_states[i];
-		if (li < g_cfg.num_linear_layers) {
-			if (g_metal->buf_delta_state[li] && la->ssm_state)
-				memcpy([g_metal->buf_delta_state[li] contents], la->ssm_state,
-					   LINEAR_NUM_V_HEADS * LINEAR_VALUE_DIM * LINEAR_KEY_DIM * sizeof(float));
-			if (g_metal->buf_conv_state[li] && la->conv_state)
-				memcpy([g_metal->buf_conv_state[li] contents], la->conv_state,
-					   (CONV_KERNEL_SIZE - 1) * LINEAR_CONV_DIM * sizeof(float));
-		}
-		li++;
-	}
-}
-
 #ifdef FLASH_SESSION_STATE_DIAGNOSTICS
 #include "session_state_diag.inc"
 #endif
@@ -19740,7 +19720,8 @@ printf("[serve] Tool API revision 9.4 — bounded cache + malformed-tool recover
 #ifdef FLASH_SESSION_STATE_DIAGNOSTICS
         if(sd_enabled())sd_write(@"startup-before-sync.json",sd_fingerprint(kv_caches,layer_states,sys_pos,"startup_before_sync"));
 #endif
-		sync_cpu_to_gpu_delta_state_serve(layer_states);
+		// GPU recurrence/convolution buffers already contain the completed prefix.
+		// Never replace them with inactive CPU shadow state.
 #ifdef FLASH_SESSION_STATE_DIAGNOSTICS
         if(sd_enabled())sd_write(@"startup-after-sync.json",sd_fingerprint(kv_caches,layer_states,sys_pos,"startup_after_sync"));
 #endif

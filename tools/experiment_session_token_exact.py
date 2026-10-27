@@ -21,6 +21,7 @@ def make_call(base, messages, sid=None, create=False):
     payload = {
         "model": "qwen3.5", "messages": messages, "stream": False,
         "temperature": 0, "reasoning_effort": "off", "max_tokens": 48,
+        "flash_trace_id": identity,
     }
     if sid:
         payload["session_id"] = sid

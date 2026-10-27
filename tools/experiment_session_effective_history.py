@@ -58,6 +58,18 @@ def record(result, name):
     return prompt, generated
 
 
+def effective_prompt(result, name, generated):
+    state = load(result[name]["state_trace"])
+    if not state["history_complete"]:
+        raise ValueError(f"{name}: incomplete effective history")
+    end = (generated["forwarded_positions"][0] if generated["forwarded_positions"]
+           else state["end_position"])
+    ids = state["effective_token_ids"]
+    if end > len(ids):
+        raise ValueError(f"{name}: prompt extends past completed history")
+    return ids[:end]
+
+
 def main():
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument("--stage1", required=True, type=Path,
@@ -73,6 +85,8 @@ def main():
     if not actual["history_complete"]:
         raise ValueError("Incomplete effective history; do not omit cached prefix tokens")
     timeline=actual["effective_token_ids"]+delta["token_ids"]
+    canonical_ids=effective_prompt(result,"canonical_full",c)
+    replay_ids=effective_prompt(result,"explicit_replay_create",d)
     # Request-boundary position checks are diagnostic, not hidden assumptions:
     # the resident path may deliberately reuse saved state or prompt prefixes.
     continuity = {
@@ -87,7 +101,7 @@ def main():
     }
     checks = {
         "all_completed_are_prefix_of_forwarded": True,
-        "canonical_prompt_equals_replay": canonical["token_ids"] == replay["token_ids"],
+        "canonical_prompt_equals_replay": canonical_ids == replay_ids,
         "initial_request_succeeded": not a["request_state_failed"],
         "continuation_request_succeeded": not b["request_state_failed"],
         "initial_completed_count": len(a["completed_token_ids"]),
@@ -102,9 +116,9 @@ def main():
         "checks": checks,
         "continuity": continuity,
         "resident_committed_candidate_vs_canonical_prompt": first_mismatch(
-            timeline, canonical["token_ids"]),
+            timeline, canonical_ids),
         "canonical_vs_explicit_replay": first_mismatch(
-            canonical["token_ids"], replay["token_ids"]),
+            canonical_ids, replay_ids),
         "interpretation": (
             "Resident candidate is the original request prompt + successful "
             "generated forwards + next request delta. This checks token-level "
@@ -113,7 +127,7 @@ def main():
             "reported, not normalized away."
         ),
         "state_equivalence": "NOT_ESTABLISHED",
-        "gpu_state_fingerprints": "NOT_IMPLEMENTED",
+        "gpu_state_fingerprints": "See separate matched-token mission results; not inferred here",
     }
     args.out.parent.mkdir(parents=True, exist_ok=True)
     args.out.write_text(json.dumps(report, indent=2) + "\n")

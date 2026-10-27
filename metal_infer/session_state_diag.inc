@@ -1,6 +1,6 @@
 // Bounded diagnostic build only. Never changes the chat template or sampler.
 #include <CommonCrypto/CommonDigest.h>
-#define SESSION_DIAG_LIMIT 256
+#define SESSION_DIAG_LIMIT 512
 static NSMutableArray *sd_history,*sd_steps;
 static NSArray *sd_base_tokens;
 static NSString *sd_identity;
@@ -110,13 +110,19 @@ static int sd_replay(WeightFile *wf,KVCache **kv,void **states,void **maps,int *
     NSArray *ids=[object isKindOfClass:[NSDictionary class]]?object[@"token_ids"]:nil;
     if(![ids isKindOfClass:[NSArray class]] || !ids.count || ids.count>SESSION_DIAG_LIMIT || !sd_enabled())return 2;
     for(id n in ids)if(![n isKindOfClass:[NSNumber class]] || [n intValue]<0 || [n intValue]>=VOCAB_SIZE)return 2;
+    id expected_digests=object[@"expected_digests"];
+    if(expected_digests && ![expected_digests isKindOfClass:[NSDictionary class]])return 2;
     reset_delta_net_state();g_forward_error=0;
     sd_begin(@"continuous-replay",NO,0,NULL,kv,states);
+    NSString *initial_expected=expected_digests[@"0"];
+    if(initial_expected && ![initial_expected isEqual:sd_steps.lastObject[@"digest"]]) {
+        sd_end(0,NO,NO);fprintf(stderr,"[session-state] FIRST_DIVERGENCE position=0\n");return 3;
+    }
     for(NSUInteger i=0;i<ids.count;i++) {
         int token=[ids[i] intValue];embed_lookup(wf,token,hidden);cache_telemetry_note_token();
         if(!run_all_layers_checked(wf,hidden,kv,states,maps,fds,(int)i,K) || !complete_deferred_experts()) {sd_end((int)i,NO,YES);return 1;}
         sd_complete(token,(int)i,"continuous",kv,states);
-        NSString *expected=object[@"expected_digests"][[NSString stringWithFormat:@"%lu",(unsigned long)i+1]];
+        NSString *expected=expected_digests[[NSString stringWithFormat:@"%lu",(unsigned long)i+1]];
         if(expected && ![expected isEqual:sd_steps.lastObject[@"digest"]]) {
             sd_end((int)i+1,NO,NO);fprintf(stderr,"[session-state] FIRST_DIVERGENCE position=%lu\n",(unsigned long)i+1);return 3;
         }

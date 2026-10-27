@@ -22,10 +22,11 @@ def compare_parts(a,b):
    differences.append(dict(component=key[0],layer=key[1],bytes=part['bytes'],active=part['active']))
  return differences
 def main():
- ap=argparse.ArgumentParser();ap.add_argument('--out',type=P,required=True);ap.add_argument('--repo',type=P,default=P(__file__).resolve().parents[1]);ap.add_argument('--model',default=MODEL);ap.add_argument('--replace-pid',type=int);ap.add_argument('--case',choices=['implicit','explicit','thinking','length'],default='implicit');ap.add_argument('--dump-component');ap.add_argument('--dump-position',type=int,default=13);a=ap.parse_args()
+ ap=argparse.ArgumentParser();ap.add_argument('--out',type=P,required=True);ap.add_argument('--repo',type=P,default=P(__file__).resolve().parents[1]);ap.add_argument('--model',default=MODEL);ap.add_argument('--replace-pid',type=int);ap.add_argument('--case',choices=['implicit','explicit','thinking','length','tools','warmtools','canonical'],default='implicit');ap.add_argument('--dump-component');ap.add_argument('--dump-position',type=int,default=13);a=ap.parse_args()
  a.out.mkdir(parents=True,exist_ok=False);http=a.out/'http';http.mkdir();control=a.out/'continuous';control.mkdir()
  binary=a.repo/'metal_infer/infer-session-state-experiment'
  report=dict(case=a.case,started=stamp(),binary_sha256=sha(binary),source_head=subprocess.check_output(['git','rev-parse','HEAD'],cwd=a.repo,text=True).strip(),model=a.model,acceptance='Exact component SHA256, all KV lengths equal position, no nonfinite; no tolerance relaxation',status='INCOMPLETE',template_modified=False)
+ report['source_sha256']={name:sha(a.repo/name) for name in ['metal_infer/infer.m','metal_infer/session_state_diag.inc','metal_infer/warm_state_cache.inc','metal_infer/Makefile']}
  write(a.out/'result.json',report)
  readings=[]
  for _ in range(3):readings.append(gpu());time.sleep(.3)
@@ -68,12 +69,18 @@ def main():
   first=[{'role':'user','content':'Remember identifier STATE-73941. Reply exactly READY.'}]
   if a.case=='explicit':first.insert(0,{'role':'system','content':'You are a helpful assistant.'})
   if a.case=='thinking':first=[{'role':'system','content':'You are a helpful assistant.'},{'role':'user','content':'Think step by step about 17 times 23, then reply with the product.'}]
-  for n,messages in enumerate([first,[{'role':'user','content':'What identifier did I give? Reply only the identifier.'}]]):
+  turns=[first,[{'role':'user','content':'What identifier did I give? Reply only the identifier.'}]]
+  if a.case=='warmtools':turns=turns+turns
+  if a.case=='canonical':turns=turns+[turns[1]]
+  for n,messages in enumerate(turns):
+   if n==2 or (a.case=='canonical' and n):sid='state-'+uuid.uuid4().hex
+   if a.case=='canonical' and n:messages=first+[{'role':'assistant','content':responses[0]['choices'][0]['message'].get('content','')},turns[1][0]]
    if a.case=='thinking' and n:break
    tag='state-'+uuid.uuid4().hex
    body=dict(model='qwen3.5',messages=messages,session_id=sid,stream=False,temperature=0,reasoning_effort='off',max_tokens=24,flash_trace_id=tag)
-   if n==0:body['flash_session_create']=True
-   if a.case=='thinking':body.update(reasoning_effort='on',thinking_token_budget=1,max_tokens=72)
+   if n%2==0 or a.case=='canonical':body['flash_session_create']=True
+   if a.case in ('tools','warmtools'):body['tools']=[{'type':'function','function':{'name':'noop','description':'Never call this tool.','parameters':{'type':'object','properties':{},'additionalProperties':False}}}]
+   if a.case=='thinking':body.update(reasoning_effort='high',thinking_token_budget=1,max_tokens=72)
    if a.case=='length':body['max_tokens']=1
    req=urllib.request.Request('http://127.0.0.1:11243/v1/chat/completions',json.dumps(body).encode(),{'Content-Type':'application/json'})
    with urllib.request.urlopen(req,timeout=240) as r:reply=json.load(r)
@@ -90,15 +97,22 @@ def main():
  finally:
   proc.terminate();proc.wait(timeout=15);log.close();print('SERVER_STOP',stamp(),'exit',proc.returncode,flush=True)
  expected={};boundary_mismatch=[]
- for t in traces:
+ compared_traces=traces[1:] if a.case=='canonical' else traces
+ for t in compared_traces:
   for row in t['state']['steps']:
    assert row.get('kv_lengths_match') and not any(c['nonfinite'] for c in row['components']),row
    pos=str(row['position'])
    if pos in expected and expected[pos]!=row['digest']:boundary_mismatch.append(int(pos))
    expected[pos]=row['digest']
+ if a.case=='canonical':
+  report['canonical_recreated_tokens_identical']=traces[1]['state']['effective_token_ids']==traces[2]['state']['effective_token_ids']
+  report['canonical_recreated_answers_identical']=responses[1]['choices']==responses[2]['choices']
+  assert report['canonical_recreated_tokens_identical'] and report['canonical_recreated_answers_identical']
  report['boundary_mismatch_positions']=boundary_mismatch
+ report['requests']=[dict(end_position=t['state']['end_position'],ended_with_eos=t['generated']['ended_with_eos'],sampled_count=len(t['generated']['sampled_token_ids']),forwarded_count=len(t['generated']['forwarded_token_ids']),sampled_forwarded_differences=sum(x!=y for x,y in zip(t['generated']['sampled_token_ids'],t['generated']['forwarded_token_ids'])),timings=r.get('flash_timings',{}),finish_reason=r['choices'][0]['finish_reason']) for t,r in zip(traces,responses)]
+ report['behavioral_identifier_retained']=(None if a.case=='thinking' else all('STATE-73941' in r['choices'][0]['message'].get('content','') for r in responses[1::2]))
  assert not boundary_mismatch,'Actual state changed at a request boundary'
- ids=traces[-1]['state']['effective_token_ids'];assert len(ids)<=256
+ ids=traces[-1]['state']['effective_token_ids'];assert len(ids)<=512
  write(a.out/'replay-input.json',dict(token_ids=ids,expected_digests=expected))
  cmd=[str(binary),'--model',a.model,'--tiered','--no-prefill-nrow']
  replay_env=dict(env,FLASH_SESSION_TOKEN_TRACE_DIR=str(control),FLASH_SESSION_REPLAY_INPUT=str(a.out/'replay-input.json'))
@@ -108,7 +122,7 @@ def main():
  print('CONTINUOUS_STOP',stamp(),'exit',result.returncode,flush=True)
  actual=load(control/'continuous-replay-state.json');control_rows={str(r['position']):r for r in actual['steps']}
  earliest=None;differences=[]
- for t in traces:
+ for t in compared_traces:
   for row in t['state']['steps']:
    reference=control_rows.get(str(row['position']))
    if reference and reference.get('digest')!=row['digest'] and (earliest is None or row['position']<earliest):earliest=row['position'];differences=compare_parts(row,reference)

@@ -1,8 +1,22 @@
 #!/usr/bin/env python3
 """Model-free collector regressions, including restart reuse and delayed publish."""
 import json,pathlib,tempfile,threading,time,unittest
-from experiment_session_token_exact import collect
+from unittest.mock import patch
+from io import BytesIO
+from experiment_session_token_exact import collect,make_call
+from experiment_session_effective_history import effective_prompt
 class Collection(unittest.TestCase):
+ def test_nonce_is_sent_in_request(self):
+  captured=[]
+  def reply(req,timeout):
+   captured.append(json.loads(req.data));return BytesIO(json.dumps({'id':'chatcmpl-1','choices':[{'message':{'content':'ok'}}]}).encode())
+  with patch('urllib.request.urlopen',side_effect=reply):response=make_call('http://127.0.0.1:11243/v1',[])
+  self.assertEqual(captured[0]['flash_trace_id'],response['trace_identity'])
+ def test_effective_prompt_includes_cached_prefix(self):
+  with tempfile.TemporaryDirectory() as t:
+   p=pathlib.Path(t)/'state.json';p.write_text(json.dumps({'history_complete':True,'effective_token_ids':[10,11,12,13,14],'end_position':5}))
+   self.assertEqual(effective_prompt({'test':{'state_trace':str(p)}},'test',{'forwarded_positions':[4]}),[10,11,12,13])
+
  def test_unique_nonce_and_delayed_generated_publish(self):
   with tempfile.TemporaryDirectory() as t:
    p=pathlib.Path(t);identity='new';rid='chatcmpl-1'
