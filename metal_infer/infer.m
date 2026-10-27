@@ -19578,6 +19578,10 @@ static void sync_cpu_to_gpu_delta_state_serve(void **layer_states) {
 	}
 }
 
+#ifdef FLASH_SESSION_STATE_DIAGNOSTICS
+#include "session_state_diag.inc"
+#endif
+
 static void serve_loop(
 	int port,
 	WeightFile *wf, Vocabulary *vocab,
@@ -19733,9 +19737,22 @@ printf("[serve] Tool API revision 9.4 — bounded cache + malformed-tool recover
 		}
 		if (sys_embed_batch) { free(sys_embed_batch); sys_embed_batch = NULL; }
 		// Sync CPU state → GPU for delta-net
+#ifdef FLASH_SESSION_STATE_DIAGNOSTICS
+        if(sd_enabled())sd_write(@"startup-before-sync.json",sd_fingerprint(kv_caches,layer_states,sys_pos,"startup_before_sync"));
+#endif
 		sync_cpu_to_gpu_delta_state_serve(layer_states);
+#ifdef FLASH_SESSION_STATE_DIAGNOSTICS
+        if(sd_enabled())sd_write(@"startup-after-sync.json",sd_fingerprint(kv_caches,layer_states,sys_pos,"startup_after_sync"));
+#endif
 		fprintf(stderr, "[serve] System prompt cached: %d tokens prefilled\n", sys_pos);
 	}
+#ifdef FLASH_SESSION_STATE_DIAGNOSTICS
+    if(sd_enabled()) {
+        NSMutableArray *base=[NSMutableArray array];for(int i=0;i<sys_pt->count;i++)[base addObject:@(sys_pt->ids[i])];
+        sd_base_tokens=base;
+        sd_write([NSString stringWithFormat:@"base-%d.json",getpid()],@{@"token_ids":base,@"position":@(sys_pos)});
+    }
+#endif
 	if (sys_pt) {
 		free(sys_pt->ids);
 		free(sys_pt);
@@ -20146,6 +20163,9 @@ printf("[serve] Tool API revision 9.4 — bounded cache + malformed-tool recover
 	if (listen(server_fd, 8) < 0) {
 		perror("listen"); close(server_fd); return;
 	}
+#ifdef FLASH_SESSION_STATE_DIAGNOSTICS
+    if(sd_enabled())sd_write(@"server.json",@{@"server_pid":@(getpid()),@"port":@(port),@"limit":@(SESSION_DIAG_LIMIT),@"gpu_kv_capacity":@(GPU_KV_SEQ),@"scalar_qualification":@(!g_prefill_nrow_runtime_enabled)});
+#endif
 	fprintf(stderr, "[serve] Listening on http://127.0.0.1:%d\n[serve] Ready\n", port);
 
 	for (;;) {
@@ -20676,7 +20696,14 @@ printf("[serve] Tool API revision 9.4 — bounded cache + malformed-tool recover
             // Diagnostic-only: record exact requested token IDs without prompt text.
             // Opt in via FLASH_SESSION_TOKEN_TRACE_DIR; never enabled by default.
             // Each file is written before inference and is unique per request.
+            NSString *token_trace_identity=nil;
             const char *token_trace_dir = getenv("FLASH_SESSION_TOKEN_TRACE_DIR");
+            if(token_trace_dir && *token_trace_dir) {
+                id tag=request[@"flash_trace_id"];
+                NSCharacterSet *allowed=[NSCharacterSet characterSetWithCharactersInString:@"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_"];
+                if([tag isKindOfClass:[NSString class]] && [tag length]>0 && [tag length]<=64 && [tag rangeOfCharacterFromSet:allowed.invertedSet].location==NSNotFound)token_trace_identity=tag;
+                else token_trace_identity=[[NSUUID UUID] UUIDString];
+            }
             if (token_trace_dir && token_trace_dir[0]) {
                 NSString *trace_dir = [NSString stringWithUTF8String:token_trace_dir];
                 BOOL trace_is_dir = NO;
@@ -20687,6 +20714,7 @@ printf("[serve] Tool API revision 9.4 — bounded cache + malformed-tool recover
                         [ids addObject:@(pt->ids[ti])];
                     NSDictionary *trace = @{
                         @"request_id": [NSString stringWithUTF8String:request_id],
+                        @"trace_identity":token_trace_identity, @"server_pid":@(getpid()),
                         @"session_mode": is_continuation ? @"delta" : @"full",
                         @"session_reused": @(is_continuation),
                         @"session_ended_with_eos": @(session_ended_with_eos),
@@ -20698,7 +20726,7 @@ printf("[serve] Tool API revision 9.4 — bounded cache + malformed-tool recover
                     NSData *trace_bytes = [NSJSONSerialization dataWithJSONObject:trace
                         options:0 error:&trace_error];
                     NSString *trace_path = [trace_dir stringByAppendingPathComponent:
-                        [NSString stringWithFormat:@"%@.json", @(request_id)]];
+                        [token_trace_identity stringByAppendingString:@"-prompt.json"]];
                     if (trace_bytes && ![trace_bytes writeToFile:trace_path
                         options:NSDataWritingAtomic error:&trace_error]) {
                         fprintf(stderr, "[session-token-trace] write failed: %s\n",
@@ -21175,6 +21203,9 @@ printf("[serve] Tool API revision 9.4 — bounded cache + malformed-tool recover
 				continue;
 			}
 
+#ifdef FLASH_SESSION_STATE_DIAGNOSTICS
+            sd_begin(token_trace_identity,is_continuation,pos,request_prefix_pt,kv_caches,layer_states);
+#endif
 			g_forward_error = 0;
 
 			// ---- Batch prefill ----
@@ -21240,6 +21271,9 @@ printf("[serve] Tool API revision 9.4 — bounded cache + malformed-tool recover
 					}
 					prefill_forward_ms += now_ms() - forward_started_ms;
 					i += PREFILL_NROW_CAPTURE_ROWS;
+#ifdef FLASH_SESSION_STATE_DIAGNOSTICS
+                    if(sd_enabled())sd_history_complete=NO; // scalar matched path first; never invent intermediate batch states
+#endif
 					pos += PREFILL_NROW_CAPTURE_ROWS;
 					prefill_completed_tokens += PREFILL_NROW_CAPTURE_ROWS;
 					prefill_nrow_chunks++;
@@ -21273,6 +21307,9 @@ printf("[serve] Tool API revision 9.4 — bounded cache + malformed-tool recover
 				prefill_forward_ms += now_ms() - forward_started_ms;
 				if (g_forward_error) break;
 				if (!discard_deferred_experts()) break;
+#ifdef FLASH_SESSION_STATE_DIAGNOSTICS
+                sd_complete(pt->ids[i],pos,"prefill",kv_caches,layer_states);
+#endif
 				pos++;
 				i++;
 				prefill_completed_tokens++;
@@ -21399,6 +21436,9 @@ printf("[serve] Tool API revision 9.4 — bounded cache + malformed-tool recover
 					if (!complete_deferred_experts()) {
 						g_forward_error = 1;
 					} else {
+#ifdef FLASH_SESSION_STATE_DIAGNOSTICS
+                        sd_complete(pt->ids[pt->count-1],pos,"prefill_final",kv_caches,layer_states);
+#endif
 						pos++;
 					}
 				}
@@ -21497,6 +21537,7 @@ printf("[serve] Tool API revision 9.4 — bounded cache + malformed-tool recover
                 generated_trace_dir[0]) ? [NSMutableArray array] : nil;
             // Attempted sample IDs may differ from the actual forward inputs
             // (for example when the thinking-budget handoff replaces a token).
+            NSMutableArray *sampled_token_ids = generated_token_ids ? [NSMutableArray array] : nil;
             NSMutableArray *forwarded_token_ids = generated_token_ids ? [NSMutableArray array] : nil;
             NSMutableArray *forwarded_positions = generated_token_ids ? [NSMutableArray array] : nil;
             NSMutableArray *completed_token_ids = generated_token_ids ? [NSMutableArray array] : nil;
@@ -21541,6 +21582,7 @@ printf("[serve] Tool API revision 9.4 — bounded cache + malformed-tool recover
                 }
             }
 			for (int gen = 0; gen < max_gen; gen++) {
+                if(sampled_token_ids)[sampled_token_ids addObject:@(next_token)];
                 if ((gen & 7) == 0 && http_client_disconnected(client_fd)) {
                     fprintf(stderr, "[serve] %s client disconnected during decode\n", request_id);
                     request_client_disconnected = 1;
@@ -21610,6 +21652,9 @@ printf("[serve] Tool API revision 9.4 — bounded cache + malformed-tool recover
                         [completed_token_ids addObject:@(next_token)];
                         [completed_positions addObject:@(pos)];
                     }
+#ifdef FLASH_SESSION_STATE_DIAGNOSTICS
+                    sd_complete(next_token,pos,"decode_eos",kv_caches,layer_states);
+#endif
                     pos++;
 					break;
 				}
@@ -21773,6 +21818,9 @@ printf("[serve] Tool API revision 9.4 — bounded cache + malformed-tool recover
                     [completed_token_ids addObject:@(next_token)];
                     [completed_positions addObject:@(pos)];
                 }
+#ifdef FLASH_SESSION_STATE_DIAGNOSTICS
+                sd_complete(next_token,pos,"decode",kv_caches,layer_states);
+#endif
 				pos++;
 
 				if (final_norm_w) {
@@ -22099,16 +22147,20 @@ printf("[serve] Tool API revision 9.4 — bounded cache + malformed-tool recover
 			} else {
 				session_pos = pos;
 			}
+#ifdef FLASH_SESSION_STATE_DIAGNOSTICS
+            sd_end(session_pos,!request_state_failed && session_reusable,request_state_failed);
+#endif
             if (generated_token_ids) {
                 NSString *trace_dir = [NSString stringWithUTF8String:generated_trace_dir];
                 BOOL is_dir = NO;
                 if ([[NSFileManager defaultManager] fileExistsAtPath:trace_dir
                     isDirectory:&is_dir] && is_dir) {
                     NSString *trace_path = [trace_dir stringByAppendingPathComponent:
-                        [NSString stringWithFormat:@"%@-generated.json",
-                            [NSString stringWithUTF8String:request_id]]];
+                        [token_trace_identity stringByAppendingString:@"-generated.json"]];
                     NSDictionary *trace = @{
                         @"request_id": [NSString stringWithUTF8String:request_id],
+                        @"trace_identity":token_trace_identity, @"server_pid":@(getpid()),
+                        @"sampled_token_ids":sampled_token_ids,
                         @"generated_token_ids": generated_token_ids,
                         @"generated_semantics": @"attempted_pre_substitution",
                         @"generated_count": @(generated_token_ids.count),
@@ -23567,6 +23619,13 @@ if (g_temperature <= 0.0f) {
 			return 1;
 		}
 
+#ifdef FLASH_SESSION_STATE_DIAGNOSTICS
+        if(getenv("FLASH_SESSION_REPLAY_INPUT")) {
+            int result=sd_replay(wf,kv_caches,layer_states,(void **)layer_mmaps,layer_fds,K,hidden);
+            complete_deferred_experts();io_pool_shutdown();
+            return result;
+        }
+#endif
 #ifdef FLASH_GPU_KV_QUALIFICATION
         if (getenv("FLASH_QUAL_ANCHOR")) {
             int result =

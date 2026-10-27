@@ -69,8 +69,10 @@ def main():
     delta, b = record(result, "resident_continuation")
     canonical, c = record(result, "canonical_full")
     replay, d = record(result, "explicit_replay_create")
-    timeline = (initial["token_ids"] + a["completed_token_ids"]
-                + delta["token_ids"])
+    actual=load(result["resident_create"]["state_trace"])
+    if not actual["history_complete"]:
+        raise ValueError("Incomplete effective history; do not omit cached prefix tokens")
+    timeline=actual["effective_token_ids"]+delta["token_ids"]
     # Request-boundary position checks are diagnostic, not hidden assumptions:
     # the resident path may deliberately reuse saved state or prompt prefixes.
     continuity = {

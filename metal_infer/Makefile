@@ -382,3 +382,8 @@ integration-kv-candidates: $(INFER_SRC) $(INFER_DEPS)
 	$(CC) $(INFER_CFLAGS) -DFLASH_EXPERIMENTAL_LAZY_SHARED_GPU_KV $(FRAMEWORKS) $(LDFLAGS) $(INFER_SRC) -o infer-candidate-lazy16k
 	$(CC) $(INFER_CFLAGS) -DFLASH_EXPERIMENTAL_LAZY_SHARED_GPU_KV_32K $(FRAMEWORKS) $(LDFLAGS) $(INFER_SRC) -o infer-candidate-lazy32k
 	@echo "Opt-in binaries ready. Production ./infer is unchanged."
+
+# Bounded private resident/continuous state diagnostics; production targets unchanged.
+.PHONY: session-state-experiment
+session-state-experiment: $(INFER_SRC) $(INFER_DEPS) session_state_diag.inc
+	$(CC) $(INFER_CFLAGS) -DFLASH_SESSION_STATE_DIAGNOSTICS -DFLASH_EXPERIMENTAL_LAZY_SHARED_GPU_KV_32K $(FRAMEWORKS) $(LDFLAGS) $(INFER_SRC) -o infer-session-state-experiment

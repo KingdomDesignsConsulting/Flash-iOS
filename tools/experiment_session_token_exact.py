@@ -17,6 +17,7 @@ import uuid
 
 
 def make_call(base, messages, sid=None, create=False):
+    identity="probe-"+uuid.uuid4().hex
     payload = {
         "model": "qwen3.5", "messages": messages, "stream": False,
         "temperature": 0, "reasoning_effort": "off", "max_tokens": 48,
@@ -36,32 +37,35 @@ def make_call(base, messages, sid=None, create=False):
         "text": result["choices"][0]["message"].get("content", ""),
         "timings": result.get("flash_timings", {}),
         "usage": result.get("usage", {}),
-        "id": result.get("id"),
+        "id": result.get("id"),"trace_identity":identity,
     }
 
 
-def collect(folder, previous, expected_id):
+def collect(folder, previous, expected_id, identity=None, suffix="prompt", attempts=100):
     """Match a completed request by ID and changed file metadata, not filename novelty.
 
     The server restarts its chatcmpl-N counter. A trace path may therefore be
     overwritten and must be considered when its mtime/size has changed.
     """
-    path = folder / (expected_id + ".json")
-    for _ in range(100):
+    path = folder / ((identity+"-"+suffix) if identity else expected_id)
+    path=path.with_suffix(".json")
+    for _ in range(attempts):
         try:
             stat = path.stat()
             fingerprint = (stat.st_mtime_ns, stat.st_size)
             if fingerprint != previous.get(path):
                 item = json.loads(path.read_text())
                 if item.get("request_id") == expected_id:
-                    ids = item["token_ids"]
-                    if item["prompt_tokens"] != len(ids):
+                    if identity and item.get("trace_identity")!=identity:
+                        raise ValueError("Trace identity mismatch")
+                    ids = item.get("token_ids",[])
+                    if suffix=="prompt" and item["prompt_tokens"] != len(ids):
                         raise ValueError("Token-trace length mismatch")
                     return path, item
         except (FileNotFoundError, json.JSONDecodeError):
             pass
         time.sleep(.1)
-    present = sorted(p.name for p in folder.glob("chatcmpl-*.json"))
+    present = sorted(p.name for p in folder.glob("*.json"))
     raise RuntimeError(
         f"Trace missing/stale for {expected_id}. Expected {path}; "
         f"directory={folder}; files={present[-16:]}. "
@@ -128,6 +132,12 @@ def main():
     if not folder.is_dir():
         parser.error("trace directory must already exist")
     opts.out.parent.mkdir(parents=True, exist_ok=True)
+    metadata=folder/"server.json"
+    if not metadata.exists():
+        parser.error("Missing server.json preflight: use the diagnostic build and exact live trace directory; no inference sent")
+    manifest=json.loads(metadata.read_text())
+    if manifest.get("port")!=11243:
+        parser.error("Trace directory is not for isolated port 11243")
     sentinel = "TOKEN-" + uuid.uuid4().hex[:12].upper()
     sid = "token-exact-" + uuid.uuid4().hex
     first_turn = {"role": "user", "content": f"Remember identifier {sentinel}. Reply briefly."}
@@ -136,11 +146,14 @@ def main():
     def invoke(label, messages, session=None, create=False):
         before = {p: (p.stat().st_mtime_ns, p.stat().st_size) for p in folder.glob("chatcmpl-*.json")}
         reply = make_call(opts.base, messages, session, create)
-        path, trace = collect(folder, before, reply["id"])
-        genpath = path.with_name(path.stem + "-generated.json")
-        generated = json.loads(genpath.read_text()) if genpath.is_file() else None
+        path, trace = collect(folder, before, reply["id"],reply["trace_identity"])
+        genpath,generated=collect(folder,before,reply["id"],reply["trace_identity"],"generated")
+        if trace.get("server_pid")!=manifest.get("server_pid") or generated.get("server_pid")!=manifest.get("server_pid"):
+            raise ValueError("Trace belongs to a different server process")
+        statepath=folder/(reply["trace_identity"]+"-state.json")
         records[label] = {
             "response": reply, "trace": describe(trace, path),
+            "state_trace":str(statepath),
             "generated": {
                 "file": str(genpath),
                 "count": len(generated["generated_token_ids"]),
