@@ -28,10 +28,15 @@ def main():
  report=dict(case=a.case,started=stamp(),binary_sha256=sha(binary),source_head=subprocess.check_output(['git','rev-parse','HEAD'],cwd=a.repo,text=True).strip(),model=a.model,acceptance='Exact component SHA256, all KV lengths equal position, no nonfinite; no tolerance relaxation',status='INCOMPLETE',template_modified=False)
  report['source_sha256']={name:sha(a.repo/name) for name in ['metal_infer/infer.m','metal_infer/session_state_diag.inc','metal_infer/warm_state_cache.inc','metal_infer/Makefile']}
  write(a.out/'result.json',report)
- readings=[]
- for _ in range(3):readings.append(gpu());time.sleep(.3)
- assert all(n is not None and n<30 for n in readings),readings
+ readings=[];stable=0
+ for _ in range(10):
+  value=gpu();readings.append(value);stable=stable+1 if value is not None and value<30 else 0
+  if stable==3:break
+  time.sleep(1)
  report['pre_gpu']=readings
+ if stable<3:
+  report.update(status='GPU_GATE_NOT_RUN',ended=stamp());write(a.out/'result.json',report)
+  raise RuntimeError('GPU gate: no three consecutive readings below 30%; no model launched: '+str(readings))
  if a.replace_pid:
   owners=subprocess.run(['lsof','-t','-nP','-iTCP:11243','-sTCP:LISTEN'],capture_output=True,text=True).stdout.split()
   assert owners==[str(a.replace_pid)],'Refusing to stop an unverified listener'
