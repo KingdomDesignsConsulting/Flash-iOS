@@ -21495,6 +21495,12 @@ printf("[serve] Tool API revision 9.4 — bounded cache + malformed-tool recover
             const char *generated_trace_dir = getenv("FLASH_SESSION_TOKEN_TRACE_DIR");
             NSMutableArray *generated_token_ids = (generated_trace_dir &&
                 generated_trace_dir[0]) ? [NSMutableArray array] : nil;
+            // Attempted sample IDs may differ from the actual forward inputs
+            // (for example when the thinking-budget handoff replaces a token).
+            NSMutableArray *forwarded_token_ids = generated_token_ids ? [NSMutableArray array] : nil;
+            NSMutableArray *forwarded_positions = generated_token_ids ? [NSMutableArray array] : nil;
+            NSMutableArray *completed_token_ids = generated_token_ids ? [NSMutableArray array] : nil;
+            NSMutableArray *completed_positions = generated_token_ids ? [NSMutableArray array] : nil;
 			int in_think = tokens_end_in_think(pt->ids, pt->count);
 			int think_tokens = 0;
 			uint32_t *think_stop_seq = NULL;
@@ -21572,6 +21578,10 @@ printf("[serve] Tool API revision 9.4 — bounded cache + malformed-tool recover
 					session_ended_with_eos = next_token;
 					if (next_token == EOS_TOKEN_2) session_reusable = 0;
                     // Feed EOS through the model so session state includes it
+                    if (forwarded_token_ids) {
+                        [forwarded_token_ids addObject:@(next_token)];
+                        [forwarded_positions addObject:@(pos)];
+                    }
 					cache_telemetry_note_token();
 					embed_lookup(wf, next_token, hidden);
 					g_forward_error = !run_all_layers_checked(wf, hidden, kv_caches, layer_states,
@@ -21596,7 +21606,11 @@ printf("[serve] Tool API revision 9.4 — bounded cache + malformed-tool recover
 						session_ended_with_eos = 0;
 						break;
 					}
-					pos++;
+					if (completed_token_ids) {
+                        [completed_token_ids addObject:@(next_token)];
+                        [completed_positions addObject:@(pos)];
+                    }
+                    pos++;
 					break;
 				}
 
@@ -21727,6 +21741,10 @@ printf("[serve] Tool API revision 9.4 — bounded cache + malformed-tool recover
 				completion_tokens++;
 
 				// Generate next
+                if (forwarded_token_ids) {
+                    [forwarded_token_ids addObject:@(next_token)];
+                    [forwarded_positions addObject:@(pos)];
+                }
 				cache_telemetry_note_token();
 				embed_lookup(wf, next_token, hidden);
 				g_forward_error = !run_all_layers_checked(wf, hidden, kv_caches, layer_states,
@@ -21751,6 +21769,10 @@ printf("[serve] Tool API revision 9.4 — bounded cache + malformed-tool recover
 					session_ended_with_eos = 0;
 					break;
 				}
+                if (completed_token_ids) {
+                    [completed_token_ids addObject:@(next_token)];
+                    [completed_positions addObject:@(pos)];
+                }
 				pos++;
 
 				if (final_norm_w) {
@@ -22088,7 +22110,13 @@ printf("[serve] Tool API revision 9.4 — bounded cache + malformed-tool recover
                     NSDictionary *trace = @{
                         @"request_id": [NSString stringWithUTF8String:request_id],
                         @"generated_token_ids": generated_token_ids,
+                        @"generated_semantics": @"attempted_pre_substitution",
                         @"generated_count": @(generated_token_ids.count),
+                        @"forwarded_token_ids": forwarded_token_ids,
+                        @"forwarded_positions": forwarded_positions,
+                        @"completed_token_ids": completed_token_ids,
+                        @"completed_positions": completed_positions,
+                        @"trace_semantics": @"completed means forward and deferred completion succeeded and position was advanced; overall session reuse is separately indicated",
                         @"completion_tokens": @(completion_tokens),
                         @"request_state_failed": @(request_state_failed),
                         @"session_reusable": @(session_reusable),
