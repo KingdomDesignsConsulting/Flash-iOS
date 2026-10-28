@@ -385,5 +385,5 @@ integration-kv-candidates: $(INFER_SRC) $(INFER_DEPS)
 
 # Bounded private resident/continuous state diagnostics; production targets unchanged.
 .PHONY: session-state-experiment
-session-state-experiment: $(INFER_SRC) $(INFER_DEPS) session_state_diag.inc
+session-state-experiment: $(INFER_SRC) $(INFER_DEPS) session_state_diag.inc session_nrow_oracle.inc session_disk_oracle.inc
 	$(CC) $(INFER_CFLAGS) -DFLASH_SESSION_STATE_DIAGNOSTICS -DFLASH_EXPERIMENTAL_LAZY_SHARED_GPU_KV_32K $(FRAMEWORKS) $(LDFLAGS) $(INFER_SRC) -o infer-session-state-experiment

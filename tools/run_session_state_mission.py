@@ -22,7 +22,7 @@ def compare_parts(a,b):
    differences.append(dict(component=key[0],layer=key[1],bytes=part['bytes'],active=part['active']))
  return differences
 def main():
- ap=argparse.ArgumentParser();ap.add_argument('--out',type=P,required=True);ap.add_argument('--repo',type=P,default=P(__file__).resolve().parents[1]);ap.add_argument('--model',default=MODEL);ap.add_argument('--replace-pid',type=int);ap.add_argument('--case',choices=['implicit','explicit','thinking','length','tools','warmtools','canonical'],default='implicit');ap.add_argument('--dump-component');ap.add_argument('--dump-position',type=int,default=13);a=ap.parse_args()
+ ap=argparse.ArgumentParser();ap.add_argument('--out',type=P,required=True);ap.add_argument('--repo',type=P,default=P(__file__).resolve().parents[1]);ap.add_argument('--model',default=MODEL);ap.add_argument('--replace-pid',type=int);ap.add_argument('--case',choices=['implicit','explicit','thinking','length','tools','warmtools','canonical'],default='implicit');ap.add_argument('--nrow',action='store_true');ap.add_argument('--allow-scalar-only',action='store_true');ap.add_argument('--words',type=int,default=0);ap.add_argument('--dump-component');ap.add_argument('--dump-position',type=int,default=13);a=ap.parse_args()
  a.out.mkdir(parents=True,exist_ok=False);http=a.out/'http';http.mkdir();control=a.out/'continuous';control.mkdir()
  binary=a.repo/'metal_infer/infer-session-state-experiment'
  report=dict(case=a.case,started=stamp(),binary_sha256=sha(binary),source_head=subprocess.check_output(['git','rev-parse','HEAD'],cwd=a.repo,text=True).strip(),model=a.model,acceptance='Exact component SHA256, all KV lengths equal position, no nonfinite; no tolerance relaxation',status='INCOMPLETE',template_modified=False)
@@ -54,7 +54,8 @@ def main():
  else:raise RuntimeError('Isolated port remains busy; no model started')
  env=dict(os.environ,FLASH_SESSION_TOKEN_TRACE_DIR=str(http))
  if a.dump_component:env.update(FLASH_SESSION_STATE_DUMP_COMPONENT=a.dump_component,FLASH_SESSION_STATE_DUMP_POSITION=str(a.dump_position))
- command=[str(binary),'--model',a.model,'--tiered','--no-prefill-nrow','--serve','11243']
+ command=[str(binary),'--model',a.model,'--tiered','--prefill-nrow' if a.nrow else '--no-prefill-nrow','--serve','11243']
+ report.update(nrow=a.nrow,padding_words=a.words)
  report['server_command']=command
  log=(a.out/'server.log').open('w');print('SERVER_START',stamp(),flush=True)
  proc=subprocess.Popen(command,cwd=binary.parent,env=env,stdin=subprocess.DEVNULL,stdout=log,stderr=subprocess.STDOUT,start_new_session=True)
@@ -69,9 +70,10 @@ def main():
    except OSError:pass
    time.sleep(.2)
   else:raise TimeoutError('Server ready timeout')
-  manifest=load(http/'server.json');assert manifest['server_pid']==proc.pid and manifest['scalar_qualification']
+  manifest=load(http/'server.json');assert manifest['server_pid']==proc.pid and manifest['scalar_qualification']==(not a.nrow)
   sid='state-'+uuid.uuid4().hex
   first=[{'role':'user','content':'Remember identifier STATE-73941. Reply exactly READY.'}]
+  if a.words:first[0]['content']='Filler:'+' x'*a.words+'\n'+first[0]['content']
   if a.case=='explicit':first.insert(0,{'role':'system','content':'You are a helpful assistant.'})
   if a.case=='thinking':first=[{'role':'system','content':'You are a helpful assistant.'},{'role':'user','content':'Think step by step about 17 times 23, then reply with the product.'}]
   turns=[first,[{'role':'user','content':'What identifier did I give? Reply only the identifier.'}]]
@@ -113,6 +115,8 @@ def main():
   report['canonical_recreated_tokens_identical']=traces[1]['state']['effective_token_ids']==traces[2]['state']['effective_token_ids']
   report['canonical_recreated_answers_identical']=responses[1]['choices']==responses[2]['choices']
   assert report['canonical_recreated_tokens_identical'] and report['canonical_recreated_answers_identical']
+ report['batch_endpoints']=[dict(position=row['position'],start=row['batch_start'],rows=row['batch_rows']) for t in traces for row in t['state']['steps'] if 'batch_rows' in row]
+ if a.nrow and not a.allow_scalar_only:assert report['batch_endpoints'],'No N128 slab executed; cannot qualify batching'
  report['boundary_mismatch_positions']=boundary_mismatch
  report['requests']=[dict(end_position=t['state']['end_position'],ended_with_eos=t['generated']['ended_with_eos'],sampled_count=len(t['generated']['sampled_token_ids']),forwarded_count=len(t['generated']['forwarded_token_ids']),sampled_forwarded_differences=sum(x!=y for x,y in zip(t['generated']['sampled_token_ids'],t['generated']['forwarded_token_ids'])),timings=r.get('flash_timings',{}),finish_reason=r['choices'][0]['finish_reason']) for t,r in zip(traces,responses)]
  report['behavioral_identifier_retained']=(None if a.case=='thinking' else all('STATE-73941' in r['choices'][0]['message'].get('content','') for r in responses[1::2]))

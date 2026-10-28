@@ -691,6 +691,10 @@ static inline void pipeline_profile_capture_lm_cmd(id<MTLCommandBuffer> cmd) {
 	}
 }
 
+#ifdef FLASH_SESSION_STATE_DIAGNOSTICS
+static void sd_progress(const char *phase,int position);
+#endif
+
 // Temporal prediction pipeline counters (declared early for timing_print access)
 static int g_pred_enabled = 0;
 static int g_pred_generating = 0;   // only set to 1 after prefill (predictions only help during generation)
@@ -18527,6 +18531,9 @@ typedef struct {
 static int serve_nrow_poll(void *opaque) {
     ServeNRowPollContext *ctx = (ServeNRowPollContext *)opaque;
     if (!ctx) return 1;
+#ifdef FLASH_SESSION_STATE_DIAGNOSTICS
+    sd_progress("prefill_nrow_poll",-1);
+#endif
     if (http_client_disconnected(ctx->client_fd)) {
         if (ctx->client_disconnected) *ctx->client_disconnected = 1;
         return 0;
@@ -21253,7 +21260,7 @@ printf("[serve] Tool API revision 9.4 — bounded cache + malformed-tool recover
 					prefill_forward_ms += now_ms() - forward_started_ms;
 					i += PREFILL_NROW_CAPTURE_ROWS;
 #ifdef FLASH_SESSION_STATE_DIAGNOSTICS
-                    if(sd_enabled())sd_history_complete=NO; // scalar matched path first; never invent intermediate batch states
+                    sd_complete_batch(pt->ids+i-PREFILL_NROW_CAPTURE_ROWS,PREFILL_NROW_CAPTURE_ROWS,pos,kv_caches,layer_states);
 #endif
 					pos += PREFILL_NROW_CAPTURE_ROWS;
 					prefill_completed_tokens += PREFILL_NROW_CAPTURE_ROWS;
@@ -21389,6 +21396,10 @@ printf("[serve] Tool API revision 9.4 — bounded cache + malformed-tool recover
                     free(request_prefix_pt);
                     request_prefix_pt = NULL;
                 }
+#ifdef FLASH_SESSION_STATE_DIAGNOSTICS
+                sd_abort_record(prefill_client_disconnected?"prefill_cancelled":"prefill_failed",kv_caches,layer_states);
+                sd_end(0,NO,YES);
+#endif
 				if (!prefill_client_disconnected)
 					send_session_invalidated_error(
 						client_fd, stream_response, @"prefill failed");
@@ -21440,6 +21451,10 @@ printf("[serve] Tool API revision 9.4 — bounded cache + malformed-tool recover
                     free(request_prefix_pt);
                     request_prefix_pt = NULL;
                 }
+#ifdef FLASH_SESSION_STATE_DIAGNOSTICS
+                sd_abort_record(prefill_client_disconnected?"prefill_cancelled":"prefill_failed",kv_caches,layer_states);
+                sd_end(0,NO,YES);
+#endif
 				if (!prefill_client_disconnected)
 					send_session_invalidated_error(
 						client_fd, stream_response, @"prefill failed");
@@ -22129,6 +22144,7 @@ printf("[serve] Tool API revision 9.4 — bounded cache + malformed-tool recover
 				session_pos = pos;
 			}
 #ifdef FLASH_SESSION_STATE_DIAGNOSTICS
+            if(request_state_failed || !session_reusable)sd_abort_record("decode_or_output_invalidated",kv_caches,layer_states);
             sd_end(session_pos,!request_state_failed && session_reusable,request_state_failed);
 #endif
             if (generated_token_ids) {
@@ -22212,6 +22228,10 @@ printf("[serve] Tool API revision 9.4 — bounded cache + malformed-tool recover
 #endif
 #ifdef FLASH_PREFILL_NROW_BENCH
 #include "prefill_nrow_control.inc"
+#endif
+#ifdef FLASH_SESSION_STATE_DIAGNOSTICS
+#include "session_nrow_oracle.inc"
+#include "session_disk_oracle.inc"
 #endif
 
 static void print_usage(const char *prog) {
@@ -23601,6 +23621,14 @@ if (g_temperature <= 0.0f) {
 		}
 
 #ifdef FLASH_SESSION_STATE_DIAGNOSTICS
+        if(getenv("FLASH_SESSION_DISK_INPUT")) {
+            int result=sn_disk(wf,kv_caches,layer_states,(void **)layer_mmaps,layer_fds,K,hidden,weights_path,manifest_path,vocab_path);
+            complete_deferred_experts();io_pool_shutdown();return result;
+        }
+        if(getenv("FLASH_SESSION_NROW_ORACLE_INPUT")) {
+            int result=sn_oracle(wf,kv_caches,layer_states,(void **)layer_mmaps,layer_fds,K,final_norm_w);
+            complete_deferred_experts();io_pool_shutdown();return result;
+        }
         if(getenv("FLASH_SESSION_REPLAY_INPUT")) {
             int result=sd_replay(wf,kv_caches,layer_states,(void **)layer_mmaps,layer_fds,K,hidden);
             complete_deferred_experts();io_pool_shutdown();

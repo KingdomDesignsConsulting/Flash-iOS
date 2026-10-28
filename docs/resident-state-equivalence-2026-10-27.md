@@ -218,3 +218,11 @@ architectural gates are N128 and long-context matched-state comparisons, plus
 cancellation/error and persistent-disk restoration comparisons. These should
 precede production promotion. Do not modify the Qwen template to conceal the
 canonical/resident wrapper distinction.
+
+
+## N128 and lifecycle follow-up
+
+The subsequent bounded N128 numerical, cancellation/recreation and native disk
+restart gates are now addressed in [the follow-up report](n128-resident-state-qualification-2026-10-27.md).
+N128 is numerically qualified under the existing thresholds, not bit-exact to
+scalar. Long-context, CPU-linear and named-profile HTTP restart remain open.

@@ -5,7 +5,8 @@ static NSMutableArray *sd_history,*sd_steps;
 static NSArray *sd_base_tokens;
 static NSString *sd_identity;
 static BOOL sd_history_complete;
-static int sd_initial_pos;
+static int sd_initial_pos,sd_polled_layers;
+static void sd_progress(const char *phase,int position);
 static BOOL sd_enabled(void) {
     const char *p=getenv("FLASH_SESSION_TOKEN_TRACE_DIR");return p && *p;
 }
@@ -74,7 +75,7 @@ static NSDictionary *sd_fingerprint(KVCache **kv,void **states,int pos,const cha
 }
 static void sd_begin(NSString *identity,BOOL continuation,int pos,PromptTokens *prefix,KVCache **kv,void **states) {
     if(!sd_enabled())return;
-    sd_identity=identity;sd_steps=[NSMutableArray array];sd_initial_pos=pos;
+    sd_identity=identity;sd_steps=[NSMutableArray array];sd_initial_pos=pos;sd_polled_layers=0;
     if(!continuation) {
         sd_history=[NSMutableArray array];sd_history_complete=YES;
         if(pos) {
@@ -89,18 +90,36 @@ static void sd_complete(uint32_t token,int position,const char *phase,KVCache **
     if(!sd_enabled() || !sd_steps)return;
     if(position>=SESSION_DIAG_LIMIT || sd_history.count!=(NSUInteger)position){sd_history_complete=NO;return;}
     [sd_history addObject:@(token)];
-    NSMutableDictionary *row=[sd_fingerprint(kv,states,position+1,phase) mutableCopy];row[@"token_id"]=@(token);[sd_steps addObject:row];
+    NSMutableDictionary *row=[sd_fingerprint(kv,states,position+1,phase) mutableCopy];row[@"token_id"]=@(token);[sd_steps addObject:row];sd_progress(phase,position+1);
+}
+// A slab exposes its completed endpoint, not intermediate row states.
+static void sd_complete_batch(const uint32_t *ids,int count,int position,KVCache **kv,void **states) {
+    if(!sd_enabled() || !sd_steps)return;
+    if(count<=0 || position<0 || count>SESSION_DIAG_LIMIT-position || sd_history.count!=(NSUInteger)position) {sd_history_complete=NO;return;}
+    for(int row=0;row<count;row++)[sd_history addObject:@(ids[row])];
+    NSMutableDictionary *step=[sd_fingerprint(kv,states,position+count,"prefill_batch_endpoint") mutableCopy];
+    step[@"batch_start"]=@(position);step[@"batch_rows"]=@(count);
+    [sd_steps addObject:step];
 }
 static void sd_end(int position,BOOL accepted,BOOL failed) {
     if(!sd_enabled() || !sd_identity || !sd_steps)return;
     sd_write([sd_identity stringByAppendingString:@"-state.json"],
        @{@"trace_identity":sd_identity,@"initial_position":@(sd_initial_pos),@"end_position":@(position),
-         @"accepted":@(accepted),@"failed":@(failed),@"history_complete":@(sd_history_complete),
+         @"accepted":@(accepted),@"failed":@(failed),@"last_completed_position":@(sd_history.count),@"history_complete":@(sd_history_complete),
          @"effective_token_ids":sd_history?:@[],@"steps":sd_steps,
          @"gpu_linear":@(snapshot_uses_gpu_linear_state()),@"active_gdn_floats":@(LINEAR_NUM_V_HEADS*LINEAR_VALUE_DIM*LINEAR_KEY_DIM),
          @"active_conv_floats":@((CONV_KERNEL_SIZE-1)*LINEAR_CONV_DIM),
          @"geometry":@"native float32; active tensors only; GPU allocation padding excluded"});
     sd_steps=nil;
+}
+static void sd_progress(const char *phase,int position) {
+    if(!getenv("FLASH_SESSION_STATE_PROGRESS") || !sd_identity)return;
+    if(!strcmp(phase,"prefill_nrow_poll"))sd_polled_layers++;
+    sd_write([sd_identity stringByAppendingString:@"-progress.json"],@{@"phase":@(phase),@"position":@(position),@"polls":@(sd_polled_layers)});
+}
+static void sd_abort_record(const char *reason,KVCache **kv,void **states) {
+    if(!sd_enabled() || !sd_identity)return;
+    sd_write([sd_identity stringByAppendingString:@"-abort.json"],@{@"reason":@(reason),@"session_invalidated":@YES,@"last_completed_position":@(sd_history.count),@"partial_state":sd_fingerprint(kv,states,(int)sd_history.count,"invalidated_partial_state")});
 }
 static int sd_replay(WeightFile *wf,KVCache **kv,void **states,void **maps,int *fds,int K,float *hidden) {
     const char *input=getenv("FLASH_SESSION_REPLAY_INPUT");if(!input)return -1;
