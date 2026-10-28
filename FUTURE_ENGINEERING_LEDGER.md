@@ -9,7 +9,7 @@
 - **Lead Architect (this ChatGPT thread) is the default hands-on engineer.** The Architect investigates, designs and implements individual experiments, commits scripts/source changes on the authorized experimental branch, provides exact Mac commands, and reviews the user's test logs/results. **The user executes Mac-local tests** when this thread lacks direct access. Architectural review and implementation are not separate responsibilities by default.
 - **Work engineering thread is optional and reserved for batches of numerous short, sequential experiments** that benefit from unattended automation and minimal moment-by-moment user interaction. Delegate a bounded batch with clear evidence and branch boundaries; do not automatically route a substantial task or every experiment to Work.
 - **Research thread** discovers candidate approaches and supplies evidence. Research recommendations are not validated Flash results or implementation assignments until triaged.
-- **Owner field describes the current actual implementer**, not merely the reviewer. Use `Architect`, `Work`, `Research`, or `Unassigned`; assign to Work only when explicitly delegated. The existing FE-001–004 Work assignment remains in effect unless reassigned; future items default to Architect engineering when selected.
+- **Owner field describes the current actual implementer**, not merely the reviewer. Use `Architect`, `Work`, `Research`, or `Unassigned`; assign to Work only when explicitly delegated. The existing FE-001–004 Work assignment has now returned results and FE-027 is Architect-owned; future items default to Architect engineering when selected.
 - For Architect-developed experiments: inspect code → implement and commit isolated change → give runnable Mac commands → user executes and returns evidence → diagnose/iterate → update ledger/status and reports. Avoid worktree conflicts with concurrent Work batches.
 
 ## How to maintain this ledger
@@ -25,14 +25,14 @@
 
 **Research intake:** [Research Discoveries.md (Drive)](https://drive.google.com/file/d/197wH1GgOC-7eaddF_Bv-B2W7vSmOsQgn/view). Reference material may evolve independently; record source date/revision when implementing.
 
-## Active release gates — currently delegated Work batch (exception to default Architect ownership)
+## Release gates — completed Work batch and new Architect blocker
 
 | ID | Priority | Status | Owner | Required outcome / current boundary | Evidence / dependencies |
 | --- | --- | --- | --- | --- | --- |
-| FE-001 | P0 | ACTIVE | Work | Long-context and many-slab N128 numerical accumulation, including 2K/4K/8K and bounded escalation; actual matched positions, state/hidden/logits tolerances, greedy tokens, KV geometry | [Architect gates](docs/architect-release-gates-2026-10-28.md); [bounded N128 report](docs/n128-resident-state-qualification-2026-10-27.md) |
-| FE-002 | P0 | ACTIVE | Work | Named-profile HTTP save → clean restart → restore → continuation, including wrong identity/metadata rejection and unchanged valid state | Native serializer restart qualified; HTTP profile lifecycle not yet |
-| FE-003 | P0 | ACTIVE | Work | Additional failure and rollback: half-close, timeout, interrupted streaming, bounded executor/Metal injection, disk-fault handling; no tainted reuse | Actual TCP RST prefill/decode covered in FE-006 |
-| FE-004 | P1 | ACTIVE | Work | Inventory and qualify supported CPU-linear, bypass, legacy GPU KV and other reachable execution modes, plus mode identity switches | Do not label unsupported modes PASS |
+| FE-001 | P0 | BLOCKED | Architect | **Confirmed numerical FAIL at completed position 1920**, after pass through 1792. Candidate/state 0.967838436, hidden 0.006615520, logits 0.042357683 exceed unchanged limits. Near-tied layer-9 expert set differs at input position 1829; earlier accumulated drift suspected. Do not escalate 4K+ until localized and corrected | [Release-gates handback](docs/resident-release-gates-2026-10-28.md); [bounded N128 report](docs/n128-resident-state-qualification-2026-10-27.md); FE-027 |
+| FE-002 | P0 | QUALIFIED | Work | Named-profile HTTP restart, matched overlapping fingerprints, correct old-session 409, incompatible signature/mode rebuild, unchanged valid profile; CPU-linear profile restart and unrelated-binary rebuild also pass **within observed scope** | [Release-gates handback](docs/resident-release-gates-2026-10-28.md); real different model weights not tested |
+| FE-003 | P0 | QUALIFIED | Work | Actual half-close and client timeout, synthetic checked-forward failure, partial temp checkpoint write EIO: invalidation/recreation or safe completion as specified; old sessions rejected; exact recovery. **Only these scenarios qualified** | [Release-gates handback](docs/resident-release-gates-2026-10-28.md); real device/OOM/disk hardware faults unverified; external tool executor N/A |
+| FE-004 | P1 | QUALIFIED | Work | Seven **short within-mode** persistent-state comparisons pass, including CPU-linear/profile restart and legacy KV. Bypass is an ablation, not model-quality pass | [Release-gates handback](docs/resident-release-gates-2026-10-28.md); long mode cross-products and cross-mode numerical parity not established |
 
 ## Completed or bounded-qualified groundwork
 
@@ -44,6 +44,12 @@
 | FE-008 | [x] DONE | Selective identity advanced to execution v3 for corrected GPU-prefix state and includes N128/scalar runtime switch; full executable hashing remains disabled | `dc77d12c`, `0b49e08` |
 | FE-009 | [x] DONE | Four-token difference explained by empty thinking wrapper retained in resident history; canonical reconstructed history omits it. Qwen template deliberately unchanged | [Scalar report](docs/resident-state-equivalence-2026-10-27.md) |
 | FE-010 | [x] DONE | GUI Regenerate not available in inspected LM Studio interface. This **does not** qualify all other GUI behavior | [Architect gates](docs/architect-release-gates-2026-10-28.md) |
+
+## Confirmed defect requiring Architect-led engineering
+
+| ID | Priority | State | Owner | Next discriminating experiment and exit criterion | Evidence |
+| --- | --- | --- | --- | --- | --- |
+| FE-027 | P0 | ACTIVE | Architect | **Locate earliest accumulated N128/scalar divergence preceding hard MoE route flip.** Inspect the exact 1792→1920 oracle, layer-9 router tie at input 1829, and earlier state drift. Use narrowly instrumented same-input route-score margins and per-layer state-delta tracing across slab endpoints; identify where numerical paths differ enough to alter top-K. Test targeted arithmetic/accumulation fixes on isolated experimental paths only; require unchanged numerical limits across many-slab and long-context cases, greedy equality, correct KV, finite state and repeatability. Scalar-anchor reset is a diagnostic counterfactual, not a serving fix. Preserve routing policy and Qwen template unless separate explicit decision | [Work report](docs/resident-release-gates-2026-10-28.md) at `ba11bd38`, implementation/probes `120e993`. At 1920: state 0.967838436, hidden 0.006615520, logits 0.042357683. Last measured pass 1792; first observed expert-set flip layer 9 / position 1829; exact anchor at 1792 prevents jump. |
 
 ## Research-derived candidate queue — not demonstrated Flash defects
 
@@ -68,11 +74,12 @@
 
 ## Next disposition queue
 
-1. **Work (existing delegated batch only):** Own and report FE-001 through FE-004. Incorporate FE-017/018/019/016 test patterns where relevant but do not turn this into uncontrolled scope expansion. Update statuses and attach measured results.
-2. **Architect:** Independently design and implement selected future experiments, commit runnable changes, hand Mac execution to the user, interpret results, and maintain this ledger; review FE-001–004 Work evidence for production gates. Coordinate agent protocol FE-011–015 as Architect-led work unless a short unattended batch is expressly delegated.
+1. **Architect:** Own FE-027 as the next implementation-and-user-run investigation. FE-001 is blocked on its resolution; do not reclassify failure as pass based on greedy agreement. Work's FE-002/003/004 bounded handback is recorded, with untested sub-scopes explicitly preserved.
+2. **Architect:** Implement experiments and give the user Mac commands; review exact outputs and revise FE-027 as evidence dictates. Once numerical drift is corrected, reopen FE-001 for 2K/4K/8K and extended contexts. Keep FE-011–015 as later Architect-led agent protocol work.
 3. **Research:** File new discoveries as proposed candidate entries with source, date, applicability, testable hypothesis, blockers and expected benefit, explicitly stating whether Apple M4 was tested.
 4. **Verifier:** Keep FE-021 blocked until a bounded M4 design beats serial end-to-end with exact hybrid-state rollback. Microbenchmarks, acceptance length and off-target draft models alone do not unblock it.
 
 ## Decision log
 
-- **2026-10-28 (operating-model amendment):** Lead Architect is also the default experiment implementer; user runs local Mac tests. Work is used selectively for many short experiments that can run unattended. Existing FE-001–004 batch delegation retained.\n- **2026-10-28:** Ledger established. Existing qualified short-scalar/N128/lifecycle findings recorded as bounded, and four active release gates identified. Research findings triaged without claiming current Flash bugs. No production promotion.
+- **2026-10-28 (Work handback / architectural triage):** FE-001 long N128 FAIL at 1920 (state 0.967838436 versus <1e-3). FE-002, FE-003 and FE-004 qualified only within bounded executed scopes. Created FE-027 Architect investigation of near-tied MoE route flip with inherited numerical drift; no production promotion.\n- **2026-10-28 (operating-model amendment):** Lead Architect is also the default experiment implementer; user runs local Mac tests. Work is used selectively for many short experiments that can run unattended. Existing FE-001–004 batch delegation retained.
+- **2026-10-28:** Ledger established. Existing qualified short-scalar/N128/lifecycle findings recorded as bounded, and four active release gates identified. Research findings triaged without claiming current Flash bugs. No production promotion.
