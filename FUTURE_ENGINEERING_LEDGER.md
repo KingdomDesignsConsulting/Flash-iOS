@@ -2,7 +2,15 @@
 
 **Purpose:** The durable, living queue for future Flash-iOS engineering, open release gates, research discoveries, experiment proposals, and work completed. **Source of truth for roadmap status**, not a replacement for detailed experiment reports, raw private results, PR discussion, or `autoresearch/experiments.tsv`.
 
-**Initialized:** 2026-10-28. **Branch:** `experiment/http-resident-prefix-reuse-20261023`. **Production:** `flash-moe-production` unchanged. **PR #2:** draft; promotion not authorized.
+**Initialized:** 2026-10-28. **Operating model clarified:** 2026-10-28. **Branch:** `experiment/http-resident-prefix-reuse-20261023`. **Production:** `flash-moe-production` unchanged. **PR #2:** draft; promotion not authorized.
+
+## Engineering ownership and execution model
+
+- **Lead Architect (this ChatGPT thread) is the default hands-on engineer.** The Architect investigates, designs and implements individual experiments, commits scripts/source changes on the authorized experimental branch, provides exact Mac commands, and reviews the user's test logs/results. **The user executes Mac-local tests** when this thread lacks direct access. Architectural review and implementation are not separate responsibilities by default.
+- **Work engineering thread is optional and reserved for batches of numerous short, sequential experiments** that benefit from unattended automation and minimal moment-by-moment user interaction. Delegate a bounded batch with clear evidence and branch boundaries; do not automatically route a substantial task or every experiment to Work.
+- **Research thread** discovers candidate approaches and supplies evidence. Research recommendations are not validated Flash results or implementation assignments until triaged.
+- **Owner field describes the current actual implementer**, not merely the reviewer. Use `Architect`, `Work`, `Research`, or `Unassigned`; assign to Work only when explicitly delegated. The existing FE-001–004 Work assignment remains in effect unless reassigned; future items default to Architect engineering when selected.
+- For Architect-developed experiments: inspect code → implement and commit isolated change → give runnable Mac commands → user executes and returns evidence → diagnose/iterate → update ledger/status and reports. Avoid worktree conflicts with concurrent Work batches.
 
 ## How to maintain this ledger
 
@@ -17,7 +25,7 @@
 
 **Research intake:** [Research Discoveries.md (Drive)](https://drive.google.com/file/d/197wH1GgOC-7eaddF_Bv-B2W7vSmOsQgn/view). Reference material may evolve independently; record source date/revision when implementing.
 
-## Active release gates — Work engineering assignment
+## Active release gates — currently delegated Work batch (exception to default Architect ownership)
 
 | ID | Priority | Status | Owner | Required outcome / current boundary | Evidence / dependencies |
 | --- | --- | --- | --- | --- | --- |
@@ -60,11 +68,11 @@
 
 ## Next disposition queue
 
-1. **Work:** Own and report FE-001 through FE-004. Incorporate FE-017/018/019/016 test patterns where relevant but do not turn this into uncontrolled scope expansion. Update statuses and attach measured results.
-2. **Architect:** Review FE-001–004 evidence for production gates; coordinate independent agent protocol FE-011–015 after correctness baseline, rather than interrupting active N128 runs.
+1. **Work (existing delegated batch only):** Own and report FE-001 through FE-004. Incorporate FE-017/018/019/016 test patterns where relevant but do not turn this into uncontrolled scope expansion. Update statuses and attach measured results.
+2. **Architect:** Independently design and implement selected future experiments, commit runnable changes, hand Mac execution to the user, interpret results, and maintain this ledger; review FE-001–004 Work evidence for production gates. Coordinate agent protocol FE-011–015 as Architect-led work unless a short unattended batch is expressly delegated.
 3. **Research:** File new discoveries as proposed candidate entries with source, date, applicability, testable hypothesis, blockers and expected benefit, explicitly stating whether Apple M4 was tested.
 4. **Verifier:** Keep FE-021 blocked until a bounded M4 design beats serial end-to-end with exact hybrid-state rollback. Microbenchmarks, acceptance length and off-target draft models alone do not unblock it.
 
 ## Decision log
 
-- **2026-10-28:** Ledger established. Existing qualified short-scalar/N128/lifecycle findings recorded as bounded, and four active release gates identified. Research findings triaged without claiming current Flash bugs. No production promotion.
+- **2026-10-28 (operating-model amendment):** Lead Architect is also the default experiment implementer; user runs local Mac tests. Work is used selectively for many short experiments that can run unattended. Existing FE-001–004 batch delegation retained.\n- **2026-10-28:** Ledger established. Existing qualified short-scalar/N128/lifecycle findings recorded as bounded, and four active release gates identified. Research findings triaged without claiming current Flash bugs. No production promotion.
