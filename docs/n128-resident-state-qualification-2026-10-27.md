@@ -5,6 +5,14 @@ Starting HEAD: `c35dc78be19bc9e4ba141252fe2cc300b8d30d40`.
 Selective compatibility correction: `0b49e08bb5948897a2b43774971213cdba0eec8a`.
 PR #2 stays draft. Production branch/binary, model weights and Qwen template are unchanged.
 
+## Subsequent long-context result
+
+The bounded results below remain accepted within scope. The October 28 many-slab
+experiment FAILS the unchanged limits at completed position 1920, after a
+near-tied MoE routing discontinuity. Named-profile HTTP restart and additional
+fault/mode tests also advanced. See [the consolidated release-gate handback](resident-release-gates-2026-10-28.md).
+Production remains NO-GO; short numerical PASS does not establish long-context parity.
+
 ## Verdict and acceptance contract
 
 **Bounded N128 resident execution is NUMERICALLY QUALIFIED on the tested M4
