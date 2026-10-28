@@ -106,6 +106,10 @@ static int warm_hash_small_file(uint64_t *h, const char *path) {
 }
 
 static uint64_t warm_execution_mode_hash(int K) {
+    uint64_t nrow_mode=0;
+#ifdef FLASH_PREFILL_NROW_PRODUCTION
+    nrow_mode=(uint64_t)g_prefill_nrow_runtime_enabled;
+#endif
     uint64_t shape[] = {WARM_STATE_VERSION, WARM_STATE_LAYOUT_VERSION,
         WARM_STATE_EXECUTION_VERSION, (uint64_t)NUM_LAYERS,
         (uint64_t)NUM_KV_HEADS, (uint64_t)HEAD_DIM,
@@ -122,7 +126,7 @@ static uint64_t warm_execution_mode_hash(int K) {
         (uint64_t)g_cmd12_chain_enabled,
         (uint64_t)g_cmd12_full_chain_enabled,
         (uint64_t)gpu_linear_attn_enabled,
-        (uint64_t)linear_attn_bypass};
+        (uint64_t)linear_attn_bypass, nrow_mode};
     uint64_t h = warm_hash_bytes(UINT64_C(14695981039346656037),
                                  shape, sizeof(shape));
     // v2 CPU recurrence semantics: pre-fix --cpu-linear checkpoints stored
@@ -979,6 +983,15 @@ static int warm_state_self_test(const char *directory) {
     linear_attn_bypass ^= 1;
     int bypass_mode_changes = warm_execution_mode_hash(8) != base_mode;
     linear_attn_bypass = saved_bypass;
+    int nrow_mode_changes=1;
+#ifdef FLASH_PREFILL_NROW_PRODUCTION
+    int saved_nrow=g_prefill_nrow_runtime_enabled;
+    g_prefill_nrow_runtime_enabled^=1;
+    nrow_mode_changes=warm_execution_mode_hash(8)!=base_mode;
+    g_prefill_nrow_runtime_enabled=saved_nrow;
+#endif
+    printf("[warm-state-test] N128/scalar mode changes identity: %s\n",nrow_mode_changes?"PASS":"FAIL");
+    if(!nrow_mode_changes)failures++;
     printf("[warm-state-test] numerical mode changes identity: %s\n",
            gpu_mode_changes && oproj_mode_changes && tiny_mode_changes &&
            linear_mode_changes && bypass_mode_changes ? "PASS" : "FAIL");
