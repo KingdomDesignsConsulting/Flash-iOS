@@ -248,11 +248,26 @@ static int warm_state_compatibility(const char *weights, const char *manifest,
                                              layer_fds, K, 0, 0, result);
 }
 
+#ifdef FLASH_SESSION_STATE_DIAGNOSTICS
+static size_t warm_test_written;
+#endif
 static int warm_write_all(int fd, const void *data, size_t size, uint64_t *hash) {
     const uint8_t *p = data;
     size_t remaining = size;
     while (remaining) {
-        ssize_t n = write(fd, p, remaining);
+        size_t allowed=remaining;
+#ifdef FLASH_SESSION_STATE_DIAGNOSTICS
+        const char *quota=getenv("FLASH_SESSION_TEST_WRITE_FAIL_AFTER");
+        if(quota) {
+            size_t limit=(size_t)strtoull(quota,NULL,10);
+            if(warm_test_written>=limit){errno=EIO;return 0;}
+            if(allowed>limit-warm_test_written)allowed=limit-warm_test_written;
+        }
+#endif
+        ssize_t n = write(fd, p, allowed);
+#ifdef FLASH_SESSION_STATE_DIAGNOSTICS
+        if(n>0)warm_test_written+=(size_t)n;
+#endif
         if (n < 0 && errno == EINTR) continue;
         if (n <= 0) return 0;
         p += n;
@@ -704,6 +719,9 @@ static int warm_state_save(NSString *path, const ToolPrefixCacheEntry *entry,
                            KVCache **kv_caches, void **layer_states,
                            uint64_t compatibility, uint64_t source_hash,
                            uint64_t profile_hash) {
+#ifdef FLASH_SESSION_STATE_DIAGNOSTICS
+    warm_test_written=0;
+#endif
     const ServeStateSnapshot *snap = &entry->snapshot;
     if (!snap->valid || snap->pos <= 0) return 0;
     WarmStateHeader head = {0};
@@ -983,6 +1001,11 @@ static int warm_state_self_test(const char *directory) {
     linear_attn_bypass ^= 1;
     int bypass_mode_changes = warm_execution_mode_hash(8) != base_mode;
     linear_attn_bypass = saved_bypass;
+    int saved_linear_chain=g_cmd12_chain_enabled,saved_full_chain=g_cmd12_full_chain_enabled;
+    g_cmd12_chain_enabled^=1;int linear_chain_changes=warm_execution_mode_hash(8)!=base_mode;g_cmd12_chain_enabled=saved_linear_chain;
+    g_cmd12_full_chain_enabled^=1;int full_chain_changes=warm_execution_mode_hash(8)!=base_mode;g_cmd12_full_chain_enabled=saved_full_chain;
+    printf("[warm-state-test] linear/full chain modes change identity: %s\n",linear_chain_changes && full_chain_changes?"PASS":"FAIL");
+    if(!linear_chain_changes || !full_chain_changes)failures++;
     int nrow_mode_changes=1;
 #ifdef FLASH_PREFILL_NROW_PRODUCTION
     int saved_nrow=g_prefill_nrow_runtime_enabled;
@@ -1003,6 +1026,17 @@ static int warm_state_self_test(const char *directory) {
         goto cleanup;
     }
     printf("[warm-state-test] valid restore: PASS\n");
+#ifdef FLASH_SESSION_STATE_DIAGNOSTICS
+    {
+    NSData *before_fault=[NSData dataWithContentsOfFile:path];
+    setenv("FLASH_SESSION_TEST_WRITE_FAIL_AFTER","4096",1);
+    int fault_rejected=!warm_state_save(path,&source,kv,linear,11,12,13);
+    unsetenv("FLASH_SESSION_TEST_WRITE_FAIL_AFTER");
+    fault_rejected &= [before_fault isEqualToData:[NSData dataWithContentsOfFile:path]];
+    printf("[warm-state-test] injected partial-write EIO preserves final: %s\n",fault_rejected?"PASS":"FAIL");
+    if(!fault_rejected)failures++;
+    }
+#endif
     serve_state_snapshot_free(&loaded.snapshot);
     struct stat st;
     if (stat(path.fileSystemRepresentation, &st) || st.st_size <= (off_t)sizeof(WarmStateHeader)) {

@@ -693,6 +693,7 @@ static inline void pipeline_profile_capture_lm_cmd(id<MTLCommandBuffer> cmd) {
 
 #ifdef FLASH_SESSION_STATE_DIAGNOSTICS
 static void sd_progress(const char *phase,int position);
+static void (*g_session_route_hook)(int,int,int,const int *,const float *,const float *)=NULL;
 #endif
 
 // Temporal prediction pipeline counters (declared early for timing_print access)
@@ -14793,6 +14794,9 @@ static void fused_layer_forward(
 	int expert_indices[64];
 	float expert_weights[64];
 	cpu_topk_softmax_raw(gate_scores, NUM_EXPERTS, K, expert_indices, expert_weights);
+#ifdef FLASH_SESSION_STATE_DIAGNOSTICS
+    if(g_session_route_hook)g_session_route_hook(layer_idx,pos,K,expert_indices,expert_weights,gate_scores);
+#endif
 #ifdef TARGET_VERIFY_ROUTE_STATS
 	if (g_target_verify_route_stats_active) {
 		int tracked_k = K > MAX_K ? MAX_K : K;
@@ -15860,6 +15864,14 @@ static int run_all_layers_checked(
 #ifdef FLASH_GPU_KV_PERFORMANCE
         if(kv_perf_active&&is_full)kv_perf_layer_ms[layer]+=now_ms()-kv_layer_start;
 #endif
+#ifdef FLASH_SESSION_STATE_DIAGNOSTICS
+        static int injected_forward_failure=0;
+        const char *test_failure=getenv("FLASH_SESSION_TEST_FORWARD_FAIL_POS");
+        if(test_failure && !injected_forward_failure && pos==atoi(test_failure) && layer==4) {
+            injected_forward_failure=1;g_forward_error=1;
+            fprintf(stderr,"[session-inject] simulated checked-forward failure pos=%d layer=4\n",pos);
+        }
+#endif
 		if (g_forward_error) {
 			discard_deferred_experts();
 			return 0;
@@ -16606,6 +16618,13 @@ static uint64_t tool_set_signature(NSArray<NSDictionary *> *tools) {
 }
 
 static NSString *project_tool_set_cache_directory(void) {
+#ifdef FLASH_SESSION_STATE_DIAGNOSTICS
+    const char *test_root=getenv("FLASH_SESSION_TEST_CACHE_ROOT");
+    if(test_root && *test_root) {
+        NSString *root=[@(test_root) stringByStandardizingPath];
+        return root.isAbsolutePath?[root stringByAppendingPathComponent:@"warm-tools-cache"]:nil;
+    }
+#endif
     NSString *executable_dir = infer_executable_directory();
     if (![[executable_dir lastPathComponent] isEqualToString:@"metal_infer"])
         return nil;

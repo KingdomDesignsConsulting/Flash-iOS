@@ -1,6 +1,8 @@
 // Bounded diagnostic build only. Never changes the chat template or sampler.
 #include <CommonCrypto/CommonDigest.h>
 #define SESSION_DIAG_LIMIT 512
+#define SESSION_ORACLE_LIMIT 32768
+static int sd_state_limit=SESSION_DIAG_LIMIT;
 static NSMutableArray *sd_history,*sd_steps;
 static NSArray *sd_base_tokens;
 static NSString *sd_identity;
@@ -47,12 +49,13 @@ static NSDictionary *sd_fingerprint(KVCache **kv,void **states,int pos,const cha
     for(int l=0;l<NUM_LAYERS;l++) {
         if(kv[l]) {
             lengths &= kv[l]->len==pos;
-            if(kv[l]->len<0 || kv[l]->len>SESSION_DIAG_LIMIT)return @{@"error":@"KV length outside diagnostic bound"};
+            if(kv[l]->len<0 || kv[l]->len>sd_state_limit)return @{@"error":@"KV length outside diagnostic bound"};
             size_t bytes=kv[l]->len*kv_unit;
             [parts addObject:sd_component("cpu_k",l,kv[l]->k_cache,bytes,YES,pos)];
             [parts addObject:sd_component("cpu_v",l,kv[l]->v_cache,bytes,YES,pos)];
             int fa=(l+1)/FULL_ATTN_INTERVAL-1;
             if(g_metal && g_metal->buf_kv_k[fa]) {
+                if(bytes>g_metal->buf_kv_k[fa].length || bytes>g_metal->buf_kv_v[fa].length)return @{@"position":@(pos),@"error":@"GPU mirror extent outside diagnostic range"};
                 [parts addObject:sd_component("gpu_k",l,g_metal->buf_kv_k[fa].contents,bytes,YES,pos)];
                 [parts addObject:sd_component("gpu_v",l,g_metal->buf_kv_v[fa].contents,bytes,YES,pos)];
             }

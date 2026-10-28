@@ -22,9 +22,9 @@ def compare_parts(a,b):
    differences.append(dict(component=key[0],layer=key[1],bytes=part['bytes'],active=part['active']))
  return differences
 def main():
- ap=argparse.ArgumentParser();ap.add_argument('--out',type=P,required=True);ap.add_argument('--repo',type=P,default=P(__file__).resolve().parents[1]);ap.add_argument('--model',default=MODEL);ap.add_argument('--replace-pid',type=int);ap.add_argument('--case',choices=['implicit','explicit','thinking','length','tools','warmtools','canonical'],default='implicit');ap.add_argument('--nrow',action='store_true');ap.add_argument('--allow-scalar-only',action='store_true');ap.add_argument('--words',type=int,default=0);ap.add_argument('--dump-component');ap.add_argument('--dump-position',type=int,default=13);a=ap.parse_args()
+ ap=argparse.ArgumentParser();ap.add_argument('--out',type=P,required=True);ap.add_argument('--repo',type=P,default=P(__file__).resolve().parents[1]);ap.add_argument('--model',default=MODEL);ap.add_argument('--replace-pid',type=int);ap.add_argument('--case',choices=['implicit','explicit','thinking','length','tools','warmtools','canonical'],default='implicit');ap.add_argument('--binary',type=P);ap.add_argument('--engine-arg',action='append',default=[]);ap.add_argument('--nrow',action='store_true');ap.add_argument('--allow-scalar-only',action='store_true');ap.add_argument('--words',type=int,default=0);ap.add_argument('--dump-component');ap.add_argument('--dump-position',type=int,default=13);a=ap.parse_args()
  a.out.mkdir(parents=True,exist_ok=False);http=a.out/'http';http.mkdir();control=a.out/'continuous';control.mkdir()
- binary=a.repo/'metal_infer/infer-session-state-experiment'
+ binary=a.binary or a.repo/'metal_infer/infer-session-state-experiment'
  report=dict(case=a.case,started=stamp(),binary_sha256=sha(binary),source_head=subprocess.check_output(['git','rev-parse','HEAD'],cwd=a.repo,text=True).strip(),model=a.model,acceptance='Exact component SHA256, all KV lengths equal position, no nonfinite; no tolerance relaxation',status='INCOMPLETE',template_modified=False)
  report['source_sha256']={name:sha(a.repo/name) for name in ['metal_infer/infer.m','metal_infer/session_state_diag.inc','metal_infer/warm_state_cache.inc','metal_infer/Makefile']}
  write(a.out/'result.json',report)
@@ -54,7 +54,7 @@ def main():
  else:raise RuntimeError('Isolated port remains busy; no model started')
  env=dict(os.environ,FLASH_SESSION_TOKEN_TRACE_DIR=str(http))
  if a.dump_component:env.update(FLASH_SESSION_STATE_DUMP_COMPONENT=a.dump_component,FLASH_SESSION_STATE_DUMP_POSITION=str(a.dump_position))
- command=[str(binary),'--model',a.model,'--tiered','--prefill-nrow' if a.nrow else '--no-prefill-nrow','--serve','11243']
+ command=[str(binary),'--model',a.model,'--tiered','--prefill-nrow' if a.nrow else '--no-prefill-nrow','--serve','11243',*a.engine_arg]
  report.update(nrow=a.nrow,padding_words=a.words)
  report['server_command']=command
  log=(a.out/'server.log').open('w');print('SERVER_START',stamp(),flush=True)
@@ -123,7 +123,7 @@ def main():
  assert not boundary_mismatch,'Actual state changed at a request boundary'
  ids=traces[-1]['state']['effective_token_ids'];assert len(ids)<=512
  write(a.out/'replay-input.json',dict(token_ids=ids,expected_digests=expected))
- cmd=[str(binary),'--model',a.model,'--tiered','--no-prefill-nrow']
+ cmd=[str(binary),'--model',a.model,'--tiered','--no-prefill-nrow',*a.engine_arg]
  replay_env=dict(env,FLASH_SESSION_TOKEN_TRACE_DIR=str(control),FLASH_SESSION_REPLAY_INPUT=str(a.out/'replay-input.json'))
  print('CONTINUOUS_START',stamp(),'tokens',len(ids),flush=True)
  with (a.out/'continuous.log').open('w') as f:

@@ -2178,6 +2178,11 @@ static int prefill_nrow_runtime_chunk(
         g_prefill_nrow_full_k = NULL;
         g_prefill_nrow_full_v = NULL;
         g_prefill_nrow_full_attn_out = NULL;
+#ifdef FLASH_SESSION_STATE_DIAGNOSTICS
+        if(ok && !full && g_session_route_hook)for(int row=0;row<PREFILL_NROW_ROWS;row++)
+            g_session_route_hook(layer,base_pos+row,PREFILL_NROW_K,capture->expert_id[row],capture->expert_weight[row],
+                (const float *)g_prefill_nrow_runtime_pipes.linear_gate_scores.contents+(size_t)row*NUM_EXPERTS);
+#endif
         if (ok) {
             double direct_grouped_started = now_ms();
             const double grouped_grouping0 = g_prefill_nrow_runtime_pipes.grouping_ms;
