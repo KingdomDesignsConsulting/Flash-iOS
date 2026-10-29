@@ -45,6 +45,8 @@
 | FE-009 | [x] DONE | Four-token difference explained by empty thinking wrapper retained in resident history; canonical reconstructed history omits it. Qwen template deliberately unchanged | [Scalar report](docs/resident-state-equivalence-2026-10-27.md) |
 | FE-010 | [x] DONE | GUI Regenerate not available in inspected LM Studio interface. This **does not** qualify all other GUI behavior | [Architect gates](docs/architect-release-gates-2026-10-28.md) |
 
+**2026-10-28 Architect follow-up (NOT RUN):** Added model-free source-guarded full-attention Q/K preparation comparison at `tools/test_fe027_full_attention_prepare.py` (commit `fb696d44`). This is a narrow first test; it does **not** compare actual N128/scalar QKV inputs, RoPE values, attention output or o-projection and cannot qualify the 303/2304 failures. Next evidence-bearing test must capture matched actual operands and outputs at full-attention layer 3.
+
 ## Confirmed numerical release blocker — delegated FE-027 batch
 
 | ID | Priority | State | Owner | Next discriminating experiment and exit criterion | Evidence |
