@@ -1,12 +1,15 @@
 // Routing observations are real per-layer decisions, not intermediate model-state claims.
 static NSMutableDictionary *sn_routes[2];
 static int sn_route_phase,sn_probe_lo,sn_probe_hi,sn_probe_layers;
-static void sn_capture_route(int layer,int pos,int count,const int *ids,const float *weights,const float *scores) {
+static NSData *sn_ref_stages[24], *sn_ref_experts[8], *sn_ref_shared, *sn_ref_output;
+static void sn_operation_probe(int layer,int pos,const float *weights,const float *mid,const float *post);
+static void sn_capture_route(int layer,int pos,int count,const int *ids,const float *weights,const float *scores,const float *mid,const float *post) {
     if(pos<sn_probe_lo || pos>=sn_probe_hi || layer>=sn_probe_layers || count!=8)return;
     NSMutableArray *selected=[NSMutableArray array],*w=[NSMutableArray array],*raw=[NSMutableArray array];
     for(int i=0;i<count;i++){[selected addObject:@(ids[i])];[w addObject:@(weights[i])];}
     for(int i=0;i<NUM_EXPERTS;i++)[raw addObject:@(scores[i])];
-    sn_routes[sn_route_phase][[NSString stringWithFormat:@"%d:%d",layer,pos]]=@{@"layer":@(layer),@"position":@(pos),@"experts":selected,@"weights":w,@"router_scores":raw};
+    sn_routes[sn_route_phase][[NSString stringWithFormat:@"%d:%d",layer,pos]]=@{@"layer":@(layer),@"position":@(pos),@"experts":selected,@"weights":w,@"router_scores":raw,@"mid_sha256":sd_sha(mid,HIDDEN_DIM*sizeof(float)),@"post_sha256":sd_sha(post,HIDDEN_DIM*sizeof(float))};
+    if(getenv("FLASH_FE027_OPERATIONS"))sn_operation_probe(layer,pos,weights,mid,post);
 }
 // Diagnostic-only matched-token scalar/N128 oracle. Two bounded reference banks;
 // no production snapshot pool, no intermediate batch-state claims.
@@ -18,6 +21,74 @@ static NSDictionary *sn_diff(const char *kind,int layer,const float *a,const flo
     }
     return @{@"component":@(kind),@"layer":@(layer),@"floats":@(n),@"different":@(different),
         @"max_abs":@(maximum),@"rms":@(n?sqrt(sum/n):0),@"nonfinite":@(nonfinite)};
+}
+// Same-input probes use private Metal buffers and do not overwrite serving
+// buffers or alter deferred-completion/input-normalization decisions.
+static void sn_operation_probe(int layer,int pos,const float *weights,const float *mid,const float *post) {
+    if(pos!=sn_probe_lo)return;
+    NSString *dir=@(getenv("FLASH_SESSION_TOKEN_TRACE_DIR"));
+    if(layer==0) {
+        NSString *phase=sn_route_phase?@"candidate":@"reference";
+        [[NSData dataWithBytes:mid length:HIDDEN_DIM*sizeof(float)] writeToFile:[dir stringByAppendingPathComponent:[phase stringByAppendingString:@"-mid.f32"]] atomically:YES];
+        [[NSData dataWithBytes:post length:HIDDEN_DIM*sizeof(float)] writeToFile:[dir stringByAppendingPathComponent:[phase stringByAppendingString:@"-post.f32"]] atomically:YES];
+    }
+    if(sn_route_phase)return;
+    static NSData *saved_mid_data;static float saved_weights[8],saved_score;
+    static NSMutableDictionary *report;
+    if(layer==0) {
+        report=[NSMutableDictionary dictionary];saved_mid_data=[NSData dataWithBytes:mid length:HIDDEN_DIM*sizeof(float)];memcpy(saved_weights,weights,sizeof(saved_weights));saved_score=((float *)g_metal->batch_out[3].contents)[0];
+        id<MTLBuffer> x=[g_metal->device newBufferWithBytes:mid length:HIDDEN_DIM*sizeof(float) options:MTLResourceStorageModeShared];
+        id<MTLBuffer> out=[g_metal->device newBufferWithLength:HIDDEN_DIM*sizeof(float) options:MTLResourceStorageModeShared];
+        id<MTLBuffer> sum=[g_metal->device newBufferWithLength:sizeof(float) options:MTLResourceStorageModeShared];
+        id<MTLCommandBuffer> cmd=[g_metal->queue commandBuffer];id<MTLComputeCommandEncoder> enc=[cmd computeCommandEncoder];uint32_t dim=HIDDEN_DIM;float eps=RMS_NORM_EPS;
+        [enc setComputePipelineState:g_metal->rms_norm_sum];[enc setBuffer:x offset:0 atIndex:0];[enc setBuffer:sum offset:0 atIndex:1];[enc setBytes:&dim length:4 atIndex:2];[enc dispatchThreadgroups:MTLSizeMake(1,1,1) threadsPerThreadgroup:MTLSizeMake(256,1,1)];[enc endEncoding];
+        enc=[cmd computeCommandEncoder];[enc setComputePipelineState:g_metal->rms_norm_apply_bf16];[enc setBuffer:x offset:0 atIndex:0];[enc setBuffer:g_metal->wf_buf offset:(const char *)layer_cache[0].post_attn_norm_w-(const char *)g_metal->wf_buf.contents atIndex:1];[enc setBuffer:sum offset:0 atIndex:2];[enc setBuffer:out offset:0 atIndex:3];[enc setBytes:&dim length:4 atIndex:4];[enc setBytes:&eps length:4 atIndex:5];[enc dispatchThreadgroups:MTLSizeMake((dim+255)/256,1,1) threadsPerThreadgroup:MTLSizeMake(256,1,1)];[enc endEncoding];[cmd commit];[cmd waitUntilCompleted];
+        if(cmd.status!=MTLCommandBufferStatusCompleted)return;
+        float cpu[HIDDEN_DIM];cpu_rms_norm(mid,layer_cache[0].post_attn_norm_w,cpu,HIDDEN_DIM,RMS_NORM_EPS);
+        report[@"cpu_norm_vs_reference_post"]=sn_diff("CPU_RMSNorm",0,cpu,post,HIDDEN_DIM);
+        report[@"gpu_norm_vs_reference_post"]=sn_diff("GPU_RMSNorm",0,out.contents,post,HIDDEN_DIM);
+        const float *gate=g_metal->batch_out[1].contents,*up=g_metal->batch_out[2].contents;
+        id<MTLBuffer> gb=[g_metal->device newBufferWithBytes:gate length:SHARED_INTERMEDIATE*sizeof(float) options:MTLResourceStorageModeShared];
+        id<MTLBuffer> ub=[g_metal->device newBufferWithBytes:up length:SHARED_INTERMEDIATE*sizeof(float) options:MTLResourceStorageModeShared];
+        id<MTLBuffer> act=[g_metal->device newBufferWithLength:SHARED_INTERMEDIATE*sizeof(float) options:MTLResourceStorageModeShared];
+        cmd=[g_metal->queue commandBuffer];enc=[cmd computeCommandEncoder];dim=SHARED_INTERMEDIATE;
+        [enc setComputePipelineState:g_metal->swiglu];[enc setBuffer:gb offset:0 atIndex:0];[enc setBuffer:ub offset:0 atIndex:1];[enc setBuffer:act offset:0 atIndex:2];[enc setBytes:&dim length:4 atIndex:3];[enc dispatchThreadgroups:MTLSizeMake((dim+255)/256,1,1) threadsPerThreadgroup:MTLSizeMake(256,1,1)];[enc endEncoding];[cmd commit];[cmd waitUntilCompleted];
+        if(cmd.status==MTLCommandBufferStatusCompleted) {float c[SHARED_INTERMEDIATE];cpu_swiglu(gate,up,c,SHARED_INTERMEDIATE);report[@"shared_swiglu_same_inputs"]=sn_diff("CPU_vs_GPU_SwiGLU",0,c,act.contents,SHARED_INTERMEDIATE);}
+    } else if(layer==1 && report) {
+        // CMD2(layer1) has waited for CMD3(layer0), but its expert/shared output
+        // buffers and moe_hidden are not reused until after this routing hook.
+        float c[HIDDEN_DIM];memset(c,0,sizeof(c));const float *saved_mid=saved_mid_data.bytes;for(int k=0;k<8;k++)cpu_vec_madd(c,g_metal->buf_multi_expert_out[k].contents,saved_weights[k],HIDDEN_DIM);
+        const float *shared=g_metal->buf_shared_out.contents;float sig=cpu_sigmoid(saved_score);
+        for(int i=0;i<HIDDEN_DIM;i++)c[i]=saved_mid[i]+c[i]+sig*shared[i];
+        report[@"combine_same_inputs"]=sn_diff("CPU_vs_GPU_combine",0,c,g_metal->buf_moe_hidden.contents,HIDDEN_DIM);
+        for(int k=0;k<8;k++) {
+            sn_ref_experts[k]=[NSData dataWithBytes:g_metal->buf_multi_expert_out[k].contents length:HIDDEN_DIM*sizeof(float)];
+            sn_ref_stages[k*3]=[NSData dataWithBytes:g_metal->buf_multi_expert_gate[k].contents length:MOE_INTERMEDIATE*sizeof(float)];
+            sn_ref_stages[k*3+1]=[NSData dataWithBytes:g_metal->buf_multi_expert_up[k].contents length:MOE_INTERMEDIATE*sizeof(float)];
+            sn_ref_stages[k*3+2]=[NSData dataWithBytes:g_metal->buf_multi_expert_act[k].contents length:MOE_INTERMEDIATE*sizeof(float)];
+        }
+        sn_ref_shared=[NSData dataWithBytes:shared length:HIDDEN_DIM*sizeof(float)];
+        sn_ref_output=[NSData dataWithBytes:g_metal->buf_moe_hidden.contents length:HIDDEN_DIM*sizeof(float)];
+        report[@"input_position"]=@(pos);report[@"private_buffers_only"]=@YES;sd_write(@"same-input-operations.json",report);report=nil;saved_mid_data=nil;
+    }
+}
+static void sn_expert_probe(int layer,int row,const float *const *outputs,const float *const *stages,const float *shared,const float *hidden) {
+    if(sn_probe_lo!=0 || !sn_route_phase || layer!=0 || row!=0 || !sn_ref_output)return;
+    NSDictionary *a=sn_routes[0][@"0:0"],*b=sn_routes[1][@"0:0"];
+    BOOL same_post=[a[@"post_sha256"] isEqual:b[@"post_sha256"]];
+    BOOL same_experts=[a[@"experts"] isEqual:b[@"experts"]];
+    NSMutableArray *deltas=[NSMutableArray array];
+    if(same_post && same_experts)for(int k=0;k<8;k++) {
+        int expert=[a[@"experts"][k] intValue];
+        NSMutableDictionary *entry=[sn_diff("expert_output",0,sn_ref_experts[k].bytes,outputs[k],HIDDEN_DIM) mutableCopy];
+        entry[@"slot"]=@(k);entry[@"expert_id"]=@(expert);entry[@"bits"]=@(TIERED(0,expert).bits);
+        entry[@"gate"]=sn_diff("expert_gate",0,sn_ref_stages[k*3].bytes,stages[k*3],MOE_INTERMEDIATE);
+        entry[@"up"]=sn_diff("expert_up",0,sn_ref_stages[k*3+1].bytes,stages[k*3+1],MOE_INTERMEDIATE);
+        entry[@"activation"]=sn_diff("expert_activation",0,sn_ref_stages[k*3+2].bytes,stages[k*3+2],MOE_INTERMEDIATE);
+        [deltas addObject:entry];
+    }
+    sd_write(@"same-input-expert-outputs.json",@{@"layer":@0,@"position":@0,@"same_post_input":@(same_post),@"same_expert_order":@(same_experts),@"expert_outputs":deltas,@"shared_output":sn_diff("shared_output",0,sn_ref_shared.bytes,shared,HIDDEN_DIM),@"layer_output":sn_diff("layer_output",0,sn_ref_output.bytes,hidden,HIDDEN_DIM)});
+    for(int k=0;k<8;k++)sn_ref_experts[k]=nil;for(int k=0;k<24;k++)sn_ref_stages[k]=nil;sn_ref_shared=nil;sn_ref_output=nil;
 }
 static NSArray *sn_state(const ServeStateSnapshot *ref,const ServeStateSnapshot *cand,KVCache **kv,int pos) {
     NSMutableArray *parts=[NSMutableArray array];int li=0;
@@ -68,8 +139,11 @@ static int sn_oracle(WeightFile *wf,KVCache **kv,void **states,void **maps,int *
     if(scalar_slabs && ![scalar_slabs isKindOfClass:NSArray.class])return 2;
     for(id start in scalar_slabs)if(![start isKindOfClass:NSNumber.class] || [start intValue]<0 || [start intValue]+PREFILL_NROW_CAPTURE_ROWS>count || [starts containsObject:start])return 2;
     if(input[@"route_probe_start"]) {
-        sn_probe_lo=[input[@"route_probe_start"] intValue];sn_probe_hi=sn_probe_lo+PREFILL_NROW_CAPTURE_ROWS;
-        sn_probe_layers=12;sn_routes[0]=[NSMutableDictionary dictionary];sn_routes[1]=[NSMutableDictionary dictionary];g_session_route_hook=sn_capture_route;
+        sn_probe_lo=[input[@"route_probe_start"] intValue];sn_probe_hi=sn_probe_lo+(input[@"route_probe_count"]?[input[@"route_probe_count"] intValue]:PREFILL_NROW_CAPTURE_ROWS);
+        sn_probe_layers=input[@"route_probe_layers"]?[input[@"route_probe_layers"] intValue]:12;
+        if(sn_probe_lo<0 || sn_probe_hi<=sn_probe_lo || sn_probe_hi-sn_probe_lo>PREFILL_NROW_CAPTURE_ROWS || sn_probe_hi>count || sn_probe_layers<1 || sn_probe_layers>NUM_LAYERS)return 2;
+        sn_routes[0]=[NSMutableDictionary dictionary];sn_routes[1]=[NSMutableDictionary dictionary];g_session_route_hook=sn_capture_route;
+        if(getenv("FLASH_FE027_OPERATIONS"))g_session_expert_hook=sn_expert_probe;
     }
     ServeStateSnapshot ref={0},cand={0},probe_anchor={0};NSMutableArray *rows=[NSMutableArray array];
     float *rh=malloc(HIDDEN_DIM*sizeof(float)),*ch=malloc(HIDDEN_DIM*sizeof(float));
@@ -111,18 +185,18 @@ static int sn_oracle(WeightFile *wf,KVCache **kv,void **states,void **maps,int *
     }
     sd_write(@"nrow-oracle.json",@{@"status":ok?@"NUMERICAL_PASS":@"FAIL",@"initial_digest":initial_digest,@"bit_exact":@(exact),@"completed_position":@(pos),@"input_tokens":@(count),@"batches":@(batches),@"threshold_source":@"prefill_nrow_control.inc and target_verify_grouped.inc at c35dc78: state<1e-3 hidden<=1e-3 logits<=1e-2, greedy identity, finite, exact KV lengths/mirrors",@"rows":rows});
     if(g_session_route_hook)sd_write(@"route-probe.json",@{@"reference":sn_routes[0],@"candidate":sn_routes[1],@"start":@(sn_probe_lo),@"end":@(sn_probe_hi),@"layers":@(sn_probe_layers)});
-    g_session_route_hook=NULL;sn_routes[0]=nil;sn_routes[1]=nil;
+    g_session_route_hook=NULL;g_session_expert_hook=NULL;sn_routes[0]=nil;sn_routes[1]=nil;
     // Counterfactual only: isolate upstream drift from the final slab's math.
     // This does not change the failed qualification result or serving policy.
     if(!ok && probe_anchor.valid && pos==sn_probe_hi) {
         int probe_ok=serve_state_snapshot_restore(&probe_anchor,kv,states) &&
-            sn_forward(wf,kv,states,maps,fds,K,ch,ids+sn_probe_lo,sn_probe_lo,PREFILL_NROW_CAPTURE_ROWS,1) &&
+            sn_forward(wf,kv,states,maps,fds,K,ch,ids+sn_probe_lo,sn_probe_lo,sn_probe_hi-sn_probe_lo,sn_probe_hi-sn_probe_lo==PREFILL_NROW_CAPTURE_ROWS) &&
             serve_state_snapshot_capture(&cand,kv,states,pos);
         if(probe_ok) {
             NSArray *parts=sn_state(&ref,&cand,kv,pos);double maximum=0;for(NSDictionary *part in parts)maximum=fmax(maximum,[part[@"max_abs"] doubleValue]);
             NSDictionary *h=sn_diff("hidden",-1,raw_ref,ch,HIDDEN_DIM);apply_final_norm_inplace(ch,norm);lm_head_forward(wf,ch,cl);
             NSDictionary *logits=sn_diff("logits",-1,rl,cl,VOCAB_SIZE);
-            sd_write(@"counterfactual-rebase.json",@{@"qualification":@"FAIL retained; diagnostic intervention only",@"reference_anchor":@(sn_probe_lo),@"end_position":@(pos),@"state_max_abs":@(maximum),@"hidden":h,@"logits":logits,@"greedy_equal":@(cpu_argmax(rl,VOCAB_SIZE)==cpu_argmax(cl,VOCAB_SIZE)),@"components":parts});
+            sd_write(@"counterfactual-rebase.json",@{@"qualification":@"FAIL retained; diagnostic intervention only",@"reference_anchor":@(sn_probe_lo),@"end_position":@(pos),@"step_rows":@(sn_probe_hi-sn_probe_lo),@"batch_rows":@((sn_probe_hi-sn_probe_lo==PREFILL_NROW_CAPTURE_ROWS)?PREFILL_NROW_CAPTURE_ROWS:0),@"state_max_abs":@(maximum),@"hidden":h,@"logits":logits,@"greedy_equal":@(cpu_argmax(rl,VOCAB_SIZE)==cpu_argmax(cl,VOCAB_SIZE)),@"components":parts});
         }
     }
     serve_state_snapshot_free(&probe_anchor);

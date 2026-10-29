@@ -105,6 +105,15 @@ static int warm_hash_small_file(uint64_t *h, const char *path) {
     return warm_hash_small_file_identity(h, path, path);
 }
 
+#ifdef FLASH_FE027_NUMERICS
+static uint64_t fe027_execution_identity(uint64_t h, unsigned mask) {
+    if (!mask) return h; // unrelated rebuilds / disabled experiment stay compatible
+    uint64_t experiment[] = {UINT64_C(0x4645303237), 1U, mask};
+    h = warm_hash_bytes(h, experiment, sizeof(experiment));
+    return (mask&8)?warm_hash_bytes(h,fe027_q4_source,sizeof(fe027_q4_source)):h;
+}
+#endif
+
 static uint64_t warm_execution_mode_hash(int K) {
     uint64_t nrow_mode=0;
 #ifdef FLASH_PREFILL_NROW_PRODUCTION
@@ -129,6 +138,9 @@ static uint64_t warm_execution_mode_hash(int K) {
         (uint64_t)linear_attn_bypass, nrow_mode};
     uint64_t h = warm_hash_bytes(UINT64_C(14695981039346656037),
                                  shape, sizeof(shape));
+#ifdef FLASH_FE027_NUMERICS
+    h = fe027_execution_identity(h, fe027_numerics_mask());
+#endif
     // v2 CPU recurrence semantics: pre-fix --cpu-linear checkpoints stored
     // stale CPU SSM state because the old fallback advanced GPU recurrence.
     // Hash the marker only in CPU-linear mode so ordinary GPU and bypass
@@ -980,6 +992,18 @@ static int warm_state_self_test(const char *directory) {
     }
     memset(source.snapshot.la_conv_snapshot[0], 0x3a, conv);
     memset(source.snapshot.la_ssm_snapshot[0], 0x5c, ssm);
+#ifdef FLASH_FE027_NUMERICS
+    {
+        uint64_t seed=UINT64_C(14695981039346656037), identities[16];
+        int distinct=fe027_execution_identity(seed,0)==seed;
+        for(unsigned mask=0;mask<16;mask++) {
+            identities[mask]=fe027_execution_identity(seed,mask);
+            for(unsigned prev=0;prev<mask;prev++)distinct&=identities[prev]!=identities[mask];
+        }
+        printf("[warm-state-test] FE027 disabled identity unchanged / enabled masks distinct: %s\n",distinct?"PASS":"FAIL");
+        if(!distinct)failures++;
+    }
+#endif
     uint64_t base_mode = warm_execution_mode_hash(8);
     int saved_gpu_moe = g_gpu_resident_moe_enabled;
     int saved_oproj = g_oproj_v3_enabled;

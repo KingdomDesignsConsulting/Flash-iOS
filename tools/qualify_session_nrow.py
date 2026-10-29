@@ -6,10 +6,11 @@ import argparse,json,pathlib,subprocess,sys
 P=pathlib.Path
 
 def main():
- p=argparse.ArgumentParser(description=__doc__);p.add_argument('--out',type=P,required=True);a=p.parse_args();a.out.mkdir(parents=True,exist_ok=False)
+ p=argparse.ArgumentParser(description=__doc__);p.add_argument('--out',type=P,required=True);p.add_argument('--binary',type=P);a=p.parse_args();a.out.mkdir(parents=True,exist_ok=False)
  scripts=P(__file__).resolve().parent;summary=[]
  for name,case,words,starts in [('threshold-scalar','implicit',98,[]),('minimum-batch','implicit',99,[13]),('batch-tail-eos','implicit',128,[13]),('two-slabs','implicit',227,[13,141]),('explicit-zero','explicit',128,[0])]:
   http=a.out/(name+'-http');cmd=[sys.executable,str(scripts/'run_session_state_mission.py'),'--nrow','--words',str(words),'--case',case,'--out',str(http)]
+  if a.binary:cmd+=['--binary',str(a.binary.resolve())]
   if not starts:cmd+=['--allow-scalar-only']
   print('HTTP_CASE',name,flush=True)
   with (a.out/(name+'-driver.log')).open('w') as f:r=subprocess.run(cmd,stdin=subprocess.DEVNULL,stdout=f,stderr=subprocess.STDOUT)
@@ -19,6 +20,7 @@ def main():
   assert [x['start'] for x in result['batch_endpoints']]==starts,result['batch_endpoints']
   if starts:
    oracle=a.out/(name+'-oracle');cmd=[sys.executable,str(scripts/'run_session_nrow_oracle.py'),'--history',str(http/'http-records.json'),'--starts',','.join(map(str,starts)),'--out',str(oracle)]
+   if a.binary:cmd+=['--binary',str(a.binary.resolve())]
    with (a.out/(name+'-oracle-driver.log')).open('w') as f:r=subprocess.run(cmd,stdin=subprocess.DEVNULL,stdout=f,stderr=subprocess.STDOUT)
    if (oracle/'nrow-oracle.json').exists():summary[-1]['oracle']=json.loads((oracle/'nrow-oracle.json').read_text())
    (a.out/'summary.json').write_text(json.dumps(summary,indent=2)+'\n')

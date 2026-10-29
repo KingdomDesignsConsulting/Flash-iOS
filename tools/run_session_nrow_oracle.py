@@ -4,13 +4,17 @@ import argparse,json,os,pathlib,subprocess,time
 from run_session_state_mission import gpu,stamp,sha,MODEL
 P=pathlib.Path
 def main():
- p=argparse.ArgumentParser(description=__doc__);p.add_argument('--history',type=P,required=True);p.add_argument('--out',type=P,required=True);p.add_argument('--count',type=int);p.add_argument('--starts',default='13');p.add_argument('--model',default=MODEL);a=p.parse_args()
- a.out.mkdir(parents=True,exist_ok=False);repo=P(__file__).resolve().parents[1];binary=repo/'metal_infer/infer-session-state-experiment'
+ p=argparse.ArgumentParser(description=__doc__);p.add_argument('--history',type=P,required=True);p.add_argument('--out',type=P,required=True);p.add_argument('--count',type=int);p.add_argument('--starts',default='13');p.add_argument('--model',default=MODEL);p.add_argument('--binary',type=P);p.add_argument('--route-probe-start',type=int);p.add_argument('--route-probe-count',type=int,default=128);p.add_argument('--route-probe-layers',type=int,default=12);a=p.parse_args()
+ a.out.mkdir(parents=True,exist_ok=False);repo=P(__file__).resolve().parents[1];binary=(a.binary or repo/'metal_infer/infer-session-state-experiment').resolve()
  history=json.loads(a.history.read_text());ids=history['traces'][-1]['state']['effective_token_ids'];count=a.count if a.count is not None else len(ids)
  assert 0<count<=len(ids) and count<=512
  starts=[int(n) for n in a.starts.split(',') if n];assert all(0<=n and n+128<=count for n in starts)
  for n,m in zip(starts,starts[1:]):assert m>=n+128
- inputfile=a.out/'input.json';inputfile.write_text(json.dumps(dict(token_ids=ids[:count],batch_starts=starts)))
+ payload=dict(token_ids=ids[:count],batch_starts=starts)
+ if a.route_probe_start is not None:
+  assert 0<=a.route_probe_start and 1<=a.route_probe_count<=128 and a.route_probe_start+a.route_probe_count<=count and 1<=a.route_probe_layers<=40
+  payload.update(route_probe_start=a.route_probe_start,route_probe_count=a.route_probe_count,route_probe_layers=a.route_probe_layers)
+ inputfile=a.out/'input.json';inputfile.write_text(json.dumps(payload))
  manifest=dict(started=stamp(),source_head=subprocess.check_output(['git','rev-parse','HEAD'],cwd=repo,text=True).strip(),source_sha256={n:sha(repo/n) for n in ['metal_infer/infer.m','metal_infer/session_state_diag.inc','metal_infer/session_nrow_oracle.inc','metal_infer/prefill_nrow_grouped_async.inc']},binary_sha256=sha(binary),input_tokens=count,batch_starts=starts,history_source=str(a.history),pre_gpu=[],status='INCOMPLETE')
  stable=0
  for _ in range(10):

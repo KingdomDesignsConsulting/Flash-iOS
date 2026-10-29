@@ -1,5 +1,16 @@
 # Resident-session release gates — 2026-10-28 engineering handback
 
+## FE-027 follow-up: original reproduction corrected only in an opt-in prototype
+
+See [the autonomous FE-027 investigation](fe027-n128-arithmetic-investigation-2026-10-28.md).
+The preserved baseline still fails at 1920 as recorded below. Selective scalar-
+arithmetic alignment passes the original 2057-token test, but the attempted 4K
+run fails at 2304, after passing through 2176. **FE-001 remains BLOCKED; FE-027
+ACTIVE; no production promotion.** Default serving is unchanged. Prior bounded
+FE-002/003/004 qualifications retain their original scope. This follow-up does
+not erase or reinterpret the original failure or diagnostic anchor evidence.
+
+
 Branch `experiment/http-resident-prefix-reuse-20261023`, starting HEAD
 `032eb94b4401ced1639aa83fcea3fc6be44d6fc7`.
 Verified tooling commit: `120e993eead03fdae7ad5efbac9fe1583c250e7c`.

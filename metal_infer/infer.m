@@ -693,7 +693,19 @@ static inline void pipeline_profile_capture_lm_cmd(id<MTLCommandBuffer> cmd) {
 
 #ifdef FLASH_SESSION_STATE_DIAGNOSTICS
 static void sd_progress(const char *phase,int position);
-static void (*g_session_route_hook)(int,int,int,const int *,const float *,const float *)=NULL;
+static void (*g_session_expert_hook)(int,int,const float *const *,const float *const *,const float *,const float *)=NULL;
+static void (*g_session_route_hook)(int,int,int,const int *,const float *,const float *,const float *,const float *)=NULL;
+#endif
+
+#ifdef FLASH_FE027_NUMERICS
+// Isolated numerical experiment: 1 router RMS, 2 input RMS, 4 shared SwiGLU,
+// 8 scalar-V3 Q4 projection math. Zero preserves the accepted identity.
+#include "fe027_q4.inc"
+static unsigned fe027_numerics_mask(void) {
+    static int cached=-1;
+    if(cached<0){const char *s=getenv("FLASH_FE027_NUMERICS");char *end=NULL;unsigned long n=s?strtoul(s,&end,10):0;cached=(!s || (end && !*end && n<=15))?(int)n:255;}
+    return (unsigned)cached;
+}
 #endif
 
 // Temporal prediction pipeline counters (declared early for timing_print access)
@@ -14795,7 +14807,9 @@ static void fused_layer_forward(
 	float expert_weights[64];
 	cpu_topk_softmax_raw(gate_scores, NUM_EXPERTS, K, expert_indices, expert_weights);
 #ifdef FLASH_SESSION_STATE_DIAGNOSTICS
-    if(g_session_route_hook)g_session_route_hook(layer_idx,pos,K,expert_indices,expert_weights,gate_scores);
+    if(g_session_route_hook)g_session_route_hook(layer_idx,pos,K,expert_indices,expert_weights,gate_scores,
+        gpu_resident_this_layer?(const float *)g_metal->buf_h_mid.contents:h_mid,
+        gpu_resident_this_layer?(const float *)g_metal->buf_input.contents:h_post);
 #endif
 #ifdef TARGET_VERIFY_ROUTE_STATS
 	if (g_target_verify_route_stats_active) {
