@@ -693,6 +693,9 @@ static inline void pipeline_profile_capture_lm_cmd(id<MTLCommandBuffer> cmd) {
 
 #ifdef FLASH_SESSION_STATE_DIAGNOSTICS
 static void sd_progress(const char *phase,int position);
+static int g_fe_fa_base;
+static void (*g_fe_fa_cpu)(const char *,int,int,const float *,size_t)=NULL;
+static void (*g_fe_fa_gpu)(id<MTLCommandBuffer>,const char *,int,int,id<MTLBuffer>,NSUInteger,size_t)=NULL;
 static void (*g_session_expert_hook)(int,int,const float *const *,const float *const *,const float *,const float *)=NULL;
 static void (*g_session_route_hook)(int,int,int,const int *,const float *,const float *,const float *,const float *)=NULL;
 #endif
@@ -703,7 +706,7 @@ static void (*g_session_route_hook)(int,int,int,const int *,const float *,const 
 #include "fe027_q4.inc"
 static unsigned fe027_numerics_mask(void) {
     static int cached=-1;
-    if(cached<0){const char *s=getenv("FLASH_FE027_NUMERICS");char *end=NULL;unsigned long n=s?strtoul(s,&end,10):0;cached=(!s || (end && !*end && n<=15))?(int)n:255;}
+    if(cached<0){const char *s=getenv("FLASH_FE027_NUMERICS");char *end=NULL;unsigned long n=s?strtoul(s,&end,10):0;cached=(!s || (end && !*end && n<=31))?(int)n:255;}
     return (unsigned)cached;
 }
 #endif
@@ -11568,6 +11571,12 @@ static void encode_full_attn_prepare(
 	[enc dispatchThreadgroups:MTLSizeMake(NUM_ATTN_HEADS + NUM_KV_HEADS, 1, 1)
 		threadsPerThreadgroup:MTLSizeMake(1, 1, 1)];
 	[enc endEncoding];
+#ifdef FLASH_SESSION_STATE_DIAGNOSTICS
+    if(g_fe_fa_gpu){int layer=(fa_idx+1)*FULL_ATTN_INTERVAL-1;
+        g_fe_fa_gpu(cmd,"q_rope",layer,pos,g_metal->buf_attn_q,0,NUM_ATTN_HEADS*HEAD_DIM);
+        g_fe_fa_gpu(cmd,"k_rope",layer,pos,g_metal->buf_kv_k[fa_idx],(size_t)cache_pos*p.kv_dim*sizeof(float),p.kv_dim);
+    }
+#endif
 }
 
 static void sync_full_attn_cpu_kv_from_gpu(KVCache *kv, int fa_idx, int cache_pos) {
@@ -13388,6 +13397,14 @@ static void fused_layer_forward(
 
 		cmd1 = [g_metal->queue commandBuffer];
 		gpu_encode_batch_matvec(g_metal, cmd1, attn_specs, num_attn_specs);
+#ifdef FLASH_SESSION_STATE_DIAGNOSTICS
+        if(is_full && g_fe_fa_gpu) {
+            g_fe_fa_gpu(cmd1,"input_norm",layer_idx,pos,g_metal->buf_input,0,HIDDEN_DIM);
+            g_fe_fa_gpu(cmd1,"qproj",layer_idx,pos,g_metal->batch_out[0],0,NUM_ATTN_HEADS*HEAD_DIM*2);
+            g_fe_fa_gpu(cmd1,"kproj",layer_idx,pos,g_metal->batch_out[1],0,NUM_KV_HEADS*HEAD_DIM);
+            g_fe_fa_gpu(cmd1,"vproj",layer_idx,pos,g_metal->batch_out[2],0,NUM_KV_HEADS*HEAD_DIM);
+        }
+#endif
 
 		if (can_cmd12_full_chain) {
 			encode_full_attn_prepare(cmd1, lc, cmd12_full_chain_fa_idx,
@@ -13587,6 +13604,14 @@ static void fused_layer_forward(
 			memcpy([g_metal->buf_input contents], normed, HIDDEN_DIM * sizeof(float));
 			cmd1 = [g_metal->queue commandBuffer];
 			gpu_encode_batch_matvec(g_metal, cmd1, attn_specs, num_attn_specs);
+#ifdef FLASH_SESSION_STATE_DIAGNOSTICS
+        if(is_full && g_fe_fa_gpu) {
+            g_fe_fa_gpu(cmd1,"input_norm",layer_idx,pos,g_metal->buf_input,0,HIDDEN_DIM);
+            g_fe_fa_gpu(cmd1,"qproj",layer_idx,pos,g_metal->batch_out[0],0,NUM_ATTN_HEADS*HEAD_DIM*2);
+            g_fe_fa_gpu(cmd1,"kproj",layer_idx,pos,g_metal->batch_out[1],0,NUM_KV_HEADS*HEAD_DIM);
+            g_fe_fa_gpu(cmd1,"vproj",layer_idx,pos,g_metal->batch_out[2],0,NUM_KV_HEADS*HEAD_DIM);
+        }
+#endif
 
 			if (can_cmd12_full_chain) {
 				encode_full_attn_prepare(cmd1, lc, cmd12_full_chain_fa_idx,
@@ -13908,6 +13933,9 @@ static void fused_layer_forward(
 			memcpy(q_gate + h * HEAD_DIM, src + HEAD_DIM, HEAD_DIM * sizeof(float));
 		}
 
+#ifdef FLASH_SESSION_STATE_DIAGNOSTICS
+        if(g_fe_fa_cpu){g_fe_fa_cpu("q_raw",layer_idx,pos,q,q_dim);g_fe_fa_cpu("k_raw",layer_idx,pos,k_out,kv_dim);}
+#endif
 		// Q/K RMSNorm
 		uint16_t *qnorm_w = lc->q_norm_w;
 		uint16_t *knorm_w = lc->k_norm_w;
@@ -13930,8 +13958,14 @@ static void fused_layer_forward(
 			}
 		}
 
+#ifdef FLASH_SESSION_STATE_DIAGNOSTICS
+        if(g_fe_fa_cpu){g_fe_fa_cpu("q_norm",layer_idx,pos,q,q_dim);g_fe_fa_cpu("k_norm",layer_idx,pos,k_out,kv_dim);}
+#endif
 		// RoPE
 		apply_rotary_emb(q, k_out, pos, NUM_ATTN_HEADS, NUM_KV_HEADS, HEAD_DIM, ROTARY_DIM);
+#ifdef FLASH_SESSION_STATE_DIAGNOSTICS
+        if(g_fe_fa_cpu){g_fe_fa_cpu("q_rope",layer_idx,pos,q,q_dim);g_fe_fa_cpu("k_rope",layer_idx,pos,k_out,kv_dim);}
+#endif
 #ifdef FLASH_PREFILL_NROW_ENABLED
 		if (g_prefill_nrow_capture)
 			g_prefill_nrow_prof_qk_rope_ms += now_ms() - nrow_fa_qk_started;
@@ -14031,6 +14065,9 @@ static void fused_layer_forward(
 					for (int d = 0; d < HEAD_DIM; d++) oh[d] += scores[p] * vp[d];
 				}
 			}
+#ifdef FLASH_SESSION_STATE_DIAGNOSTICS
+            if(g_fe_fa_cpu)g_fe_fa_cpu("attention_ungated",layer_idx,pos,attn_out,q_dim);
+#endif
 			for (int i = 0; i < q_dim; i++) {
 				float g = 1.0f / (1.0f + expf(-q_gate[i]));
 				attn_out[i] *= g;
@@ -14040,6 +14077,9 @@ static void fused_layer_forward(
 #endif
 		}
 
+#ifdef FLASH_SESSION_STATE_DIAGNOSTICS
+        if(!gpu_attn_ready && g_fe_fa_cpu)g_fe_fa_cpu("attention_gated",layer_idx,pos,attn_out,q_dim);
+#endif
 		if (gpu_attn_ready) {
 			attn_out_for_oproj = NULL;  // signal CMD2 to use GPU buf_attn_out
 		} else {
@@ -14483,6 +14523,9 @@ static void fused_layer_forward(
 					threadsPerThreadgroup:MTLSizeMake(256, 1, 1)];
 				[enc endEncoding];
 			}
+#ifdef FLASH_SESSION_STATE_DIAGNOSTICS
+            if(g_fe_fa_gpu)g_fe_fa_gpu(cmd_fused,"attention_ungated",layer_idx,pos,g_metal->buf_attn_out,0,NUM_ATTN_HEADS*HEAD_DIM);
+#endif
 			// Enc A4: sigmoid_gate
 			{
 				uint32_t qdim = NUM_ATTN_HEADS * HEAD_DIM;
@@ -14506,6 +14549,12 @@ static void fused_layer_forward(
 			}
 		}
 
+#ifdef FLASH_SESSION_STATE_DIAGNOSTICS
+        if(is_full && g_fe_fa_gpu) {
+            g_fe_fa_gpu(cmd_fused,"layer_input",layer_idx,pos,residual_buf,0,HIDDEN_DIM);
+            g_fe_fa_gpu(cmd_fused,"attention_gated",layer_idx,pos,gpu_attn_fuse?g_metal->buf_attn_out:g_metal->batch_out[6],0,NUM_ATTN_HEADS*HEAD_DIM);
+        }
+#endif
 		// ---- o_proj matvec ----
 		{
 			// For GPU attention: o_proj reads from buf_attn_out
@@ -14559,6 +14608,9 @@ static void fused_layer_forward(
 			[enc endEncoding];
 		}
 
+#ifdef FLASH_SESSION_STATE_DIAGNOSTICS
+        if(is_full && g_fe_fa_gpu)g_fe_fa_gpu(cmd_fused,"oprojection",layer_idx,pos,g_metal->buf_output,0,HIDDEN_DIM);
+#endif
 		// ---- Enc 2: residual_add (buf_output + buf_residual -> buf_h_mid) ----
 		{
 			id<MTLComputeCommandEncoder> enc = [cmd_fused computeCommandEncoder];
@@ -14789,6 +14841,13 @@ static void fused_layer_forward(
 		if (g_timing_enabled) { t1 = now_ms(); g_timing.cmd2_encode += t1 - t0; }
 	}
 
+#ifdef FLASH_SESSION_STATE_DIAGNOSTICS
+    if(is_full && g_fe_fa_cpu)g_fe_fa_cpu("residual",layer_idx,pos,gpu_resident_this_layer?g_metal->buf_h_mid.contents:h_mid,HIDDEN_DIM);
+    if(is_full && g_fe_fa_cpu && kv->len<=4096) {
+        g_fe_fa_cpu("kv_k",layer_idx,pos,kv->k_cache,(size_t)kv->len*NUM_KV_HEADS*HEAD_DIM);
+        g_fe_fa_cpu("kv_v",layer_idx,pos,kv->v_cache,(size_t)kv->len*NUM_KV_HEADS*HEAD_DIM);
+    }
+#endif
 	// ---- Softmax + top-K (CPU) ----
 	if (g_timing_enabled) { t0 = now_ms(); }
 	double pipeline_route_start_ms =

@@ -21,7 +21,7 @@ def main():
  inputfile=a.out/'input.json';inputfile.write_text(json.dumps(payload))
  repo=P(__file__).resolve().parents[1];binary=(a.binary or repo/'metal_infer/infer-session-state-experiment').resolve()
  report=dict(started=stamp(),source_head=subprocess.check_output(['git','rev-parse','HEAD'],cwd=repo,text=True).strip(),source_sha256={n:(hashlib.sha256(subprocess.check_output(['git','show',a.source_ref+':'+n],cwd=repo)).hexdigest() if a.source_ref else sha(repo/n)) for n in ['metal_infer/infer.m','metal_infer/session_state_diag.inc','metal_infer/session_nrow_oracle.inc','metal_infer/warm_state_cache.inc','metal_infer/prefill_nrow_grouped_async.inc','metal_infer/Makefile']},binary_sha256=sha(binary),fixture=str(a.fixture),fixture_sha256=sha(a.fixture),fixture_tokens=len(ids),input_tokens=a.count,batch_starts=starts,scalar_slab_starts=a.scalar_slab,pre_gpu=[],status='INCOMPLETE',sampling='Completed slabs and scalar tail only; greedy deterministic, identical supplied IDs; not long HTTP qualification')
- for extra in ['metal_infer/fe027_alignment.inc','metal_infer/fe027_q4.inc']:
+ for extra in ['metal_infer/fe027_alignment.inc','metal_infer/fe027_q4.inc','metal_infer/fe027_attention_reference.inc','metal_infer/fe027_full_attention_diag.inc']:
   if not a.source_ref and (repo/extra).exists():report['source_sha256'][extra]=sha(repo/extra)
  report['source_ref']=a.source_ref;report['numerics_mask']=a.numerics;report['full_final_slab']=a.full_final_slab
  stable=0

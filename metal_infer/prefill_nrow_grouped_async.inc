@@ -728,6 +728,7 @@ static int prefill_nrow_encode_dense_rows(
 
 #ifdef FLASH_FE027_NUMERICS
 #include "fe027_alignment.inc"
+#include "fe027_attention_reference.inc"
 #endif
 
 // V4: project full-attention Q/K/V for all 16 rows in one command buffer.
@@ -744,7 +745,7 @@ static int prefill_nrow_full_qkv_layer(PrefillNRowGrouped *p,
     double started = now_ms();
     float *normed_rows = (float *)[p->normed_rows contents];
 #ifdef FLASH_FE027_NUMERICS
-    if(fe027_numerics_mask()>15)return 0;
+    if(fe027_numerics_mask()>31)return 0;
     if((fe027_numerics_mask()&2) && layer>0) {
         memcpy(p->linear_hpost_rows.contents,slab,(size_t)PREFILL_NROW_ROWS*HIDDEN_DIM*sizeof(float));
         if(!fe027_normalize_rows(p->linear_hpost_rows,p->normed_rows,lc->input_norm_w))return 0;
@@ -791,6 +792,17 @@ static int prefill_nrow_full_qkv_layer(PrefillNRowGrouped *p,
                 cmd.error.localizedDescription.UTF8String);
         return 0;
     }
+#ifdef FLASH_SESSION_STATE_DIAGNOSTICS
+    if(g_fe_fa_cpu)for(int row=0;row<PREFILL_NROW_ROWS;row++) {
+        // Runtime chunk supplies absolute positions through the diagnostic base.
+        int pos=g_fe_fa_base+row;
+        g_fe_fa_cpu("layer_input",layer,pos,slab+(size_t)row*HIDDEN_DIM,HIDDEN_DIM);
+        g_fe_fa_cpu("input_norm",layer,pos,normed_rows+(size_t)row*HIDDEN_DIM,HIDDEN_DIM);
+        g_fe_fa_cpu("qproj",layer,pos,(float *)p->full_qproj_rows.contents+(size_t)row*q_proj_dim,q_proj_dim);
+        g_fe_fa_cpu("kproj",layer,pos,(float *)p->full_k_rows.contents+(size_t)row*kv_dim,kv_dim);
+        g_fe_fa_cpu("vproj",layer,pos,(float *)p->full_v_rows.contents+(size_t)row*kv_dim,kv_dim);
+    }
+#endif
     return 1;
 }
 
@@ -801,6 +813,9 @@ static __attribute__((unused)) int prefill_nrow_full_attention_batch(PrefillNRow
     LayerWeightCache *lc = &layer_cache[layer];
     if (!lc->q_norm_w || !lc->k_norm_w) return 0;
 
+#ifdef FLASH_FE027_NUMERICS
+    if(fe027_numerics_mask()&16)return fe027_reference_full_attention(p,layer,base_pos,kv);
+#endif
     const int q_dim = NUM_ATTN_HEADS * HEAD_DIM;
     const int q_proj_dim = q_dim * 2;
     const int kv_dim = NUM_KV_HEADS * HEAD_DIM;
@@ -835,6 +850,9 @@ static __attribute__((unused)) int prefill_nrow_full_attention_batch(PrefillNRow
             memcpy(gate + h * HEAD_DIM, src + HEAD_DIM, HEAD_DIM * sizeof(float));
         }
 
+#ifdef FLASH_SESSION_STATE_DIAGNOSTICS
+        if(g_fe_fa_cpu){g_fe_fa_cpu("q_raw",layer,base_pos+row,q,q_dim);g_fe_fa_cpu("k_raw",layer,base_pos+row,k,kv_dim);}
+#endif
         for (int h = 0; h < NUM_ATTN_HEADS; h++) {
             float *qh = q + h * HEAD_DIM;
             float ss = 0.0f;
@@ -852,8 +870,14 @@ static __attribute__((unused)) int prefill_nrow_full_attention_batch(PrefillNRow
                 kh[d] = kh[d] * inv * bf16_to_f32(lc->k_norm_w[d]);
         }
 
+#ifdef FLASH_SESSION_STATE_DIAGNOSTICS
+        if(g_fe_fa_cpu){g_fe_fa_cpu("q_norm",layer,base_pos+row,q,q_dim);g_fe_fa_cpu("k_norm",layer,base_pos+row,k,kv_dim);}
+#endif
         apply_rotary_emb(q, k, base_pos + row,
             NUM_ATTN_HEADS, NUM_KV_HEADS, HEAD_DIM, ROTARY_DIM);
+#ifdef FLASH_SESSION_STATE_DIAGNOSTICS
+        if(g_fe_fa_cpu){g_fe_fa_cpu("q_rope",layer,base_pos+row,q,q_dim);g_fe_fa_cpu("k_rope",layer,base_pos+row,k,kv_dim);}
+#endif
 
         const int cache_pos = base_cache_pos + row;
         memcpy(kv->k_cache + (size_t)cache_pos * kv_dim,
@@ -920,6 +944,13 @@ static __attribute__((unused)) int prefill_nrow_full_attention_batch(PrefillNRow
         "[prefill-nrow-attn128] layer=%d base=%d prep=%.3fms gpu=%.3fms\n",
         layer, base_cache_pos,
         gpu_started - prep_started, now_ms() - gpu_started);
+#ifdef FLASH_SESSION_STATE_DIAGNOSTICS
+    if(g_fe_fa_cpu)for(int row=0;row<PREFILL_NROW_ROWS;row++)g_fe_fa_cpu("attention_gated",layer,base_pos+row,(float *)p->full_attn_rows.contents+(size_t)row*q_dim,q_dim);
+    if(g_fe_fa_cpu && base_cache_pos+PREFILL_NROW_ROWS<=4096) {
+        g_fe_fa_cpu("kv_k",layer,base_pos+PREFILL_NROW_ROWS-1,kv->k_cache,(size_t)(base_cache_pos+PREFILL_NROW_ROWS)*kv_dim);
+        g_fe_fa_cpu("kv_v",layer,base_pos+PREFILL_NROW_ROWS-1,kv->v_cache,(size_t)(base_cache_pos+PREFILL_NROW_ROWS)*kv_dim);
+    }
+#endif
     return 1;
 }
 
@@ -936,7 +967,7 @@ static int prefill_nrow_linear_layer(PrefillNRowGrouped *p, WeightFile *wf,
     double started = now_ms();
     float *normed_rows = (float *)[p->normed_rows contents];
 #ifdef FLASH_FE027_NUMERICS
-    if(fe027_numerics_mask()>15)return 0;
+    if(fe027_numerics_mask()>31)return 0;
     if((fe027_numerics_mask()&2) && layer>0) {
         memcpy(p->linear_hpost_rows.contents,slab,(size_t)PREFILL_NROW_ROWS*HIDDEN_DIM*sizeof(float));
         if(!fe027_normalize_rows(p->linear_hpost_rows,p->normed_rows,lc->input_norm_w))return 0;
@@ -2156,6 +2187,9 @@ static int prefill_nrow_runtime_chunk(
         !layer_states || !layer_mmaps || !layer_fds)
         return 0;
 
+#ifdef FLASH_SESSION_STATE_DIAGNOSTICS
+    g_fe_fa_base=base_pos;
+#endif
     float *slab = g_prefill_nrow_runtime_slab;
     PrefillNRowCapture *capture = g_prefill_nrow_runtime_capture;
     const double prof_qk0 = g_prefill_nrow_prof_qk_rope_ms;

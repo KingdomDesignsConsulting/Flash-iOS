@@ -4,7 +4,7 @@ import argparse,json,os,pathlib,subprocess,time
 from run_session_state_mission import gpu,stamp,sha,MODEL
 P=pathlib.Path
 def main():
- p=argparse.ArgumentParser(description=__doc__);p.add_argument('--history',type=P,required=True);p.add_argument('--out',type=P,required=True);p.add_argument('--count',type=int);p.add_argument('--starts',default='13');p.add_argument('--model',default=MODEL);p.add_argument('--binary',type=P);p.add_argument('--route-probe-start',type=int);p.add_argument('--route-probe-count',type=int,default=128);p.add_argument('--route-probe-layers',type=int,default=12);a=p.parse_args()
+ p=argparse.ArgumentParser(description=__doc__);p.add_argument('--history',type=P,required=True);p.add_argument('--history-for-tokens-only',action='store_true',help='Use old history token IDs, without claiming linkage to its different-arithmetic HTTP candidate');p.add_argument('--out',type=P,required=True);p.add_argument('--count',type=int);p.add_argument('--starts',default='13');p.add_argument('--model',default=MODEL);p.add_argument('--binary',type=P);p.add_argument('--route-probe-start',type=int);p.add_argument('--route-probe-count',type=int,default=128);p.add_argument('--route-probe-layers',type=int,default=12);a=p.parse_args()
  a.out.mkdir(parents=True,exist_ok=False);repo=P(__file__).resolve().parents[1];binary=(a.binary or repo/'metal_infer/infer-session-state-experiment').resolve()
  history=json.loads(a.history.read_text());ids=history['traces'][-1]['state']['effective_token_ids'];count=a.count if a.count is not None else len(ids)
  assert 0<count<=len(ids) and count<=512
@@ -38,7 +38,7 @@ def main():
    bypos={row['position']:row['candidate_digest'] for row in result['rows']};bypos[0]=result['initial_digest'];linked=[]
    for trace in history['traces']:
     for row in trace['state']['steps']:
-     if row['position']>count:continue
+     if a.history_for_tokens_only or row['position']>count:continue
      assert bypos.get(row['position'])==row['digest'],('HTTP/native candidate mismatch',row['position'])
      linked.append(row['position'])
    controlfile=a.history.parent/'continuous/continuous-replay-state.json'
@@ -46,7 +46,7 @@ def main():
    if controlfile.exists():
     for row in json.loads(controlfile.read_text())['steps']:
      if row['position'] in ref:assert row['digest']==ref[row['position']],('scalar reference mismatch',row['position'])
-   manifest['http_candidate_positions_exact']=sorted(set(linked));manifest['http_candidate_exact']=True
+   manifest['http_candidate_positions_exact']=sorted(set(linked));manifest['http_candidate_exact']=not a.history_for_tokens_only;manifest['history_for_tokens_only']=a.history_for_tokens_only
    (a.out/'manifest.json').write_text(json.dumps(manifest,indent=2)+'\n')
   print(json.dumps({k:result[k] for k in ['status','bit_exact','completed_position','batches']}),flush=True)
  return r.returncode

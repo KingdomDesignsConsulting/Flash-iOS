@@ -1,5 +1,7 @@
 # FE-027: N128 numerical drift and selective arithmetic alignment
 
+> Follow-up: [actual full-attention localization and mask-31 results](fe027-full-attention-localization-2026-10-29.md). The failures below remain the historical mask-15/control results; do not reinterpret them as passes.
+
 Experimental branch: `experiment/http-resident-prefix-reuse-20261023`.
 Reference source: `c94753bb7fa3ad28bbac887cf6ab861254c738eb`.
 Date: 2026-10-28, native Mac mini M4 execution.

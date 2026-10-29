@@ -385,24 +385,24 @@ integration-kv-candidates: $(INFER_SRC) $(INFER_DEPS)
 
 # Bounded private resident/continuous state diagnostics; production targets unchanged.
 .PHONY: session-state-experiment
-session-state-experiment: $(INFER_SRC) $(INFER_DEPS) session_state_diag.inc session_nrow_oracle.inc session_disk_oracle.inc
+session-state-experiment: $(INFER_SRC) $(INFER_DEPS) session_state_diag.inc session_nrow_oracle.inc session_disk_oracle.inc fe027_full_attention_diag.inc
 	$(CC) $(INFER_CFLAGS) -DFLASH_SESSION_STATE_DIAGNOSTICS -DFLASH_EXPERIMENTAL_LAZY_SHARED_GPU_KV_32K $(FRAMEWORKS) $(LDFLAGS) $(INFER_SRC) -o infer-session-state-experiment
 
 # Isolated legacy KV control for within-mode resident-state qualification.
 .PHONY: session-state-legacy-experiment
-session-state-legacy-experiment: $(INFER_SRC) $(INFER_DEPS) session_state_diag.inc session_nrow_oracle.inc session_disk_oracle.inc
+session-state-legacy-experiment: $(INFER_SRC) $(INFER_DEPS) session_state_diag.inc session_nrow_oracle.inc session_disk_oracle.inc fe027_full_attention_diag.inc
 	$(CC) $(INFER_CFLAGS) -DFLASH_SESSION_STATE_DIAGNOSTICS $(FRAMEWORKS) $(LDFLAGS) $(INFER_SRC) -o infer-session-state-legacy-experiment
 
 # FE-027 same-input arithmetic probe, isolated from production and prior binaries.
 .PHONY: fe027-probe
-fe027-probe: $(INFER_SRC) $(INFER_DEPS) session_state_diag.inc session_nrow_oracle.inc session_disk_oracle.inc
+fe027-probe: $(INFER_SRC) $(INFER_DEPS) session_state_diag.inc session_nrow_oracle.inc session_disk_oracle.inc fe027_full_attention_diag.inc
 	$(CC) $(INFER_CFLAGS) -DFLASH_SESSION_STATE_DIAGNOSTICS -DFLASH_EXPERIMENTAL_LAZY_SHARED_GPU_KV_32K $(FRAMEWORKS) $(LDFLAGS) $(INFER_SRC) -o infer-fe027-probe
 
 # Opt-in FE-027 normalization alignment; default/production targets unchanged.
 .PHONY: fe027-experiment fe027-performance
-fe027-experiment: $(INFER_SRC) $(INFER_DEPS) fe027_alignment.inc fe027_q4.inc session_state_diag.inc session_nrow_oracle.inc session_disk_oracle.inc
+fe027-experiment: $(INFER_SRC) $(INFER_DEPS) fe027_alignment.inc fe027_attention_reference.inc fe027_q4.inc session_state_diag.inc session_nrow_oracle.inc session_disk_oracle.inc fe027_full_attention_diag.inc
 	$(CC) $(INFER_CFLAGS) -DFLASH_FE027_NUMERICS -DFLASH_SESSION_STATE_DIAGNOSTICS -DFLASH_EXPERIMENTAL_LAZY_SHARED_GPU_KV_32K $(FRAMEWORKS) $(LDFLAGS) $(INFER_SRC) -o infer-fe027-experiment
-fe027-performance: $(INFER_SRC) $(INFER_DEPS) fe027_alignment.inc fe027_q4.inc
+fe027-performance: $(INFER_SRC) $(INFER_DEPS) fe027_alignment.inc fe027_attention_reference.inc fe027_q4.inc
 	$(CC) $(INFER_CFLAGS) -DFLASH_FE027_NUMERICS -DFLASH_EXPERIMENTAL_LAZY_SHARED_GPU_KV_32K $(FRAMEWORKS) $(LDFLAGS) $(INFER_SRC) -o infer-fe027-performance
 
 # Matched non-diagnostic control for FE-027 performance only.

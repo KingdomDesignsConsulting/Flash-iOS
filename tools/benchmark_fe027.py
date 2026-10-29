@@ -10,13 +10,13 @@ P=pathlib.Path
 def main():
  p=argparse.ArgumentParser(description=__doc__)
  for name in ['control','candidate','fixture','out']:p.add_argument('--'+name,type=P,required=True)
- p.add_argument('--count',type=int,default=1025);p.add_argument('--repeats',type=int,default=3);a=p.parse_args()
+ p.add_argument('--count',type=int,default=1025);p.add_argument('--repeats',type=int,default=3);p.add_argument('--candidate-numerics',type=int,choices=range(32),default=15);a=p.parse_args()
  assert a.count>128 and 2<=a.repeats<=5;a.out.mkdir(parents=True,exist_ok=False)
  values=struct.unpack('<'+'I'*(a.fixture.stat().st_size//4),a.fixture.read_bytes());assert values[0]==len(values)-1 and a.count<=values[0]
  inp=a.out/'prompt.bin';inp.write_bytes(struct.pack('<I',a.count)+struct.pack('<'+'I'*a.count,*values[1:1+a.count]))
- rows=[];report=dict(started=stamp(),scope=__doc__,fixture_sha256=sha(a.fixture),input_tokens=a.count,rows=rows)
+ rows=[];report=dict(started=stamp(),scope=__doc__,fixture_sha256=sha(a.fixture),input_tokens=a.count,candidate_numerics=a.candidate_numerics,rows=rows)
  for trial in range(a.repeats):
-  for label,binary,mask in ([('control',a.control,0),('candidate',a.candidate,15)] if trial%2==0 else [('candidate',a.candidate,15),('control',a.control,0)]):
+  for label,binary,mask in ([('control',a.control,0),('candidate',a.candidate,a.candidate_numerics)] if trial%2==0 else [('candidate',a.candidate,a.candidate_numerics),('control',a.control,0)]):
    stable=0;readings=[]
    for _ in range(60):
     g=gpu();readings.append(g);stable=stable+1 if g is not None and g<30 else 0
