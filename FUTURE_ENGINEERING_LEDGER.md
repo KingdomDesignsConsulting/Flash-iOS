@@ -74,6 +74,13 @@
 | FE-025 | P2 | TRIAGED | Additional live LM Studio GUI install, cancellation and attachment behavior for actual SDK integration; do not confuse SDK/mock controller tests with full GUI qualification | PR #2; Regenerate item FE-010 closed |
 | FE-026 | P2 | PROPOSED | Checkpoint compression/persistence tuning only if measured end-to-end startup savings justify CPU/memory overhead; preserve current Zstd baseline | Research baseline 224.42MB → 88.27MB; no new optimizer claim |
 
+| FE-028 | P1 | TRIAGED | Token-ID provenance versus printable control delimiters in nonstreaming and streaming parsing; test ordinary-token literal markers and genuine special IDs, normalized tool/reasoning events | vLLM #64326; extend FE-011/FE-013; verify actual Qwen tokenizer format first |
+| FE-029 | P2 | TRIAGED | Causal matched-prefix checkpoint boundary and in-block GDN/conv ownership; async restore/promotion must reserve all destination state or safely backpressure | vLLM #64267; intersects FE-002/FE-019; PrefixLM-specific mask must not be adopted |
+| FE-030 | P1 | TRIAGED | Direct-tool vs announce-first paired prompts; capture raw token IDs and final HTTP/LM Studio tool frames to separate model choice from parser loss | Ollama #19353; coordinate FE-011/FE-025 |
+| FE-031 | P2 | PROPOSED | Before grouped expert union experiments, quantify unique expert bytes **and effective bandwidth** on base M4, Q2/Q4, cache-temperature and dispatch effects; require u<r and end-to-end confirmation | arXiv:2610.34440; FE-021/FE-022 dependency, M4 Max external evidence not transferable |
+| FE-032 | P2 | TRIAGED | Measure resumed short-prefix forward/pass and state-copy counts; assert exact accepted-boundary publish, immutable cached state, cancellation behavior before considering fixed running/checkpoint slots | vLLM #64303; FE-019 overlap; GB200 results not M4 evidence |
+| FE-033 | P1 | TRIAGED | Checked offset multiplication and index-width audit for host/Metal QKV, GDN, convolution and checkpoint paths; bounded synthetic near-overflow tests without giant allocations | vLLM #63759/#63761; CUDA failure not established in Flash's 32K geometry |
+
 ## Next disposition queue
 
 1. **Work (explicit FE-027 delegation), Architect review:** Original 1920 failure corrected only in the opt-in prototype, but larger accumulation fails at 2304 and an alternate short history fails at 303. FE-001 remains blocked. Review [FE-027 evidence](docs/fe027-n128-arithmetic-investigation-2026-10-28.md); do not promote, relax limits or treat greedy equality as sufficient.
@@ -82,6 +89,8 @@
 4. **Verifier:** Keep FE-021 blocked until a bounded M4 design beats serial end-to-end with exact hybrid-state rollback. Microbenchmarks, acceptance length and off-target draft models alone do not unblock it.
 
 ## Decision log
+
+- **2026-10-28 (research intake, latest Drive revision):** Triaged six source-qualified findings as FE-028–033. No upstream bug is assumed present in Flash; no new performance claim or change to FE-027 priority. Research source: [Research Discoveries.md](https://drive.google.com/file/d/197wH1GgOC-7eaddF_Bv-B2W7vSmOsQgn/view), updated 2026-10-29 06:43:59 UTC.\n
 
 - **2026-10-28 (explicit autonomous Work FE-027 batch):** Same-input instrumentation identifies CPU/GPU RMS and shared SwiGLU differences plus scalar-V3 versus grouped Q4 reassociation. Opt-in alignment passes 2057 but fails at 2304 during 4K attempt. New route crossing at layer 21 / position 2237; exact scalar anchor does not eliminate it. FE-027 remains ACTIVE, FE-001 BLOCKED; no production promotion. Default arithmetic/cache identity and routing policy preserved.
 
