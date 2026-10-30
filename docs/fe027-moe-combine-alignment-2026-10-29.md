@@ -5,9 +5,10 @@ Starting HEAD: `d1b8265f2edf85b49f2f844056f96abbaabd4f54`.
 Production branch/binary, weights, template, routing and port 11241 are unchanged.
 PR #2 remains draft; this report is experimental evidence, not promotion approval.
 
-**4K engineering checkpoint:** all known counterexamples and full 4096 pass;
-an independent 4K repeat has identical reference/candidate state fingerprints.
-Expanded 8K and performance work is still in progress at this checkpoint.
+**Correctness through 8192:** all known counterexamples, complete 4K twice and
+the 8K fixture pass. Active persistent-state fingerprints are exact at every
+observed endpoint. All nine conditional timing trials completed. **READY FOR
+ARCHITECT REVIEW**, within the tested scope; production remains NO-GO.
 
 ## Proven cause at the preceding combine
 
@@ -112,6 +113,7 @@ whole-model bitwise equivalence.
 | Former failure 3456 | 0 | 1.9073486328125e-6 | 3.814697265625e-6 | PASS |
 | Full 4096 | 0 | 1.9073486328125e-6 | 3.814697265625e-6 | PASS |
 | Independent repeat 4096 | 0 | 1.9073486328125e-6 | 3.814697265625e-6 | PASS |
+| Full 8192 | 0 | 1.9073486328125e-6 | 3.814697265625e-6 | PASS |
 
 Reference/candidate persistent-state SHA256 fingerprints match at every observed
 endpoint in these runs: 2, 50, 25, 19 and 27 endpoints respectively. In particular,
@@ -148,9 +150,75 @@ binary. Mask zero reproduces the original N128 baseline at 128/129. The syntheti
 identity test confirms all **64** enabled-mask identities are distinct and zero's
 identity is unchanged. No user profile/checkpoint was overwritten.
 
+The 8K fixture covers all **64 completed slabs**, with identical active-state
+fingerprints at every endpoint. Peak child RSS was **10,274,308,096 bytes** (about
+9.57 GiB); the live watcher observed 10,193,682,432 bytes and never hit its 16-GiB
+limit. Startup GPU readings were `[0, 0, 0]`. This is the longest successfully
+qualified native context in this phase. It does not establish 16K/32K numerical
+convergence or long independent-document diversity: the supplied 8K fixture
+extends the original 4K sequence. Alternate fresh HTTP histories remain short.
+
 [Sanitized run matrix](results/fe027-combine-2026-10-29.json),
 [endpoint curves including largest component/layer](results/fe027-combine-error-curve-2026-10-29.csv),
 and [authenticated operator comparisons](results/fe027-combine-operators-2026-10-29.json).
+
+## Conditional non-diagnostic performance
+
+Three independent fresh processes per path, balanced rotating order, identical
+1025 supplied token IDs, greedy temperature zero/seed 73941, eight requested
+generation tokens, identical tiered model/cache policy. Every launch ends its
+preflight with three readings below 30% (all three were zero in this cohort).
+Reported generated IDs agree across all nine runs. No compilation or concurrent
+owned model ran during measurement. Servers were already stopped.
+
+The table measures **1024 prefilled tokens**, excluding the final scalar prompt
+token/first LM head from the prefill timer. TTFT includes that additional work.
+First N128 workspace/setup and cold process expert-cache effects are included;
+these are not steady-state whole-prefill numbers. OS page cache was not purged.
+
+| Path | Median prefill | Range | Sample SD | Median prefill tok/s | Median TTFT | Median process wall |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| Ordinary N128 | 29.345 s | 29.166–30.888 s | 0.947 s | 34.90 | 29.528 s | 30.165 s |
+| Corrected mask 63 | 31.434 s | 31.344–31.703 s | 0.187 s | 32.58 | 31.658 s | 32.386 s |
+| Unchanged scalar | 49.001 s | 48.900–49.606 s | 0.382 s | 20.90 | 49.145 s | 49.783 s |
+
+Observed corrected/ordinary median ratio **1.07119**: about **7.12% more prefill
+time**, or 2.089 s at this size. Corrected prefill is **1.559× scalar throughput**
+(35.85% less time). The corrected and ordinary ranges do not overlap here, but
+N=3 and setup-inclusive conditions support only a bounded exploratory result,
+not a universal slowdown percentage or production latency SLO. Ordinary N128 is
+a performance control; its historical longer-context numerical failures remain.
+
+This comparison covers the entire mask-63 alignment, not bit 32 in isolation.
+Existing linear-layer combine timing totals have medians **72.401 ms ordinary**
+versus **220.272 ms corrected** across the eight slabs. That measured subset adds
+about 148 ms, so the full 2.089-s difference must not be attributed solely to the
+new combine correction. Other alignment/attention stages and cold/setup effects
+also differ; no unsupported causal optimization claim is made.
+
+First-slab linear-batch component medians are 1504.312/1589.921 ms (ordinary/
+corrected), versus 832.380/850.314 ms mean per later slab. This distinguishes
+observed first-slab overhead from later component operation; it does **not**
+separately isolate JIT from page/cache/setup costs. Both N128 paths finish every
+trial with the same reported malloc-cache counters: 444 hits, 7987 misses and
+512/512 entries. Scalar's access cadence differs; its policy and fresh-process
+initial conditions are matched, not its hit count. Child fault/I/O counters are
+preserved in the sanitized measurements.
+
+Post-prefill CLI decode medians are 17.26, 17.07 and 17.73 tok/s (ordinary,
+corrected, scalar), respectively. Those are only seven post-first-token steps;
+the duration is printed rounded to 0.4 s. They are **insufficient to establish
+steady-state continuation differences**. Instrumented HTTP timing is not used
+as a performance result, and warm repeated-full-prefill/API latency was not
+separately measured. No global guarantee of an uncontended desktop is inferred
+from the startup gate alone.
+
+Recommendation: retain the correction as explicit opt-in pending Architect
+review. It resolves the measured correctness blocker while retaining batching's
+benefit, with a measured cost that must be considered before adoption. Future
+dispatch-overhead optimization must preserve authenticated scalar sigmoid/final
+arithmetic and rerun the numerical matrix; no expert-union/speculation work is
+introduced here.
 
 ## Reproduction and evidence
 
@@ -160,6 +228,7 @@ private output directories. Production port 11241 is never used.
 
 ```bash
 cd '/Users/knagel/.codex/worktrees/http-session-validation/Flash-iOS'
+PRIVATE_OUT='/Users/knagel/My Drive/Flash-iOS/Testing/HTTP-Prefix-Reuse/fe027-combine-manual-fresh'
 make -C metal_infer fe027-experiment
 python3 -m unittest discover -s tools -p test_fe027_combine_summary.py
 
@@ -175,6 +244,38 @@ python3 tools/qualify_fe027_combine.py \
   --binary "$PWD/metal_infer/infer-fe027-experiment" \
   --history '/Users/knagel/My Drive/Flash-iOS/Testing/HTTP-Prefix-Reuse/2026-10-28-fe027/http-mask15/two-slabs-http/http-records.json' \
   --out "$PRIVATE_OUT/mandatory"
+
+# Only after the mandatory suite passes: independent full 4K repeat.
+python3 tools/qualify_session_accumulation.py \
+  --binary "$PWD/metal_infer/infer-fe027-experiment" --numerics 63 \
+  --count 4096 --full-final-slab --gpu-wait 60 --timeout 900 \
+  --out "$PRIVATE_OUT/repeat-4096"
+
+FLASH_FE027_NUMERICS=63 python3 tools/qualify_session_nrow.py \
+  --binary "$PWD/metal_infer/infer-fe027-experiment" --out "$PRIVATE_OUT/http"
+FLASH_FE027_NUMERICS=63 metal_infer/infer-fe027-experiment \
+  --self-test-warm-state "$PRIVATE_OUT/identity64"
+FLASH_FE027_NUMERICS=63 python3 tools/qualify_session_disk.py \
+  --binary "$PWD/metal_infer/infer-fe027-experiment" \
+  --history '/Users/knagel/My Drive/Flash-iOS/Testing/HTTP-Prefix-Reuse/2026-10-28-fe027/http-mask15/batch-tail-eos-http/http-records.json' \
+  --reject-numerics 31 --out "$PRIVATE_OUT/disk63"
+
+# Only after those gates pass; memory-limited and bounded to 8K.
+python3 tools/qualify_session_accumulation.py \
+  --binary "$PWD/metal_infer/infer-fe027-experiment" --numerics 63 \
+  --fixture '/Users/Shared/Main Hard Drive/AI Storage/Apps/Flash-iOS/Testing/Temporary Testing Files/Resources/prefill-8192.bin' \
+  --count 8192 --full-final-slab --gpu-wait 60 --timeout 2400 \
+  --max-rss-gib 16 --out "$PRIVATE_OUT/full-8192"
+
+# Conditional performance only after correctness, with the GPU gate each time.
+make -C metal_infer fe027-control fe027-performance
+python3 tools/benchmark_fe027.py \
+  --control "$PWD/metal_infer/infer-fe027-control" \
+  --candidate "$PWD/metal_infer/infer-fe027-performance" \
+  --scalar-reference "$PWD/metal_infer/infer-fe027-control" \
+  --candidate-numerics 63 --count 1025 --repeats 3 \
+  --fixture '/Users/Shared/Main Hard Drive/AI Storage/Apps/Flash-iOS/Testing/Temporary Testing Files/Resources/prefill-4k-4096-from-1k.bin' \
+  --out "$PRIVATE_OUT/performance"
 ```
 
 The mandatory runner stops at the first failure; it does not escalate or run
@@ -188,6 +289,12 @@ Private evidence cohort:
 Controller/build logs: project-root `benchmark-logs/fe027-phase4-*.log`.
 Raw tokens, expert IDs, operands, routes and checkpoints remain private.
 
+The implementation/4K checkpoint is commit
+`4fa23a66a12ed9cb92eb400be9b651825a3ac284`. Run manifests preserve the original
+working HEAD and exact runtime-source/binary SHA256 values, including runs begun
+before that commit was published. Follow-up documentation records expanded
+results separately; no uncommitted numeric change is implied by the HEAD label.
+
 ## Safety and remaining release boundary
 
 Seven fail-closed combine-summary tests cover missing observations, missing stages,
@@ -196,3 +303,21 @@ qualification follows from this phase. Native oracle timing with snapshot/hash
 overhead is not serving throughput. Performance is eligible only after the
 required numerical regressions pass. Production integration still requires Lead
 Architect review, and PR #2 must remain draft and unmerged.
+
+Three CPU-only owned-process tests also pass: successful child exit, RSS-limit
+termination and timeout termination. Corrected isolated diagnostic, ordinary
+control and non-diagnostic candidate builds pass without compiler warnings.
+
+## Implementation surface
+
+- `metal_infer/fe027_combine_reference.inc`: opt-in original-pipeline combine;
+  grouped dispatch selects it without changing routed expert computation.
+- `metal_infer/fe027_combine_diag.inc` and `fe027_combine_trace.metal`: bounded
+  actual observations, private authenticated replays and staged comparisons.
+- `infer.m`, `prefill_nrow_grouped_async.inc`, `session_nrow_oracle.inc`: hooks,
+  mask range, selection and active-state preservation check.
+- `warm_state_cache.inc`: bit-32 versioned identity and 64-mask self-test;
+  Makefile: isolated dependencies only.
+- Qualification/summary tools, seven provenance tests, three process-budget
+  tests, gated HTTP reference launch and optional three-way benchmark collection.
+- Ledger and sanitized reports; raw model data remains private.
