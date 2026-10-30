@@ -23,6 +23,7 @@ static NSDictionary *sn_diff(const char *kind,int layer,const float *a,const flo
         @"max_abs":@(maximum),@"rms":@(n?sqrt(sum/n):0),@"nonfinite":@(nonfinite)};
 }
 #include "fe027_full_attention_diag.inc"
+#include "fe027_combine_diag.inc"
 // Same-input probes use private Metal buffers and do not overwrite serving
 // buffers or alter deferred-completion/input-normalization decisions.
 // Select one preceding-layer identical-input probe; default preserves the old
@@ -155,6 +156,7 @@ static int sn_oracle(WeightFile *wf,KVCache **kv,void **states,void **maps,int *
         if(getenv("FLASH_FE027_OPERATIONS"))g_session_expert_hook=sn_expert_probe;
     }
     if(getenv("FLASH_FE027_FULL_ATTENTION"))fa_begin();
+    if(getenv("FLASH_FE027_COMBINE"))cb_begin();
     ServeStateSnapshot ref={0},cand={0},probe_anchor={0};NSMutableArray *rows=[NSMutableArray array];
     float *rh=malloc(HIDDEN_DIM*sizeof(float)),*ch=malloc(HIDDEN_DIM*sizeof(float));
     float *rl=malloc(VOCAB_SIZE*sizeof(float)),*cl=malloc(VOCAB_SIZE*sizeof(float));
@@ -193,12 +195,14 @@ static int sn_oracle(WeightFile *wf,KVCache **kv,void **states,void **maps,int *
         fprintf(stderr,"[session-n128] pos=%d batch=%d state=%.9g hidden=%.9g logits=%.9g greedy=%d pass=%d\n",pos,batch,state_max,[h[@"max_abs"] doubleValue],[logits[@"max_abs"] doubleValue],rt==ct,pass);
         if(!pass){ok=0;break;}
     }
-    NSString *fa_before=fa_records[0]?sd_fingerprint(kv,states,pos,"fa_private_replay_check")[@"digest"]:nil;
+    BOOL cb_observed=cb_records[0]!=nil;
+    NSString *fa_before=(fa_records[0] || cb_observed)?sd_fingerprint(kv,states,pos,"fa_private_replay_check")[@"digest"]:nil;
     fa_end();
+    cb_end();
     if(fa_before) {
         NSString *fa_after=sd_fingerprint(kv,states,pos,"fa_private_replay_check")[@"digest"];
         BOOL unchanged=[fa_before isEqual:fa_after];
-        sd_write(@"full-attention-replay-state.json",@{@"position":@(pos),@"active_state_unchanged":@(unchanged)});
+        sd_write(cb_observed?@"combine-replay-state.json":@"full-attention-replay-state.json",@{@"position":@(pos),@"active_state_unchanged":@(unchanged)});
         if(!unchanged)ok=0;
     }
     sd_write(@"nrow-oracle.json",@{@"status":ok?@"NUMERICAL_PASS":@"FAIL",@"initial_digest":initial_digest,@"bit_exact":@(exact),@"completed_position":@(pos),@"input_tokens":@(count),@"batches":@(batches),@"threshold_source":@"prefill_nrow_control.inc and target_verify_grouped.inc at c35dc78: state<1e-3 hidden<=1e-3 logits<=1e-2, greedy identity, finite, exact KV lengths/mirrors",@"rows":rows});

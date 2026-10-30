@@ -729,6 +729,7 @@ static int prefill_nrow_encode_dense_rows(
 #ifdef FLASH_FE027_NUMERICS
 #include "fe027_alignment.inc"
 #include "fe027_attention_reference.inc"
+#include "fe027_combine_reference.inc"
 #endif
 
 // V4: project full-attention Q/K/V for all 16 rows in one command buffer.
@@ -745,7 +746,7 @@ static int prefill_nrow_full_qkv_layer(PrefillNRowGrouped *p,
     double started = now_ms();
     float *normed_rows = (float *)[p->normed_rows contents];
 #ifdef FLASH_FE027_NUMERICS
-    if(fe027_numerics_mask()>31)return 0;
+    if(fe027_numerics_mask()>63)return 0;
     if((fe027_numerics_mask()&2) && layer>0) {
         memcpy(p->linear_hpost_rows.contents,slab,(size_t)PREFILL_NROW_ROWS*HIDDEN_DIM*sizeof(float));
         if(!fe027_normalize_rows(p->linear_hpost_rows,p->normed_rows,lc->input_norm_w))return 0;
@@ -967,7 +968,7 @@ static int prefill_nrow_linear_layer(PrefillNRowGrouped *p, WeightFile *wf,
     double started = now_ms();
     float *normed_rows = (float *)[p->normed_rows contents];
 #ifdef FLASH_FE027_NUMERICS
-    if(fe027_numerics_mask()>31)return 0;
+    if(fe027_numerics_mask()>63)return 0;
     if((fe027_numerics_mask()&2) && layer>0) {
         memcpy(p->linear_hpost_rows.contents,slab,(size_t)PREFILL_NROW_ROWS*HIDDEN_DIM*sizeof(float));
         if(!fe027_normalize_rows(p->linear_hpost_rows,p->normed_rows,lc->input_norm_w))return 0;
@@ -2067,24 +2068,39 @@ static int prefill_nrow_grouped_layer(PrefillNRowGrouped *p,
     const float *shared_out_rows =
         (const float *)[p->shared_out_rows contents];
     double combine_started = now_ms();
+    BOOL aligned_combine=NO;
+#ifdef FLASH_FE027_NUMERICS
+    // Match scalar CMD3 eligibility, including its CPU final-layer combine.
+    aligned_combine=(fe027_numerics_mask()&32) && layer<NUM_LAYERS-1 &&
+        !disable_gpu_combine_debug() && g_metal->rms_norm_sum &&
+        g_metal->rms_norm_apply_bf16 && g_metal->wf_buf &&
+        layer_cache[layer+1].input_norm_w!=NULL;
+    if(aligned_combine && !fe027_combine_rows(p,cap,assignment_index))return 0;
+#endif
     for (int row = 0; row < PREFILL_NROW_ROWS; row++) {
         float moe_out[2048];
         memset(moe_out, 0, sizeof(moe_out));
-        for (int k = 0; k < PREFILL_NROW_K; k++) {
+        if(!aligned_combine)for (int k = 0; k < PREFILL_NROW_K; k++) {
             int packed = assignment_index[row][k];
             if (packed < 0 || packed >= PREFILL_NROW_ASSIGNMENTS) return 0;
             cpu_vec_madd(moe_out,
                 (float *)[p->output contents] + (size_t)packed * HIDDEN_DIM,
                 cap->expert_weight[row][k], HIDDEN_DIM);
         }
-        float shared_weight = cpu_sigmoid(cap->shared_score[row]);
+        float shared_weight = aligned_combine?0.0f:cpu_sigmoid(cap->shared_score[row]);
         const float *shared_out =
             shared_out_rows + (size_t)row * HIDDEN_DIM;
         float *dest = slab + (size_t)row * HIDDEN_DIM;
-        for (int i = 0; i < HIDDEN_DIM; i++)
-            dest[i] = cap->h_mid[row][i] + moe_out[i] +
-                      shared_weight * shared_out[i];
+        if(aligned_combine)memcpy(dest,(float *)p->normed_rows.contents+(size_t)row*HIDDEN_DIM,HIDDEN_DIM*sizeof(float));
+        else for (int i = 0; i < HIDDEN_DIM; i++)
+                dest[i] = cap->h_mid[row][i] + moe_out[i] +
+                          shared_weight * shared_out[i];
 #ifdef FLASH_SESSION_STATE_DIAGNOSTICS
+        if(g_fe_combine_cpu) {
+            const float *outputs[PREFILL_NROW_K];
+            for(int k=0;k<PREFILL_NROW_K;k++)outputs[k]=(float *)p->output.contents+(size_t)assignment_index[row][k]*HIDDEN_DIM;
+            g_fe_combine_cpu(layer,g_fe_fa_base+row,cap->h_mid[row],shared_out,outputs,cap->expert_weight[row],cap->expert_id[row],cap->shared_score[row],dest);
+        }
         if(g_session_expert_hook) {
             const float *outputs[PREFILL_NROW_K],*stages[PREFILL_NROW_K*3];
             for(int k=0;k<PREFILL_NROW_K;k++) {

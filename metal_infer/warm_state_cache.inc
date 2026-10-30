@@ -115,6 +115,8 @@ static uint64_t fe027_execution_identity(uint64_t h, unsigned mask) {
     // its inference arithmetic changes without a hashed execution-mode change.
     // HTTP, diagnostics and logging-only edits must not invalidate checkpoints.
     if(mask&16)h=warm_hash_string(h,"fe027-reference-attention-v1");
+    // Same contract: advance for state-affecting combine arithmetic changes.
+    if(mask&32)h=warm_hash_string(h,"fe027-scalar-gpu-combine-v1");
     return h;
 }
 #endif
@@ -999,9 +1001,9 @@ static int warm_state_self_test(const char *directory) {
     memset(source.snapshot.la_ssm_snapshot[0], 0x5c, ssm);
 #ifdef FLASH_FE027_NUMERICS
     {
-        uint64_t seed=UINT64_C(14695981039346656037), identities[32];
+        uint64_t seed=UINT64_C(14695981039346656037), identities[64];
         int distinct=fe027_execution_identity(seed,0)==seed;
-        for(unsigned mask=0;mask<32;mask++) {
+        for(unsigned mask=0;mask<64;mask++) {
             identities[mask]=fe027_execution_identity(seed,mask);
             for(unsigned prev=0;prev<mask;prev++)distinct&=identities[prev]!=identities[mask];
         }

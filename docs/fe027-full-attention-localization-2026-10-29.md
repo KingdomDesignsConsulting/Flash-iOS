@@ -1,5 +1,7 @@
 # FE-027: actual full-attention localization and scalar-compatible operator
 
+> Follow-up: [Phase 4 combine alignment](fe027-moe-combine-alignment-2026-10-29.md) authenticates the remaining sigmoid difference and tests mask 63. The mask-31 failures below remain valid historical controls.
+
 Experimental branch: `experiment/http-resident-prefix-reuse-20261023`. Started from
 `5c26430f2790b84516b7384915eb0500abc5392f`; incorporated the documentation-only
 `f220bc6` research intake before publication. PR #2 stays draft and unmerged.

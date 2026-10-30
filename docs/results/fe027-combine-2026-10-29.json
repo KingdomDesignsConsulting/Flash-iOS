@@ -1,0 +1,683 @@
+{
+  "starting_head": "d1b8265f2edf85b49f2f844056f96abbaabd4f54",
+  "mask": 63,
+  "criteria": {
+    "state_max_exclusive": 0.001,
+    "hidden_max_inclusive": 0.001,
+    "logits_max_inclusive": 0.01,
+    "greedy_identity": true,
+    "finite": true,
+    "ten_kv_lengths_and_mirrors": true
+  },
+  "cases": {
+    "mandatory/short-129": {
+      "status": "NUMERICAL_PASS",
+      "completed_position": 129,
+      "input_tokens": 129,
+      "batches": 1,
+      "bit_exact": 0,
+      "persistent_fingerprints_exact": true,
+      "max_errors": {
+        "state": 0,
+        "hidden": 2.384185791015625e-07,
+        "logits": 1.9073486328125e-06
+      },
+      "all_greedy_equal": true,
+      "all_finite": true,
+      "all_ten_kv_lengths_and_mirrors": true,
+      "observed_endpoints": 2,
+      "started": "2026-10-29T19:52:17.057692-07:00",
+      "ended": "2026-10-29T19:52:31.247011-07:00",
+      "exit": 0,
+      "binary_sha256": "707be4ad68db22a7368be2efb8d4983cc2aa9e5e06c89ce4060522e767e30cd4",
+      "source_head": "d1b8265f2edf85b49f2f844056f96abbaabd4f54",
+      "source_sha256": {
+        "metal_infer/infer.m": "9d01d178c156c373a4533c6ba48032f60d3cabbf5830e72fa06fac07a22fe8eb",
+        "metal_infer/session_state_diag.inc": "fb60d2fee59a2589b0cfc54638237d76db4c6acdcf88221be26d82c1faf37a7f",
+        "metal_infer/session_nrow_oracle.inc": "f30077fa6bc4703245c37e124152c024737ec4414de91fa68255e8e60cdefcc3",
+        "metal_infer/warm_state_cache.inc": "bab801fcb0b3e71a29cec589b3dbd8e06454c1c8dbe55bc3e279ea7b06e1c7fe",
+        "metal_infer/prefill_nrow_grouped_async.inc": "983f87a3193ff7e92ddaf04b93f1fffe0e8895630af985ccfed69377d89be8a8",
+        "metal_infer/Makefile": "32989212a393ef3aa6709961f894c10f7e119d9447cc93b913aa5caf92644c83",
+        "metal_infer/fe027_alignment.inc": "16e4a39e194cefe59453382ad6faf0cf3cd7f71bde60e4535be30304ea989bcd",
+        "metal_infer/fe027_q4.inc": "6149eb0d5e4e2fa838614e88ed06c376956ba48906fdb72f92fcfceda30f7ad3",
+        "metal_infer/fe027_attention_reference.inc": "9a311ad0acbe09066940afcba2ddc46ea9474e6706227af4ef22bb6bf03b949e",
+        "metal_infer/fe027_full_attention_diag.inc": "6d5b2b615573598f7355f07d1bd1f193413b82205da55a925b8aa27a88772d0a",
+        "metal_infer/fe027_combine_reference.inc": "e245865c9d82043866243e5bb212d565592806948649063884118ea1062e5cdb",
+        "metal_infer/fe027_combine_diag.inc": "918b20d2527de6fbe6f28c3f0655d0866f770a9d8466f8416e48b38bac688fcc",
+        "metal_infer/fe027_combine_trace.metal": "d1db56472e0a6b5ba17384e7d4a2f57da2bfc7838ffe7fb8e6b660279c6cde26"
+      },
+      "pre_gpu": [
+        7,
+        0,
+        6
+      ],
+      "peak_child_rss_bytes": 6747832320
+    },
+    "mandatory/resident-304": {
+      "status": "NUMERICAL_PASS",
+      "completed_position": 304,
+      "input_tokens": 304,
+      "batches": 2,
+      "bit_exact": 0,
+      "persistent_fingerprints_exact": true,
+      "max_errors": {
+        "state": 0,
+        "hidden": 1.1920928955078125e-07,
+        "logits": 1.9073486328125e-06
+      },
+      "all_greedy_equal": true,
+      "all_finite": true,
+      "all_ten_kv_lengths_and_mirrors": true,
+      "observed_endpoints": 50,
+      "started": "2026-10-29T19:52:31.345132-07:00",
+      "ended": "2026-10-29T19:53:11.473277-07:00",
+      "exit": 0,
+      "binary_sha256": "707be4ad68db22a7368be2efb8d4983cc2aa9e5e06c89ce4060522e767e30cd4",
+      "source_head": "d1b8265f2edf85b49f2f844056f96abbaabd4f54",
+      "source_sha256": {
+        "metal_infer/infer.m": "9d01d178c156c373a4533c6ba48032f60d3cabbf5830e72fa06fac07a22fe8eb",
+        "metal_infer/session_state_diag.inc": "fb60d2fee59a2589b0cfc54638237d76db4c6acdcf88221be26d82c1faf37a7f",
+        "metal_infer/session_nrow_oracle.inc": "f30077fa6bc4703245c37e124152c024737ec4414de91fa68255e8e60cdefcc3",
+        "metal_infer/prefill_nrow_grouped_async.inc": "983f87a3193ff7e92ddaf04b93f1fffe0e8895630af985ccfed69377d89be8a8"
+      },
+      "pre_gpu": [
+        0,
+        7,
+        7
+      ]
+    },
+    "mandatory/original-2057": {
+      "status": "NUMERICAL_PASS",
+      "completed_position": 2057,
+      "input_tokens": 2057,
+      "batches": 16,
+      "bit_exact": 0,
+      "persistent_fingerprints_exact": true,
+      "max_errors": {
+        "state": 0,
+        "hidden": 1.9073486328125e-06,
+        "logits": 3.814697265625e-06
+      },
+      "all_greedy_equal": true,
+      "all_finite": true,
+      "all_ten_kv_lengths_and_mirrors": true,
+      "observed_endpoints": 25,
+      "started": "2026-10-29T19:53:11.721640-07:00",
+      "ended": "2026-10-29T19:56:33.645683-07:00",
+      "exit": 0,
+      "binary_sha256": "707be4ad68db22a7368be2efb8d4983cc2aa9e5e06c89ce4060522e767e30cd4",
+      "source_head": "d1b8265f2edf85b49f2f844056f96abbaabd4f54",
+      "source_sha256": {
+        "metal_infer/infer.m": "9d01d178c156c373a4533c6ba48032f60d3cabbf5830e72fa06fac07a22fe8eb",
+        "metal_infer/session_state_diag.inc": "fb60d2fee59a2589b0cfc54638237d76db4c6acdcf88221be26d82c1faf37a7f",
+        "metal_infer/session_nrow_oracle.inc": "f30077fa6bc4703245c37e124152c024737ec4414de91fa68255e8e60cdefcc3",
+        "metal_infer/warm_state_cache.inc": "bab801fcb0b3e71a29cec589b3dbd8e06454c1c8dbe55bc3e279ea7b06e1c7fe",
+        "metal_infer/prefill_nrow_grouped_async.inc": "983f87a3193ff7e92ddaf04b93f1fffe0e8895630af985ccfed69377d89be8a8",
+        "metal_infer/Makefile": "32989212a393ef3aa6709961f894c10f7e119d9447cc93b913aa5caf92644c83",
+        "metal_infer/fe027_alignment.inc": "16e4a39e194cefe59453382ad6faf0cf3cd7f71bde60e4535be30304ea989bcd",
+        "metal_infer/fe027_q4.inc": "6149eb0d5e4e2fa838614e88ed06c376956ba48906fdb72f92fcfceda30f7ad3",
+        "metal_infer/fe027_attention_reference.inc": "9a311ad0acbe09066940afcba2ddc46ea9474e6706227af4ef22bb6bf03b949e",
+        "metal_infer/fe027_full_attention_diag.inc": "6d5b2b615573598f7355f07d1bd1f193413b82205da55a925b8aa27a88772d0a",
+        "metal_infer/fe027_combine_reference.inc": "e245865c9d82043866243e5bb212d565592806948649063884118ea1062e5cdb",
+        "metal_infer/fe027_combine_diag.inc": "918b20d2527de6fbe6f28c3f0655d0866f770a9d8466f8416e48b38bac688fcc",
+        "metal_infer/fe027_combine_trace.metal": "d1db56472e0a6b5ba17384e7d4a2f57da2bfc7838ffe7fb8e6b660279c6cde26"
+      },
+      "pre_gpu": [
+        55,
+        6,
+        6,
+        6
+      ],
+      "peak_child_rss_bytes": 8905179136
+    },
+    "mandatory/extended-2305": {
+      "status": "NUMERICAL_PASS",
+      "completed_position": 2305,
+      "input_tokens": 2305,
+      "batches": 18,
+      "bit_exact": 0,
+      "persistent_fingerprints_exact": true,
+      "max_errors": {
+        "state": 0,
+        "hidden": 1.9073486328125e-06,
+        "logits": 3.814697265625e-06
+      },
+      "all_greedy_equal": true,
+      "all_finite": true,
+      "all_ten_kv_lengths_and_mirrors": true,
+      "observed_endpoints": 19,
+      "started": "2026-10-29T19:56:33.778142-07:00",
+      "ended": "2026-10-29T20:00:23.047186-07:00",
+      "exit": 0,
+      "binary_sha256": "707be4ad68db22a7368be2efb8d4983cc2aa9e5e06c89ce4060522e767e30cd4",
+      "source_head": "d1b8265f2edf85b49f2f844056f96abbaabd4f54",
+      "source_sha256": {
+        "metal_infer/infer.m": "9d01d178c156c373a4533c6ba48032f60d3cabbf5830e72fa06fac07a22fe8eb",
+        "metal_infer/session_state_diag.inc": "fb60d2fee59a2589b0cfc54638237d76db4c6acdcf88221be26d82c1faf37a7f",
+        "metal_infer/session_nrow_oracle.inc": "f30077fa6bc4703245c37e124152c024737ec4414de91fa68255e8e60cdefcc3",
+        "metal_infer/warm_state_cache.inc": "bab801fcb0b3e71a29cec589b3dbd8e06454c1c8dbe55bc3e279ea7b06e1c7fe",
+        "metal_infer/prefill_nrow_grouped_async.inc": "983f87a3193ff7e92ddaf04b93f1fffe0e8895630af985ccfed69377d89be8a8",
+        "metal_infer/Makefile": "32989212a393ef3aa6709961f894c10f7e119d9447cc93b913aa5caf92644c83",
+        "metal_infer/fe027_alignment.inc": "16e4a39e194cefe59453382ad6faf0cf3cd7f71bde60e4535be30304ea989bcd",
+        "metal_infer/fe027_q4.inc": "6149eb0d5e4e2fa838614e88ed06c376956ba48906fdb72f92fcfceda30f7ad3",
+        "metal_infer/fe027_attention_reference.inc": "9a311ad0acbe09066940afcba2ddc46ea9474e6706227af4ef22bb6bf03b949e",
+        "metal_infer/fe027_full_attention_diag.inc": "6d5b2b615573598f7355f07d1bd1f193413b82205da55a925b8aa27a88772d0a",
+        "metal_infer/fe027_combine_reference.inc": "e245865c9d82043866243e5bb212d565592806948649063884118ea1062e5cdb",
+        "metal_infer/fe027_combine_diag.inc": "918b20d2527de6fbe6f28c3f0655d0866f770a9d8466f8416e48b38bac688fcc",
+        "metal_infer/fe027_combine_trace.metal": "d1db56472e0a6b5ba17384e7d4a2f57da2bfc7838ffe7fb8e6b660279c6cde26"
+      },
+      "pre_gpu": [
+        50,
+        6,
+        6,
+        6
+      ],
+      "peak_child_rss_bytes": 9220227072
+    },
+    "mandatory/former-failure-3456": {
+      "status": "NUMERICAL_PASS",
+      "completed_position": 3456,
+      "input_tokens": 3456,
+      "batches": 27,
+      "bit_exact": 0,
+      "persistent_fingerprints_exact": true,
+      "max_errors": {
+        "state": 0,
+        "hidden": 1.9073486328125e-06,
+        "logits": 3.814697265625e-06
+      },
+      "all_greedy_equal": true,
+      "all_finite": true,
+      "all_ten_kv_lengths_and_mirrors": true,
+      "observed_endpoints": 27,
+      "started": "2026-10-29T20:00:23.256783-07:00",
+      "ended": "2026-10-29T20:06:38.595406-07:00",
+      "exit": 0,
+      "binary_sha256": "707be4ad68db22a7368be2efb8d4983cc2aa9e5e06c89ce4060522e767e30cd4",
+      "source_head": "d1b8265f2edf85b49f2f844056f96abbaabd4f54",
+      "source_sha256": {
+        "metal_infer/infer.m": "9d01d178c156c373a4533c6ba48032f60d3cabbf5830e72fa06fac07a22fe8eb",
+        "metal_infer/session_state_diag.inc": "fb60d2fee59a2589b0cfc54638237d76db4c6acdcf88221be26d82c1faf37a7f",
+        "metal_infer/session_nrow_oracle.inc": "f30077fa6bc4703245c37e124152c024737ec4414de91fa68255e8e60cdefcc3",
+        "metal_infer/warm_state_cache.inc": "bab801fcb0b3e71a29cec589b3dbd8e06454c1c8dbe55bc3e279ea7b06e1c7fe",
+        "metal_infer/prefill_nrow_grouped_async.inc": "983f87a3193ff7e92ddaf04b93f1fffe0e8895630af985ccfed69377d89be8a8",
+        "metal_infer/Makefile": "32989212a393ef3aa6709961f894c10f7e119d9447cc93b913aa5caf92644c83",
+        "metal_infer/fe027_alignment.inc": "16e4a39e194cefe59453382ad6faf0cf3cd7f71bde60e4535be30304ea989bcd",
+        "metal_infer/fe027_q4.inc": "6149eb0d5e4e2fa838614e88ed06c376956ba48906fdb72f92fcfceda30f7ad3",
+        "metal_infer/fe027_attention_reference.inc": "9a311ad0acbe09066940afcba2ddc46ea9474e6706227af4ef22bb6bf03b949e",
+        "metal_infer/fe027_full_attention_diag.inc": "6d5b2b615573598f7355f07d1bd1f193413b82205da55a925b8aa27a88772d0a",
+        "metal_infer/fe027_combine_reference.inc": "e245865c9d82043866243e5bb212d565592806948649063884118ea1062e5cdb",
+        "metal_infer/fe027_combine_diag.inc": "918b20d2527de6fbe6f28c3f0655d0866f770a9d8466f8416e48b38bac688fcc",
+        "metal_infer/fe027_combine_trace.metal": "d1db56472e0a6b5ba17384e7d4a2f57da2bfc7838ffe7fb8e6b660279c6cde26"
+      },
+      "pre_gpu": [
+        0,
+        7,
+        6
+      ],
+      "peak_child_rss_bytes": 9675390976
+    },
+    "mandatory/full-4096": {
+      "status": "NUMERICAL_PASS",
+      "completed_position": 4096,
+      "input_tokens": 4096,
+      "batches": 32,
+      "bit_exact": 0,
+      "persistent_fingerprints_exact": true,
+      "max_errors": {
+        "state": 0,
+        "hidden": 1.9073486328125e-06,
+        "logits": 3.814697265625e-06
+      },
+      "all_greedy_equal": true,
+      "all_finite": true,
+      "all_ten_kv_lengths_and_mirrors": true,
+      "observed_endpoints": 32,
+      "started": "2026-10-29T20:06:38.851722-07:00",
+      "ended": "2026-10-29T20:13:46.481065-07:00",
+      "exit": 0,
+      "binary_sha256": "707be4ad68db22a7368be2efb8d4983cc2aa9e5e06c89ce4060522e767e30cd4",
+      "source_head": "d1b8265f2edf85b49f2f844056f96abbaabd4f54",
+      "source_sha256": {
+        "metal_infer/infer.m": "9d01d178c156c373a4533c6ba48032f60d3cabbf5830e72fa06fac07a22fe8eb",
+        "metal_infer/session_state_diag.inc": "fb60d2fee59a2589b0cfc54638237d76db4c6acdcf88221be26d82c1faf37a7f",
+        "metal_infer/session_nrow_oracle.inc": "f30077fa6bc4703245c37e124152c024737ec4414de91fa68255e8e60cdefcc3",
+        "metal_infer/warm_state_cache.inc": "bab801fcb0b3e71a29cec589b3dbd8e06454c1c8dbe55bc3e279ea7b06e1c7fe",
+        "metal_infer/prefill_nrow_grouped_async.inc": "983f87a3193ff7e92ddaf04b93f1fffe0e8895630af985ccfed69377d89be8a8",
+        "metal_infer/Makefile": "32989212a393ef3aa6709961f894c10f7e119d9447cc93b913aa5caf92644c83",
+        "metal_infer/fe027_alignment.inc": "16e4a39e194cefe59453382ad6faf0cf3cd7f71bde60e4535be30304ea989bcd",
+        "metal_infer/fe027_q4.inc": "6149eb0d5e4e2fa838614e88ed06c376956ba48906fdb72f92fcfceda30f7ad3",
+        "metal_infer/fe027_attention_reference.inc": "9a311ad0acbe09066940afcba2ddc46ea9474e6706227af4ef22bb6bf03b949e",
+        "metal_infer/fe027_full_attention_diag.inc": "6d5b2b615573598f7355f07d1bd1f193413b82205da55a925b8aa27a88772d0a",
+        "metal_infer/fe027_combine_reference.inc": "e245865c9d82043866243e5bb212d565592806948649063884118ea1062e5cdb",
+        "metal_infer/fe027_combine_diag.inc": "918b20d2527de6fbe6f28c3f0655d0866f770a9d8466f8416e48b38bac688fcc",
+        "metal_infer/fe027_combine_trace.metal": "d1db56472e0a6b5ba17384e7d4a2f57da2bfc7838ffe7fb8e6b660279c6cde26"
+      },
+      "pre_gpu": [
+        91,
+        0,
+        0,
+        0
+      ],
+      "peak_child_rss_bytes": 10103357440
+    },
+    "expansion/repeat-4096": {
+      "status": "NUMERICAL_PASS",
+      "completed_position": 4096,
+      "input_tokens": 4096,
+      "batches": 32,
+      "bit_exact": 0,
+      "persistent_fingerprints_exact": true,
+      "max_errors": {
+        "state": 0,
+        "hidden": 1.9073486328125e-06,
+        "logits": 3.814697265625e-06
+      },
+      "all_greedy_equal": true,
+      "all_finite": true,
+      "all_ten_kv_lengths_and_mirrors": true,
+      "observed_endpoints": 32,
+      "started": "2026-10-29T20:13:47.469649-07:00",
+      "ended": "2026-10-29T20:20:52.792872-07:00",
+      "exit": 0,
+      "binary_sha256": "707be4ad68db22a7368be2efb8d4983cc2aa9e5e06c89ce4060522e767e30cd4",
+      "source_head": "d1b8265f2edf85b49f2f844056f96abbaabd4f54",
+      "source_sha256": {
+        "metal_infer/infer.m": "9d01d178c156c373a4533c6ba48032f60d3cabbf5830e72fa06fac07a22fe8eb",
+        "metal_infer/session_state_diag.inc": "fb60d2fee59a2589b0cfc54638237d76db4c6acdcf88221be26d82c1faf37a7f",
+        "metal_infer/session_nrow_oracle.inc": "f30077fa6bc4703245c37e124152c024737ec4414de91fa68255e8e60cdefcc3",
+        "metal_infer/warm_state_cache.inc": "bab801fcb0b3e71a29cec589b3dbd8e06454c1c8dbe55bc3e279ea7b06e1c7fe",
+        "metal_infer/prefill_nrow_grouped_async.inc": "983f87a3193ff7e92ddaf04b93f1fffe0e8895630af985ccfed69377d89be8a8",
+        "metal_infer/Makefile": "32989212a393ef3aa6709961f894c10f7e119d9447cc93b913aa5caf92644c83",
+        "metal_infer/fe027_alignment.inc": "16e4a39e194cefe59453382ad6faf0cf3cd7f71bde60e4535be30304ea989bcd",
+        "metal_infer/fe027_q4.inc": "6149eb0d5e4e2fa838614e88ed06c376956ba48906fdb72f92fcfceda30f7ad3",
+        "metal_infer/fe027_attention_reference.inc": "9a311ad0acbe09066940afcba2ddc46ea9474e6706227af4ef22bb6bf03b949e",
+        "metal_infer/fe027_full_attention_diag.inc": "6d5b2b615573598f7355f07d1bd1f193413b82205da55a925b8aa27a88772d0a",
+        "metal_infer/fe027_combine_reference.inc": "e245865c9d82043866243e5bb212d565592806948649063884118ea1062e5cdb",
+        "metal_infer/fe027_combine_diag.inc": "918b20d2527de6fbe6f28c3f0655d0866f770a9d8466f8416e48b38bac688fcc",
+        "metal_infer/fe027_combine_trace.metal": "d1db56472e0a6b5ba17384e7d4a2f57da2bfc7838ffe7fb8e6b660279c6cde26"
+      },
+      "pre_gpu": [
+        0,
+        0,
+        0
+      ],
+      "peak_child_rss_bytes": 10213048320
+    },
+    "expansion/disabled-129": {
+      "status": "NUMERICAL_PASS",
+      "completed_position": 129,
+      "input_tokens": 129,
+      "batches": 1,
+      "bit_exact": 0,
+      "persistent_fingerprints_exact": false,
+      "max_errors": {
+        "state": 2.288818359375e-05,
+        "hidden": 3.814697265625e-06,
+        "logits": 7.867813110351562e-06
+      },
+      "all_greedy_equal": true,
+      "all_finite": true,
+      "all_ten_kv_lengths_and_mirrors": true,
+      "observed_endpoints": 2,
+      "started": "2026-10-29T20:27:45.850048-07:00",
+      "ended": "2026-10-29T20:28:01.453875-07:00",
+      "exit": 0,
+      "binary_sha256": "707be4ad68db22a7368be2efb8d4983cc2aa9e5e06c89ce4060522e767e30cd4",
+      "source_head": "d1b8265f2edf85b49f2f844056f96abbaabd4f54",
+      "source_sha256": {
+        "metal_infer/infer.m": "9d01d178c156c373a4533c6ba48032f60d3cabbf5830e72fa06fac07a22fe8eb",
+        "metal_infer/session_state_diag.inc": "fb60d2fee59a2589b0cfc54638237d76db4c6acdcf88221be26d82c1faf37a7f",
+        "metal_infer/session_nrow_oracle.inc": "f30077fa6bc4703245c37e124152c024737ec4414de91fa68255e8e60cdefcc3",
+        "metal_infer/warm_state_cache.inc": "bab801fcb0b3e71a29cec589b3dbd8e06454c1c8dbe55bc3e279ea7b06e1c7fe",
+        "metal_infer/prefill_nrow_grouped_async.inc": "983f87a3193ff7e92ddaf04b93f1fffe0e8895630af985ccfed69377d89be8a8",
+        "metal_infer/Makefile": "32989212a393ef3aa6709961f894c10f7e119d9447cc93b913aa5caf92644c83",
+        "metal_infer/fe027_alignment.inc": "16e4a39e194cefe59453382ad6faf0cf3cd7f71bde60e4535be30304ea989bcd",
+        "metal_infer/fe027_q4.inc": "6149eb0d5e4e2fa838614e88ed06c376956ba48906fdb72f92fcfceda30f7ad3",
+        "metal_infer/fe027_attention_reference.inc": "9a311ad0acbe09066940afcba2ddc46ea9474e6706227af4ef22bb6bf03b949e",
+        "metal_infer/fe027_full_attention_diag.inc": "6d5b2b615573598f7355f07d1bd1f193413b82205da55a925b8aa27a88772d0a",
+        "metal_infer/fe027_combine_reference.inc": "e245865c9d82043866243e5bb212d565592806948649063884118ea1062e5cdb",
+        "metal_infer/fe027_combine_diag.inc": "918b20d2527de6fbe6f28c3f0655d0866f770a9d8466f8416e48b38bac688fcc",
+        "metal_infer/fe027_combine_trace.metal": "d1db56472e0a6b5ba17384e7d4a2f57da2bfc7838ffe7fb8e6b660279c6cde26"
+      },
+      "pre_gpu": [
+        45,
+        0,
+        0,
+        0
+      ],
+      "peak_child_rss_bytes": 6753107968,
+      "observed_native_rss_bytes": 6719881216,
+      "rss_limit_gib": 16,
+      "stop_reason": null
+    },
+    "expansion/http-matrix/batch-tail-eos-oracle": {
+      "status": "NUMERICAL_PASS",
+      "completed_position": 205,
+      "input_tokens": 205,
+      "batches": 1,
+      "bit_exact": 0,
+      "persistent_fingerprints_exact": true,
+      "max_errors": {
+        "state": 0,
+        "hidden": 1.1920928955078125e-07,
+        "logits": 1.9073486328125e-06
+      },
+      "all_greedy_equal": true,
+      "all_finite": true,
+      "all_ten_kv_lengths_and_mirrors": true,
+      "observed_endpoints": 78,
+      "started": "2026-10-29T20:23:26.171691-07:00",
+      "ended": "2026-10-29T20:23:59.833954-07:00",
+      "exit": 0,
+      "binary_sha256": "707be4ad68db22a7368be2efb8d4983cc2aa9e5e06c89ce4060522e767e30cd4",
+      "source_head": "d1b8265f2edf85b49f2f844056f96abbaabd4f54",
+      "source_sha256": {
+        "metal_infer/infer.m": "9d01d178c156c373a4533c6ba48032f60d3cabbf5830e72fa06fac07a22fe8eb",
+        "metal_infer/session_state_diag.inc": "fb60d2fee59a2589b0cfc54638237d76db4c6acdcf88221be26d82c1faf37a7f",
+        "metal_infer/session_nrow_oracle.inc": "f30077fa6bc4703245c37e124152c024737ec4414de91fa68255e8e60cdefcc3",
+        "metal_infer/prefill_nrow_grouped_async.inc": "983f87a3193ff7e92ddaf04b93f1fffe0e8895630af985ccfed69377d89be8a8"
+      },
+      "pre_gpu": [
+        0,
+        0,
+        0
+      ]
+    },
+    "expansion/http-matrix/two-slabs-oracle": {
+      "status": "NUMERICAL_PASS",
+      "completed_position": 304,
+      "input_tokens": 304,
+      "batches": 2,
+      "bit_exact": 0,
+      "persistent_fingerprints_exact": true,
+      "max_errors": {
+        "state": 0,
+        "hidden": 1.1920928955078125e-07,
+        "logits": 1.9073486328125e-06
+      },
+      "all_greedy_equal": true,
+      "all_finite": true,
+      "all_ten_kv_lengths_and_mirrors": true,
+      "observed_endpoints": 50,
+      "started": "2026-10-29T20:24:54.537089-07:00",
+      "ended": "2026-10-29T20:25:31.197325-07:00",
+      "exit": 0,
+      "binary_sha256": "707be4ad68db22a7368be2efb8d4983cc2aa9e5e06c89ce4060522e767e30cd4",
+      "source_head": "d1b8265f2edf85b49f2f844056f96abbaabd4f54",
+      "source_sha256": {
+        "metal_infer/infer.m": "9d01d178c156c373a4533c6ba48032f60d3cabbf5830e72fa06fac07a22fe8eb",
+        "metal_infer/session_state_diag.inc": "fb60d2fee59a2589b0cfc54638237d76db4c6acdcf88221be26d82c1faf37a7f",
+        "metal_infer/session_nrow_oracle.inc": "f30077fa6bc4703245c37e124152c024737ec4414de91fa68255e8e60cdefcc3",
+        "metal_infer/prefill_nrow_grouped_async.inc": "983f87a3193ff7e92ddaf04b93f1fffe0e8895630af985ccfed69377d89be8a8"
+      },
+      "pre_gpu": [
+        40,
+        0,
+        0,
+        0
+      ]
+    },
+    "expansion/http-matrix/minimum-batch-oracle": {
+      "status": "NUMERICAL_PASS",
+      "completed_position": 176,
+      "input_tokens": 176,
+      "batches": 1,
+      "bit_exact": 0,
+      "persistent_fingerprints_exact": true,
+      "max_errors": {
+        "state": 0,
+        "hidden": 5.960464477539063e-08,
+        "logits": 1.9073486328125e-06
+      },
+      "all_greedy_equal": true,
+      "all_finite": true,
+      "all_ten_kv_lengths_and_mirrors": true,
+      "observed_endpoints": 49,
+      "started": "2026-10-29T20:22:19.871082-07:00",
+      "ended": "2026-10-29T20:22:46.222636-07:00",
+      "exit": 0,
+      "binary_sha256": "707be4ad68db22a7368be2efb8d4983cc2aa9e5e06c89ce4060522e767e30cd4",
+      "source_head": "d1b8265f2edf85b49f2f844056f96abbaabd4f54",
+      "source_sha256": {
+        "metal_infer/infer.m": "9d01d178c156c373a4533c6ba48032f60d3cabbf5830e72fa06fac07a22fe8eb",
+        "metal_infer/session_state_diag.inc": "fb60d2fee59a2589b0cfc54638237d76db4c6acdcf88221be26d82c1faf37a7f",
+        "metal_infer/session_nrow_oracle.inc": "f30077fa6bc4703245c37e124152c024737ec4414de91fa68255e8e60cdefcc3",
+        "metal_infer/prefill_nrow_grouped_async.inc": "983f87a3193ff7e92ddaf04b93f1fffe0e8895630af985ccfed69377d89be8a8"
+      },
+      "pre_gpu": [
+        45,
+        0,
+        0,
+        0
+      ]
+    },
+    "expansion/http-matrix/explicit-zero-oracle": {
+      "status": "NUMERICAL_PASS",
+      "completed_position": 203,
+      "input_tokens": 203,
+      "batches": 1,
+      "bit_exact": 0,
+      "persistent_fingerprints_exact": true,
+      "max_errors": {
+        "state": 0,
+        "hidden": 4.76837158203125e-07,
+        "logits": 1.9073486328125e-06
+      },
+      "all_greedy_equal": true,
+      "all_finite": true,
+      "all_ten_kv_lengths_and_mirrors": true,
+      "observed_endpoints": 76,
+      "started": "2026-10-29T20:26:15.793004-07:00",
+      "ended": "2026-10-29T20:26:50.654296-07:00",
+      "exit": 0,
+      "binary_sha256": "707be4ad68db22a7368be2efb8d4983cc2aa9e5e06c89ce4060522e767e30cd4",
+      "source_head": "d1b8265f2edf85b49f2f844056f96abbaabd4f54",
+      "source_sha256": {
+        "metal_infer/infer.m": "9d01d178c156c373a4533c6ba48032f60d3cabbf5830e72fa06fac07a22fe8eb",
+        "metal_infer/session_state_diag.inc": "fb60d2fee59a2589b0cfc54638237d76db4c6acdcf88221be26d82c1faf37a7f",
+        "metal_infer/session_nrow_oracle.inc": "f30077fa6bc4703245c37e124152c024737ec4414de91fa68255e8e60cdefcc3",
+        "metal_infer/prefill_nrow_grouped_async.inc": "983f87a3193ff7e92ddaf04b93f1fffe0e8895630af985ccfed69377d89be8a8"
+      },
+      "pre_gpu": [
+        47,
+        0,
+        0,
+        0
+      ]
+    }
+  },
+  "scope": "Only actual observed completed endpoints and scalar tails. Persistent state fingerprints exclude scratch/padding. No 16K/32K numerical qualification claim.",
+  "http": [
+    {
+      "case": "threshold-scalar",
+      "status": "EXACT_FINGERPRINT_PASS",
+      "oracle_status": null,
+      "end_position": 175,
+      "requests": [
+        {
+          "end_position": 143,
+          "ended_with_eos": true,
+          "finish_reason": "stop",
+          "session_reused": false
+        },
+        {
+          "end_position": 175,
+          "ended_with_eos": true,
+          "finish_reason": "stop",
+          "session_reused": true
+        }
+      ],
+      "control_pre_gpu": [
+        46,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "case": "minimum-batch",
+      "status": "EXACT_FINGERPRINT_PASS",
+      "oracle_status": "NUMERICAL_PASS",
+      "end_position": 176,
+      "requests": [
+        {
+          "end_position": 144,
+          "ended_with_eos": true,
+          "finish_reason": "stop",
+          "session_reused": false
+        },
+        {
+          "end_position": 176,
+          "ended_with_eos": true,
+          "finish_reason": "stop",
+          "session_reused": true
+        }
+      ],
+      "control_pre_gpu": [
+        47,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "case": "batch-tail-eos",
+      "status": "EXACT_FINGERPRINT_PASS",
+      "oracle_status": "NUMERICAL_PASS",
+      "end_position": 205,
+      "requests": [
+        {
+          "end_position": 173,
+          "ended_with_eos": true,
+          "finish_reason": "stop",
+          "session_reused": false
+        },
+        {
+          "end_position": 205,
+          "ended_with_eos": true,
+          "finish_reason": "stop",
+          "session_reused": true
+        }
+      ],
+      "control_pre_gpu": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "case": "two-slabs",
+      "status": "EXACT_FINGERPRINT_PASS",
+      "oracle_status": "NUMERICAL_PASS",
+      "end_position": 304,
+      "requests": [
+        {
+          "end_position": 272,
+          "ended_with_eos": true,
+          "finish_reason": "stop",
+          "session_reused": false
+        },
+        {
+          "end_position": 304,
+          "ended_with_eos": true,
+          "finish_reason": "stop",
+          "session_reused": true
+        }
+      ],
+      "control_pre_gpu": [
+        41,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "case": "explicit-zero",
+      "status": "EXACT_FINGERPRINT_PASS",
+      "oracle_status": "NUMERICAL_PASS",
+      "end_position": 203,
+      "requests": [
+        {
+          "end_position": 171,
+          "ended_with_eos": true,
+          "finish_reason": "stop",
+          "session_reused": false
+        },
+        {
+          "end_position": 203,
+          "ended_with_eos": true,
+          "finish_reason": "stop",
+          "session_reused": true
+        }
+      ],
+      "control_pre_gpu": [
+        48,
+        0,
+        0,
+        0
+      ]
+    }
+  ],
+  "disk63": {
+    "status": "EXACT_RESTART_PASS",
+    "prefix": 141,
+    "end_position": 205,
+    "positions_compared": 65,
+    "checkpoint_bytes": 67376096,
+    "save_ms": 404.199951171875,
+    "restore_ms": 368.586181640625,
+    "wrong_prefix_and_mode_rejected": true,
+    "pre_gpu": [
+      [
+        47,
+        0,
+        0,
+        0
+      ],
+      [
+        43,
+        0,
+        0,
+        0
+      ]
+    ],
+    "binary_sha256": "707be4ad68db22a7368be2efb8d4983cc2aa9e5e06c89ce4060522e767e30cd4",
+    "source_head": "d1b8265f2edf85b49f2f844056f96abbaabd4f54",
+    "different_numerics_rejected": true,
+    "rejected_mask": 31,
+    "rejection_exit": 3,
+    "rejection_pre_gpu": [
+      43,
+      0,
+      0,
+      0
+    ]
+  },
+  "expansion_status": "RUNNING",
+  "old_modes": {
+    "old_mask31": {
+      "status": "EXACT_OLD_CHECKPOINT_PASS",
+      "positions": 65,
+      "pre_gpu": [
+        0,
+        0,
+        0
+      ],
+      "file_preserved": true
+    },
+    "old_mask15": {
+      "status": "EXACT_OLD_CHECKPOINT_PASS",
+      "positions": 65,
+      "pre_gpu": [
+        47,
+        0,
+        0,
+        0
+      ],
+      "file_preserved": true
+    },
+    "disabled_exact_old_baseline": true
+  },
+  "performance": "NOT RUN at this engineering checkpoint; conditional expansion still running"
+}

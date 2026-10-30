@@ -696,6 +696,8 @@ static void sd_progress(const char *phase,int position);
 static int g_fe_fa_base;
 static void (*g_fe_fa_cpu)(const char *,int,int,const float *,size_t)=NULL;
 static void (*g_fe_fa_gpu)(id<MTLCommandBuffer>,const char *,int,int,id<MTLBuffer>,NSUInteger,size_t)=NULL;
+static void (*g_fe_combine_gpu)(id<MTLCommandBuffer>,int,int,const int *,int)=NULL;
+static void (*g_fe_combine_cpu)(int,int,const float *,const float *,const float *const *,const float *,const int *,float,const float *)=NULL;
 static void (*g_session_expert_hook)(int,int,const float *const *,const float *const *,const float *,const float *)=NULL;
 static void (*g_session_route_hook)(int,int,int,const int *,const float *,const float *,const float *,const float *)=NULL;
 #endif
@@ -706,7 +708,7 @@ static void (*g_session_route_hook)(int,int,int,const int *,const float *,const 
 #include "fe027_q4.inc"
 static unsigned fe027_numerics_mask(void) {
     static int cached=-1;
-    if(cached<0){const char *s=getenv("FLASH_FE027_NUMERICS");char *end=NULL;unsigned long n=s?strtoul(s,&end,10):0;cached=(!s || (end && !*end && n<=31))?(int)n:255;}
+    if(cached<0){const char *s=getenv("FLASH_FE027_NUMERICS");char *end=NULL;unsigned long n=s?strtoul(s,&end,10):0;cached=(!s || (end && !*end && n<=63))?(int)n:255;}
     return (unsigned)cached;
 }
 #endif
@@ -15644,6 +15646,9 @@ static void fused_layer_forward(
 				[enc endEncoding];
 			}
 
+#ifdef FLASH_SESSION_STATE_DIAGNOSTICS
+            if(g_fe_combine_gpu)g_fe_combine_gpu(cmd_experts,layer_idx,pos,expert_indices,actual_K);
+#endif
 			// Enc C2: rms_norm_sum_sq (buf_moe_hidden -> buf_cmd3_sum_sq)
 			{
 				id<MTLComputeCommandEncoder> enc = [cmd_experts computeCommandEncoder];

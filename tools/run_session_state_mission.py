@@ -125,6 +125,17 @@ def main():
  write(a.out/'replay-input.json',dict(token_ids=ids,expected_digests=expected))
  cmd=[str(binary),'--model',a.model,'--tiered','--no-prefill-nrow',*a.engine_arg]
  replay_env=dict(env,FLASH_SESSION_TOKEN_TRACE_DIR=str(control),FLASH_SESSION_REPLAY_INPUT=str(a.out/'replay-input.json'))
+ # The HTTP process is gone, but its last GPU work or another app may still be
+ # active. Gate the independent continuous-reference process as well.
+ readings=[];stable=0
+ for _ in range(60):
+  value=gpu();readings.append(value);stable=stable+1 if value is not None and value<30 else 0
+  if stable==3:break
+  time.sleep(1)
+ report['control_pre_gpu']=readings
+ if stable<3:
+  report.update(status='GPU_GATE_NOT_RUN',ended=stamp());write(a.out/'result.json',report)
+  raise RuntimeError('GPU gate: continuous reference not launched')
  print('CONTINUOUS_START',stamp(),'tokens',len(ids),flush=True)
  with (a.out/'continuous.log').open('w') as f:
   result=subprocess.run(cmd,cwd=binary.parent,env=replay_env,stdin=subprocess.DEVNULL,stdout=f,stderr=subprocess.STDOUT,timeout=240)
