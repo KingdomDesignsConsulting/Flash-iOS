@@ -212,3 +212,11 @@ The smoke was staging-heavy, but completed normally through 32 N-row chunks with
 3. Integrate the validated exact-M2 transaction into decode only after compact banking is proven correct; retain ordinary one-token decode as the disable/fallback path.
 4. Physical-iPhone model loading/generation remains separately unvalidated for the current iOS snapshot.
 5. Continue profiling the next material N128 bottleneck after the gate+up promotion.
+
+
+## Experimental resident-session gates — October 28, 2026
+
+Production is unchanged. PR #2 remains draft: long N128/scalar state-equivalence
+fails at the measured endpoint 1920 after a near-tied MoE expert-set change.
+Named-profile HTTP restart, additional bounded fault recovery and selected short
+execution-mode comparisons pass within scope. See [the consolidated handback](resident-release-gates-2026-10-28.md).

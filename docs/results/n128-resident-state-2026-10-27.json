@@ -1,0 +1,157 @@
+{
+  "starting_commit": "c35dc78be19bc9e4ba141252fe2cc300b8d30d40",
+  "identity_fix_commit": "0b49e08bb5948897a2b43774971213cdba0eec8a",
+  "verdict": "BOUNDED_N128_NUMERICALLY_QUALIFIED",
+  "criteria": {
+    "state_max_abs_strictly_below": 0.001,
+    "hidden_max_abs_at_most": 0.001,
+    "logits_max_abs_at_most": 0.01,
+    "greedy_identity": true,
+    "finite": true,
+    "kv_lengths_mirrors_exact": true,
+    "source": "c35dc78 existing target_verify_grouped.inc / prefill_nrow_control.inc"
+  },
+  "cases": [
+    {
+      "case": "threshold-scalar",
+      "http_end_position": 175,
+      "batch_endpoints": [],
+      "status": "EXACT_FINGERPRINT_PASS",
+      "bit_exact": true
+    },
+    {
+      "case": "minimum-batch",
+      "http_end_position": 176,
+      "batch_endpoints": [
+        {
+          "position": 141,
+          "start": 13,
+          "rows": 128
+        }
+      ],
+      "status": "NUMERICAL_PASS",
+      "bit_exact": false,
+      "http_candidate_exact": true,
+      "compared_positions": 49,
+      "http_positions": 37,
+      "state_max_abs": 0.00010776519775390625,
+      "hidden_max_abs": 2.288818359375e-05,
+      "logits_max_abs": 4.9114227294921875e-05,
+      "greedy_equal": true,
+      "kv_lengths_and_mirrors": true,
+      "finite": true
+    },
+    {
+      "case": "batch-tail-eos",
+      "http_end_position": 205,
+      "batch_endpoints": [
+        {
+          "position": 141,
+          "start": 13,
+          "rows": 128
+        }
+      ],
+      "status": "NUMERICAL_PASS",
+      "bit_exact": false,
+      "http_candidate_exact": true,
+      "compared_positions": 78,
+      "http_positions": 66,
+      "state_max_abs": 0.00013017654418945312,
+      "hidden_max_abs": 1.9311904907226562e-05,
+      "logits_max_abs": 9.489059448242188e-05,
+      "greedy_equal": true,
+      "kv_lengths_and_mirrors": true,
+      "finite": true
+    },
+    {
+      "case": "two-slabs",
+      "http_end_position": 304,
+      "batch_endpoints": [
+        {
+          "position": 141,
+          "start": 13,
+          "rows": 128
+        },
+        {
+          "position": 269,
+          "start": 141,
+          "rows": 128
+        }
+      ],
+      "status": "NUMERICAL_PASS",
+      "bit_exact": false,
+      "http_candidate_exact": true,
+      "compared_positions": 50,
+      "http_positions": 38,
+      "state_max_abs": 0.00026035308837890625,
+      "hidden_max_abs": 1.430511474609375e-05,
+      "logits_max_abs": 9.489059448242188e-05,
+      "greedy_equal": true,
+      "kv_lengths_and_mirrors": true,
+      "finite": true
+    },
+    {
+      "case": "explicit-zero",
+      "http_end_position": 203,
+      "batch_endpoints": [
+        {
+          "position": 128,
+          "start": 0,
+          "rows": 128
+        }
+      ],
+      "status": "NUMERICAL_PASS",
+      "bit_exact": false,
+      "http_candidate_exact": true,
+      "compared_positions": 76,
+      "http_positions": 77,
+      "state_max_abs": 0.0002551078796386719,
+      "hidden_max_abs": 1.811981201171875e-05,
+      "logits_max_abs": 3.910064697265625e-05,
+      "greedy_equal": true,
+      "kv_lengths_and_mirrors": true,
+      "finite": true
+    }
+  ],
+  "cancellation": {
+    "status": "PASS",
+    "recovery_exact": true,
+    "cases": [
+      {
+        "phase": "prefill",
+        "cancellation_ms": 222.33991598477587,
+        "health_ms": 0.6542500341311097,
+        "stale_status": 409,
+        "invalidated": true,
+        "recovery_end": 41
+      },
+      {
+        "phase": "decode",
+        "cancellation_ms": 74.79620800586417,
+        "health_ms": 0.467624980956316,
+        "stale_status": 409,
+        "invalidated": true,
+        "recovery_end": 41
+      }
+    ]
+  },
+  "disk": {
+    "status": "EXACT_RESTART_PASS",
+    "prefix": 141,
+    "end_position": 205,
+    "positions_compared": 65,
+    "checkpoint_bytes": 67374473,
+    "save_ms": 520.8759765625,
+    "restore_ms": 444.842041015625,
+    "wrong_prefix_and_mode_rejected": true
+  },
+  "model_free_trace_tests": 6,
+  "warm_state_synthetic": "PASS",
+  "remaining": [
+    "long context / many slabs",
+    "CPU-linear / other modes",
+    "named-profile HTTP restart",
+    "other error/rollback modes",
+    "production review"
+  ]
+}

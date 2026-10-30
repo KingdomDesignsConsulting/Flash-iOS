@@ -11,7 +11,7 @@
  * WARM_STATE_EXECUTION_VERSION.
  * Do not bump for HTTP, tool, logging, or UI-only changes.
  */
-#define WARM_STATE_EXECUTION_VERSION 2U // N128 library repair can replace prior scalar fallback state
+#define WARM_STATE_EXECUTION_VERSION 3U // Preserve authoritative GPU prefix state across serving lifecycle
 #define WARM_STATE_MAX_BYTES (UINT64_C(1) << 31)
 
 typedef struct {
@@ -105,7 +105,27 @@ static int warm_hash_small_file(uint64_t *h, const char *path) {
     return warm_hash_small_file_identity(h, path, path);
 }
 
+#ifdef FLASH_FE027_NUMERICS
+static uint64_t fe027_execution_identity(uint64_t h, unsigned mask) {
+    if (!mask) return h; // unrelated rebuilds / disabled experiment stay compatible
+    uint64_t experiment[] = {UINT64_C(0x4645303237), 1U, mask};
+    h = warm_hash_bytes(h, experiment, sizeof(experiment));
+    if(mask&8)h=warm_hash_bytes(h,fe027_q4_source,sizeof(fe027_q4_source));
+    // CACHE CORRECTNESS CONTRACT: increment this operator version whenever
+    // its inference arithmetic changes without a hashed execution-mode change.
+    // HTTP, diagnostics and logging-only edits must not invalidate checkpoints.
+    if(mask&16)h=warm_hash_string(h,"fe027-reference-attention-v1");
+    // Same contract: advance for state-affecting combine arithmetic changes.
+    if(mask&32)h=warm_hash_string(h,"fe027-scalar-gpu-combine-v1");
+    return h;
+}
+#endif
+
 static uint64_t warm_execution_mode_hash(int K) {
+    uint64_t nrow_mode=0;
+#ifdef FLASH_PREFILL_NROW_PRODUCTION
+    nrow_mode=(uint64_t)g_prefill_nrow_runtime_enabled;
+#endif
     uint64_t shape[] = {WARM_STATE_VERSION, WARM_STATE_LAYOUT_VERSION,
         WARM_STATE_EXECUTION_VERSION, (uint64_t)NUM_LAYERS,
         (uint64_t)NUM_KV_HEADS, (uint64_t)HEAD_DIM,
@@ -122,9 +142,12 @@ static uint64_t warm_execution_mode_hash(int K) {
         (uint64_t)g_cmd12_chain_enabled,
         (uint64_t)g_cmd12_full_chain_enabled,
         (uint64_t)gpu_linear_attn_enabled,
-        (uint64_t)linear_attn_bypass};
+        (uint64_t)linear_attn_bypass, nrow_mode};
     uint64_t h = warm_hash_bytes(UINT64_C(14695981039346656037),
                                  shape, sizeof(shape));
+#ifdef FLASH_FE027_NUMERICS
+    h = fe027_execution_identity(h, fe027_numerics_mask());
+#endif
     // v2 CPU recurrence semantics: pre-fix --cpu-linear checkpoints stored
     // stale CPU SSM state because the old fallback advanced GPU recurrence.
     // Hash the marker only in CPU-linear mode so ordinary GPU and bypass
@@ -244,11 +267,26 @@ static int warm_state_compatibility(const char *weights, const char *manifest,
                                              layer_fds, K, 0, 0, result);
 }
 
+#ifdef FLASH_SESSION_STATE_DIAGNOSTICS
+static size_t warm_test_written;
+#endif
 static int warm_write_all(int fd, const void *data, size_t size, uint64_t *hash) {
     const uint8_t *p = data;
     size_t remaining = size;
     while (remaining) {
-        ssize_t n = write(fd, p, remaining);
+        size_t allowed=remaining;
+#ifdef FLASH_SESSION_STATE_DIAGNOSTICS
+        const char *quota=getenv("FLASH_SESSION_TEST_WRITE_FAIL_AFTER");
+        if(quota) {
+            size_t limit=(size_t)strtoull(quota,NULL,10);
+            if(warm_test_written>=limit){errno=EIO;return 0;}
+            if(allowed>limit-warm_test_written)allowed=limit-warm_test_written;
+        }
+#endif
+        ssize_t n = write(fd, p, allowed);
+#ifdef FLASH_SESSION_STATE_DIAGNOSTICS
+        if(n>0)warm_test_written+=(size_t)n;
+#endif
         if (n < 0 && errno == EINTR) continue;
         if (n <= 0) return 0;
         p += n;
@@ -700,6 +738,9 @@ static int warm_state_save(NSString *path, const ToolPrefixCacheEntry *entry,
                            KVCache **kv_caches, void **layer_states,
                            uint64_t compatibility, uint64_t source_hash,
                            uint64_t profile_hash) {
+#ifdef FLASH_SESSION_STATE_DIAGNOSTICS
+    warm_test_written=0;
+#endif
     const ServeStateSnapshot *snap = &entry->snapshot;
     if (!snap->valid || snap->pos <= 0) return 0;
     WarmStateHeader head = {0};
@@ -958,6 +999,18 @@ static int warm_state_self_test(const char *directory) {
     }
     memset(source.snapshot.la_conv_snapshot[0], 0x3a, conv);
     memset(source.snapshot.la_ssm_snapshot[0], 0x5c, ssm);
+#ifdef FLASH_FE027_NUMERICS
+    {
+        uint64_t seed=UINT64_C(14695981039346656037), identities[64];
+        int distinct=fe027_execution_identity(seed,0)==seed;
+        for(unsigned mask=0;mask<64;mask++) {
+            identities[mask]=fe027_execution_identity(seed,mask);
+            for(unsigned prev=0;prev<mask;prev++)distinct&=identities[prev]!=identities[mask];
+        }
+        printf("[warm-state-test] FE027 disabled identity unchanged / enabled masks distinct: %s\n",distinct?"PASS":"FAIL");
+        if(!distinct)failures++;
+    }
+#endif
     uint64_t base_mode = warm_execution_mode_hash(8);
     int saved_gpu_moe = g_gpu_resident_moe_enabled;
     int saved_oproj = g_oproj_v3_enabled;
@@ -979,6 +1032,20 @@ static int warm_state_self_test(const char *directory) {
     linear_attn_bypass ^= 1;
     int bypass_mode_changes = warm_execution_mode_hash(8) != base_mode;
     linear_attn_bypass = saved_bypass;
+    int saved_linear_chain=g_cmd12_chain_enabled,saved_full_chain=g_cmd12_full_chain_enabled;
+    g_cmd12_chain_enabled^=1;int linear_chain_changes=warm_execution_mode_hash(8)!=base_mode;g_cmd12_chain_enabled=saved_linear_chain;
+    g_cmd12_full_chain_enabled^=1;int full_chain_changes=warm_execution_mode_hash(8)!=base_mode;g_cmd12_full_chain_enabled=saved_full_chain;
+    printf("[warm-state-test] linear/full chain modes change identity: %s\n",linear_chain_changes && full_chain_changes?"PASS":"FAIL");
+    if(!linear_chain_changes || !full_chain_changes)failures++;
+    int nrow_mode_changes=1;
+#ifdef FLASH_PREFILL_NROW_PRODUCTION
+    int saved_nrow=g_prefill_nrow_runtime_enabled;
+    g_prefill_nrow_runtime_enabled^=1;
+    nrow_mode_changes=warm_execution_mode_hash(8)!=base_mode;
+    g_prefill_nrow_runtime_enabled=saved_nrow;
+#endif
+    printf("[warm-state-test] N128/scalar mode changes identity: %s\n",nrow_mode_changes?"PASS":"FAIL");
+    if(!nrow_mode_changes)failures++;
     printf("[warm-state-test] numerical mode changes identity: %s\n",
            gpu_mode_changes && oproj_mode_changes && tiny_mode_changes &&
            linear_mode_changes && bypass_mode_changes ? "PASS" : "FAIL");
@@ -990,6 +1057,17 @@ static int warm_state_self_test(const char *directory) {
         goto cleanup;
     }
     printf("[warm-state-test] valid restore: PASS\n");
+#ifdef FLASH_SESSION_STATE_DIAGNOSTICS
+    {
+    NSData *before_fault=[NSData dataWithContentsOfFile:path];
+    setenv("FLASH_SESSION_TEST_WRITE_FAIL_AFTER","4096",1);
+    int fault_rejected=!warm_state_save(path,&source,kv,linear,11,12,13);
+    unsetenv("FLASH_SESSION_TEST_WRITE_FAIL_AFTER");
+    fault_rejected &= [before_fault isEqualToData:[NSData dataWithContentsOfFile:path]];
+    printf("[warm-state-test] injected partial-write EIO preserves final: %s\n",fault_rejected?"PASS":"FAIL");
+    if(!fault_rejected)failures++;
+    }
+#endif
     serve_state_snapshot_free(&loaded.snapshot);
     struct stat st;
     if (stat(path.fileSystemRepresentation, &st) || st.st_size <= (off_t)sizeof(WarmStateHeader)) {

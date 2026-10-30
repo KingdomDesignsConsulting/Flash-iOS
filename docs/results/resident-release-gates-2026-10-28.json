@@ -1,0 +1,184 @@
+{
+  "starting_head": "032eb94b4401ced1639aa83fcea3fc6be44d6fc7",
+  "recommendation": "PRODUCTION_NO_GO",
+  "gate1": {
+    "verdict": "FAIL",
+    "requested_input_tokens": 2057,
+    "first_failing_observed_endpoint": 1920,
+    "last_passing_observed_endpoint": 1792,
+    "state_max_abs": 0.9678384363651276,
+    "hidden_max_abs": 0.0066155195236206055,
+    "logits_max_abs": 0.042357683181762695,
+    "greedy_equal": true,
+    "finite": true,
+    "kv_lengths_mirrors_exact": true,
+    "peak_child_rss_bytes": 8149336064,
+    "memory_measurement": "RSS only, not total unified-memory footprint",
+    "final_slab_scalar_state_error": 0.9678435027599335,
+    "first_route_set_change_in_probed_slab": {
+      "layer": 9,
+      "input_position": 1829,
+      "raw_router_max_abs": 3.337860107421875e-06,
+      "reference_cutoff_margin": 9.5367431640625e-07,
+      "candidate_same_pair_margin": 0.0
+    },
+    "counterfactual_exact_anchor": {
+      "qualification": "NOT A FIX; baseline FAIL retained",
+      "anchor": 1792,
+      "endpoint": 1920,
+      "state_max_abs": 0.0001087188720703125,
+      "hidden_max_abs": 1.2874603271484375e-05,
+      "logits_max_abs": 2.5510787963867188e-05,
+      "greedy_equal": true
+    },
+    "larger_contexts": "NOT RUN after confirmed failure",
+    "full_model_intermediate_batch_states": "NOT OBSERVED"
+  },
+  "gate2": {
+    "verdict": "PASS within tested HTTP scope",
+    "cases": [
+      {
+        "case": "compatible_restart_and_prefix_mismatch",
+        "status": "PASS",
+        "old_session_rejected": true,
+        "state_exact": true
+      },
+      {
+        "case": "version",
+        "status": "PASS",
+        "method": "Controlled header identity fault",
+        "fresh_state_exact": true
+      },
+      {
+        "case": "model_config_signature",
+        "status": "PASS",
+        "method": "Controlled header identity fault",
+        "fresh_state_exact": true
+      },
+      {
+        "case": "execution_mode",
+        "status": "PASS",
+        "method": "Real runtime-mode switch",
+        "fresh_state_exact": true
+      }
+    ],
+    "static_profile_not_session": true,
+    "unrelated_rebuild_compatible": {
+      "status": "PASS",
+      "different_executable_sha256": true,
+      "prior_binary_sha256": "e330dcebfdc2adf71079067ecb5af74b7c3832ab05fce01aa8c3056d6cbec85c",
+      "current_binary_sha256": "f47497dcfaa3bae073901d3e1243b7cf526177f448af0de97877a6b0129185d6",
+      "compatible_disk_restore": true,
+      "state_exact": true,
+      "checkpoint_rebuilt": false
+    }
+  },
+  "gate3": {
+    "verdict": "PASS for tested contracts; real hardware faults NOT ESTABLISHED",
+    "cases": [
+      {
+        "case": "TCP_SHUT_WR",
+        "status": "PASS",
+        "contract": "Successful response and continuation; FIN is not cancellation",
+        "state_exact": true
+      },
+      {
+        "case": "prefill_failure",
+        "status": "PASS",
+        "http_status": 500,
+        "stale_status": 409,
+        "fresh_state_exact": true,
+        "method": "Once-per-process diagnostic post-layer checked-forward failure; not real hardware failure"
+      },
+      {
+        "case": "decode_failure",
+        "status": "PASS",
+        "http_status": 500,
+        "stale_status": 409,
+        "fresh_state_exact": true,
+        "method": "Once-per-process diagnostic post-layer checked-forward failure; not real hardware failure"
+      }
+    ],
+    "timeout": {
+      "status": "PASS",
+      "client_timeout_ms": 50,
+      "stream": true,
+      "session_invalidated": true,
+      "stale_status": 409,
+      "recovery_exact": true,
+      "method": "Real socket receive deadline followed by TCP RST; not a server-compute timeout injection"
+    },
+    "partial_write_EIO_preserves_final": "PASS",
+    "hardware_faults": "NOT ESTABLISHED",
+    "external_executor_callbacks": "NOT APPLICABLE"
+  },
+  "gate4": {
+    "verdict": "PASS short within-mode references; long/cross-products NOT ESTABLISHED",
+    "cases": [
+      {
+        "mode": "cpu-linear-supported",
+        "status": "EXACT_FINGERPRINT_PASS",
+        "end_position": 73,
+        "identifier_retained": true,
+        "quality_scope": "Short observed identifier recall; not general model-quality qualification"
+      },
+      {
+        "mode": "legacy-kv",
+        "status": "EXACT_FINGERPRINT_PASS",
+        "end_position": 73,
+        "identifier_retained": true,
+        "quality_scope": "Short observed identifier recall; not general model-quality qualification"
+      },
+      {
+        "mode": "unchained",
+        "status": "EXACT_FINGERPRINT_PASS",
+        "end_position": 73,
+        "identifier_retained": true,
+        "quality_scope": "Short observed identifier recall; not general model-quality qualification"
+      },
+      {
+        "mode": "bypass-ablation",
+        "status": "EXACT_FINGERPRINT_PASS",
+        "end_position": 112,
+        "identifier_retained": false,
+        "quality_scope": "Ablation only; normal Qwen quality NOT APPLICABLE"
+      },
+      {
+        "mode": "nonresident-moe",
+        "status": "EXACT_FINGERPRINT_PASS",
+        "end_position": 73,
+        "identifier_retained": true,
+        "quality_scope": "Short observed identifier recall; not general model-quality qualification"
+      },
+      {
+        "mode": "oproj-v2",
+        "status": "EXACT_FINGERPRINT_PASS",
+        "end_position": 73,
+        "identifier_retained": true,
+        "quality_scope": "Short observed identifier recall; not general model-quality qualification"
+      },
+      {
+        "mode": "tiny-v3",
+        "status": "EXACT_FINGERPRINT_PASS",
+        "end_position": 73,
+        "identifier_retained": true,
+        "quality_scope": "Short observed identifier recall; not general model-quality qualification"
+      }
+    ],
+    "cpu_named_profile_restart": "PASS",
+    "unsupported_combination": "Bare --cpu-linear with default linear CMD12 chaining correctly rejected"
+  },
+  "model_free_tests": 9,
+  "synthetic_identity_and_write_tests": "PASS",
+  "thresholds_unchanged": {
+    "state_strict_lt": 0.001,
+    "hidden_lte": 0.001,
+    "logits_lte": 0.01,
+    "greedy_identity": true,
+    "finite": true,
+    "kv_lengths_mirrors_exact": true
+  },
+  "production_modified": false,
+  "template_or_kernel_math_modified": false,
+  "tooling_commit": "120e993eead03fdae7ad5efbac9fe1583c250e7c"
+}

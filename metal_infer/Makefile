@@ -300,11 +300,14 @@ n128densem2: $(INFER_SRC) $(INFER_DEPS)
 	@echo "Built benchmark-only $(N128_DENSE_M2_TARGET); production ./$(INFER_TARGET) was not replaced."
 
 # Build the chat client (thin HTTP/SSE client + linenoise line editor)
-$(CHAT_TARGET): $(CHAT_SRC) linenoise.c linenoise.h
+$(CHAT_TARGET): $(CHAT_SRC) chat_transport.inc linenoise.c linenoise.h
 	$(CC) -O2 -Wall -fobjc-arc -framework Foundation $(CHAT_SRC) linenoise.c -o $(CHAT_TARGET)
 
+chat-tool-fixture-test: $(CHAT_SRC) chat_transport.inc linenoise.c linenoise.h ../tools/chat_tool_fixture.m
+	$(CC) -O2 -Wall -fobjc-arc -framework Foundation ../tools/chat_tool_fixture.m linenoise.c -o $@
+
 clean:
-	rm -f $(TARGET) $(INFER_TARGET) "$(N128_BENCH_TARGET)" "$(N128_GATEUP8_TARGET)" "$(N128_GATEUP4ROW_TARGET)" "$(N128_GATEUP8ROW_TARGET)" "$(N128_GATEUP8CACHE_TARGET)" "$(N128_GATEUP8BITS_TARGET)" "$(N128_DOWNBITS_TARGET)" "$(N128_DOWNBITS_DIAG_TARGET)" "$(N128_DOWNCONTROL_DIAG_TARGET)" "$(N128_GATEUP16ROW_TARGET)" "$(N128_SERVE8ROW_TARGET)" "$(N128_SERVE8BITS_TARGET)" $(CHAT_TARGET) $(SHADER_AIR) $(SHADER_LIB) infer-lazy16k-experiment infer-qual-8k infer-qual-16k infer-qual-lazy16k infer-perf-8k infer-perf-16k infer-perf-lazy16k infer-lazy32k-experiment infer-qual-lazy32k infer-perf-lazy32k
+	rm -f $(TARGET) $(INFER_TARGET) "$(N128_BENCH_TARGET)" "$(N128_GATEUP8_TARGET)" "$(N128_GATEUP4ROW_TARGET)" "$(N128_GATEUP8ROW_TARGET)" "$(N128_GATEUP8CACHE_TARGET)" "$(N128_GATEUP8BITS_TARGET)" "$(N128_DOWNBITS_TARGET)" "$(N128_DOWNBITS_DIAG_TARGET)" "$(N128_DOWNCONTROL_DIAG_TARGET)" "$(N128_GATEUP16ROW_TARGET)" "$(N128_SERVE8ROW_TARGET)" "$(N128_SERVE8BITS_TARGET)" $(CHAT_TARGET) $(SHADER_AIR) $(SHADER_LIB) infer-lazy16k-experiment infer-qual-8k infer-qual-16k infer-qual-lazy16k infer-perf-8k infer-perf-16k infer-perf-lazy16k infer-lazy32k-experiment infer-qual-lazy32k infer-perf-lazy32k infer-fe027-probe infer-fe027-experiment infer-fe027-performance infer-fe027-control
 
 # Run targets
 run: $(TARGET)
@@ -379,3 +382,30 @@ integration-kv-candidates: $(INFER_SRC) $(INFER_DEPS)
 	$(CC) $(INFER_CFLAGS) -DFLASH_EXPERIMENTAL_LAZY_SHARED_GPU_KV $(FRAMEWORKS) $(LDFLAGS) $(INFER_SRC) -o infer-candidate-lazy16k
 	$(CC) $(INFER_CFLAGS) -DFLASH_EXPERIMENTAL_LAZY_SHARED_GPU_KV_32K $(FRAMEWORKS) $(LDFLAGS) $(INFER_SRC) -o infer-candidate-lazy32k
 	@echo "Opt-in binaries ready. Production ./infer is unchanged."
+
+# Bounded private resident/continuous state diagnostics; production targets unchanged.
+.PHONY: session-state-experiment
+session-state-experiment: $(INFER_SRC) $(INFER_DEPS) session_state_diag.inc session_nrow_oracle.inc session_disk_oracle.inc fe027_full_attention_diag.inc fe027_combine_diag.inc fe027_combine_trace.metal
+	$(CC) $(INFER_CFLAGS) -DFLASH_SESSION_STATE_DIAGNOSTICS -DFLASH_EXPERIMENTAL_LAZY_SHARED_GPU_KV_32K $(FRAMEWORKS) $(LDFLAGS) $(INFER_SRC) -o infer-session-state-experiment
+
+# Isolated legacy KV control for within-mode resident-state qualification.
+.PHONY: session-state-legacy-experiment
+session-state-legacy-experiment: $(INFER_SRC) $(INFER_DEPS) session_state_diag.inc session_nrow_oracle.inc session_disk_oracle.inc fe027_full_attention_diag.inc fe027_combine_diag.inc fe027_combine_trace.metal
+	$(CC) $(INFER_CFLAGS) -DFLASH_SESSION_STATE_DIAGNOSTICS $(FRAMEWORKS) $(LDFLAGS) $(INFER_SRC) -o infer-session-state-legacy-experiment
+
+# FE-027 same-input arithmetic probe, isolated from production and prior binaries.
+.PHONY: fe027-probe
+fe027-probe: $(INFER_SRC) $(INFER_DEPS) session_state_diag.inc session_nrow_oracle.inc session_disk_oracle.inc fe027_full_attention_diag.inc fe027_combine_diag.inc fe027_combine_trace.metal
+	$(CC) $(INFER_CFLAGS) -DFLASH_SESSION_STATE_DIAGNOSTICS -DFLASH_EXPERIMENTAL_LAZY_SHARED_GPU_KV_32K $(FRAMEWORKS) $(LDFLAGS) $(INFER_SRC) -o infer-fe027-probe
+
+# Opt-in FE-027 normalization alignment; default/production targets unchanged.
+.PHONY: fe027-experiment fe027-performance
+fe027-experiment: $(INFER_SRC) $(INFER_DEPS) fe027_alignment.inc fe027_attention_reference.inc fe027_combine_reference.inc fe027_q4.inc session_state_diag.inc session_nrow_oracle.inc session_disk_oracle.inc fe027_full_attention_diag.inc fe027_combine_diag.inc fe027_combine_trace.metal
+	$(CC) $(INFER_CFLAGS) -DFLASH_FE027_NUMERICS -DFLASH_SESSION_STATE_DIAGNOSTICS -DFLASH_EXPERIMENTAL_LAZY_SHARED_GPU_KV_32K $(FRAMEWORKS) $(LDFLAGS) $(INFER_SRC) -o infer-fe027-experiment
+fe027-performance: $(INFER_SRC) $(INFER_DEPS) fe027_alignment.inc fe027_attention_reference.inc fe027_combine_reference.inc fe027_q4.inc
+	$(CC) $(INFER_CFLAGS) -DFLASH_FE027_NUMERICS -DFLASH_EXPERIMENTAL_LAZY_SHARED_GPU_KV_32K $(FRAMEWORKS) $(LDFLAGS) $(INFER_SRC) -o infer-fe027-performance
+
+# Matched non-diagnostic control for FE-027 performance only.
+.PHONY: fe027-control
+fe027-control: $(INFER_SRC) $(INFER_DEPS)
+	$(CC) $(INFER_CFLAGS) -DFLASH_EXPERIMENTAL_LAZY_SHARED_GPU_KV_32K $(FRAMEWORKS) $(LDFLAGS) $(INFER_SRC) -o infer-fe027-control

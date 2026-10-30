@@ -691,6 +691,28 @@ static inline void pipeline_profile_capture_lm_cmd(id<MTLCommandBuffer> cmd) {
 	}
 }
 
+#ifdef FLASH_SESSION_STATE_DIAGNOSTICS
+static void sd_progress(const char *phase,int position);
+static int g_fe_fa_base;
+static void (*g_fe_fa_cpu)(const char *,int,int,const float *,size_t)=NULL;
+static void (*g_fe_fa_gpu)(id<MTLCommandBuffer>,const char *,int,int,id<MTLBuffer>,NSUInteger,size_t)=NULL;
+static void (*g_fe_combine_gpu)(id<MTLCommandBuffer>,int,int,const int *,int)=NULL;
+static void (*g_fe_combine_cpu)(int,int,const float *,const float *,const float *const *,const float *,const int *,float,const float *)=NULL;
+static void (*g_session_expert_hook)(int,int,const float *const *,const float *const *,const float *,const float *)=NULL;
+static void (*g_session_route_hook)(int,int,int,const int *,const float *,const float *,const float *,const float *)=NULL;
+#endif
+
+#ifdef FLASH_FE027_NUMERICS
+// Isolated numerical experiment: 1 router RMS, 2 input RMS, 4 shared SwiGLU,
+// 8 scalar-V3 Q4 projection math. Zero preserves the accepted identity.
+#include "fe027_q4.inc"
+static unsigned fe027_numerics_mask(void) {
+    static int cached=-1;
+    if(cached<0){const char *s=getenv("FLASH_FE027_NUMERICS");char *end=NULL;unsigned long n=s?strtoul(s,&end,10):0;cached=(!s || (end && !*end && n<=63))?(int)n:255;}
+    return (unsigned)cached;
+}
+#endif
+
 // Temporal prediction pipeline counters (declared early for timing_print access)
 static int g_pred_enabled = 0;
 static int g_pred_generating = 0;   // only set to 1 after prefill (predictions only help during generation)
@@ -11551,6 +11573,12 @@ static void encode_full_attn_prepare(
 	[enc dispatchThreadgroups:MTLSizeMake(NUM_ATTN_HEADS + NUM_KV_HEADS, 1, 1)
 		threadsPerThreadgroup:MTLSizeMake(1, 1, 1)];
 	[enc endEncoding];
+#ifdef FLASH_SESSION_STATE_DIAGNOSTICS
+    if(g_fe_fa_gpu){int layer=(fa_idx+1)*FULL_ATTN_INTERVAL-1;
+        g_fe_fa_gpu(cmd,"q_rope",layer,pos,g_metal->buf_attn_q,0,NUM_ATTN_HEADS*HEAD_DIM);
+        g_fe_fa_gpu(cmd,"k_rope",layer,pos,g_metal->buf_kv_k[fa_idx],(size_t)cache_pos*p.kv_dim*sizeof(float),p.kv_dim);
+    }
+#endif
 }
 
 static void sync_full_attn_cpu_kv_from_gpu(KVCache *kv, int fa_idx, int cache_pos) {
@@ -13371,6 +13399,14 @@ static void fused_layer_forward(
 
 		cmd1 = [g_metal->queue commandBuffer];
 		gpu_encode_batch_matvec(g_metal, cmd1, attn_specs, num_attn_specs);
+#ifdef FLASH_SESSION_STATE_DIAGNOSTICS
+        if(is_full && g_fe_fa_gpu) {
+            g_fe_fa_gpu(cmd1,"input_norm",layer_idx,pos,g_metal->buf_input,0,HIDDEN_DIM);
+            g_fe_fa_gpu(cmd1,"qproj",layer_idx,pos,g_metal->batch_out[0],0,NUM_ATTN_HEADS*HEAD_DIM*2);
+            g_fe_fa_gpu(cmd1,"kproj",layer_idx,pos,g_metal->batch_out[1],0,NUM_KV_HEADS*HEAD_DIM);
+            g_fe_fa_gpu(cmd1,"vproj",layer_idx,pos,g_metal->batch_out[2],0,NUM_KV_HEADS*HEAD_DIM);
+        }
+#endif
 
 		if (can_cmd12_full_chain) {
 			encode_full_attn_prepare(cmd1, lc, cmd12_full_chain_fa_idx,
@@ -13570,6 +13606,14 @@ static void fused_layer_forward(
 			memcpy([g_metal->buf_input contents], normed, HIDDEN_DIM * sizeof(float));
 			cmd1 = [g_metal->queue commandBuffer];
 			gpu_encode_batch_matvec(g_metal, cmd1, attn_specs, num_attn_specs);
+#ifdef FLASH_SESSION_STATE_DIAGNOSTICS
+        if(is_full && g_fe_fa_gpu) {
+            g_fe_fa_gpu(cmd1,"input_norm",layer_idx,pos,g_metal->buf_input,0,HIDDEN_DIM);
+            g_fe_fa_gpu(cmd1,"qproj",layer_idx,pos,g_metal->batch_out[0],0,NUM_ATTN_HEADS*HEAD_DIM*2);
+            g_fe_fa_gpu(cmd1,"kproj",layer_idx,pos,g_metal->batch_out[1],0,NUM_KV_HEADS*HEAD_DIM);
+            g_fe_fa_gpu(cmd1,"vproj",layer_idx,pos,g_metal->batch_out[2],0,NUM_KV_HEADS*HEAD_DIM);
+        }
+#endif
 
 			if (can_cmd12_full_chain) {
 				encode_full_attn_prepare(cmd1, lc, cmd12_full_chain_fa_idx,
@@ -13891,6 +13935,9 @@ static void fused_layer_forward(
 			memcpy(q_gate + h * HEAD_DIM, src + HEAD_DIM, HEAD_DIM * sizeof(float));
 		}
 
+#ifdef FLASH_SESSION_STATE_DIAGNOSTICS
+        if(g_fe_fa_cpu){g_fe_fa_cpu("q_raw",layer_idx,pos,q,q_dim);g_fe_fa_cpu("k_raw",layer_idx,pos,k_out,kv_dim);}
+#endif
 		// Q/K RMSNorm
 		uint16_t *qnorm_w = lc->q_norm_w;
 		uint16_t *knorm_w = lc->k_norm_w;
@@ -13913,8 +13960,14 @@ static void fused_layer_forward(
 			}
 		}
 
+#ifdef FLASH_SESSION_STATE_DIAGNOSTICS
+        if(g_fe_fa_cpu){g_fe_fa_cpu("q_norm",layer_idx,pos,q,q_dim);g_fe_fa_cpu("k_norm",layer_idx,pos,k_out,kv_dim);}
+#endif
 		// RoPE
 		apply_rotary_emb(q, k_out, pos, NUM_ATTN_HEADS, NUM_KV_HEADS, HEAD_DIM, ROTARY_DIM);
+#ifdef FLASH_SESSION_STATE_DIAGNOSTICS
+        if(g_fe_fa_cpu){g_fe_fa_cpu("q_rope",layer_idx,pos,q,q_dim);g_fe_fa_cpu("k_rope",layer_idx,pos,k_out,kv_dim);}
+#endif
 #ifdef FLASH_PREFILL_NROW_ENABLED
 		if (g_prefill_nrow_capture)
 			g_prefill_nrow_prof_qk_rope_ms += now_ms() - nrow_fa_qk_started;
@@ -14014,6 +14067,9 @@ static void fused_layer_forward(
 					for (int d = 0; d < HEAD_DIM; d++) oh[d] += scores[p] * vp[d];
 				}
 			}
+#ifdef FLASH_SESSION_STATE_DIAGNOSTICS
+            if(g_fe_fa_cpu)g_fe_fa_cpu("attention_ungated",layer_idx,pos,attn_out,q_dim);
+#endif
 			for (int i = 0; i < q_dim; i++) {
 				float g = 1.0f / (1.0f + expf(-q_gate[i]));
 				attn_out[i] *= g;
@@ -14023,6 +14079,9 @@ static void fused_layer_forward(
 #endif
 		}
 
+#ifdef FLASH_SESSION_STATE_DIAGNOSTICS
+        if(!gpu_attn_ready && g_fe_fa_cpu)g_fe_fa_cpu("attention_gated",layer_idx,pos,attn_out,q_dim);
+#endif
 		if (gpu_attn_ready) {
 			attn_out_for_oproj = NULL;  // signal CMD2 to use GPU buf_attn_out
 		} else {
@@ -14466,6 +14525,9 @@ static void fused_layer_forward(
 					threadsPerThreadgroup:MTLSizeMake(256, 1, 1)];
 				[enc endEncoding];
 			}
+#ifdef FLASH_SESSION_STATE_DIAGNOSTICS
+            if(g_fe_fa_gpu)g_fe_fa_gpu(cmd_fused,"attention_ungated",layer_idx,pos,g_metal->buf_attn_out,0,NUM_ATTN_HEADS*HEAD_DIM);
+#endif
 			// Enc A4: sigmoid_gate
 			{
 				uint32_t qdim = NUM_ATTN_HEADS * HEAD_DIM;
@@ -14489,6 +14551,12 @@ static void fused_layer_forward(
 			}
 		}
 
+#ifdef FLASH_SESSION_STATE_DIAGNOSTICS
+        if(is_full && g_fe_fa_gpu) {
+            g_fe_fa_gpu(cmd_fused,"layer_input",layer_idx,pos,residual_buf,0,HIDDEN_DIM);
+            g_fe_fa_gpu(cmd_fused,"attention_gated",layer_idx,pos,gpu_attn_fuse?g_metal->buf_attn_out:g_metal->batch_out[6],0,NUM_ATTN_HEADS*HEAD_DIM);
+        }
+#endif
 		// ---- o_proj matvec ----
 		{
 			// For GPU attention: o_proj reads from buf_attn_out
@@ -14542,6 +14610,9 @@ static void fused_layer_forward(
 			[enc endEncoding];
 		}
 
+#ifdef FLASH_SESSION_STATE_DIAGNOSTICS
+        if(is_full && g_fe_fa_gpu)g_fe_fa_gpu(cmd_fused,"oprojection",layer_idx,pos,g_metal->buf_output,0,HIDDEN_DIM);
+#endif
 		// ---- Enc 2: residual_add (buf_output + buf_residual -> buf_h_mid) ----
 		{
 			id<MTLComputeCommandEncoder> enc = [cmd_fused computeCommandEncoder];
@@ -14772,6 +14843,13 @@ static void fused_layer_forward(
 		if (g_timing_enabled) { t1 = now_ms(); g_timing.cmd2_encode += t1 - t0; }
 	}
 
+#ifdef FLASH_SESSION_STATE_DIAGNOSTICS
+    if(is_full && g_fe_fa_cpu)g_fe_fa_cpu("residual",layer_idx,pos,gpu_resident_this_layer?g_metal->buf_h_mid.contents:h_mid,HIDDEN_DIM);
+    if(is_full && g_fe_fa_cpu && kv->len<=4096) {
+        g_fe_fa_cpu("kv_k",layer_idx,pos,kv->k_cache,(size_t)kv->len*NUM_KV_HEADS*HEAD_DIM);
+        g_fe_fa_cpu("kv_v",layer_idx,pos,kv->v_cache,(size_t)kv->len*NUM_KV_HEADS*HEAD_DIM);
+    }
+#endif
 	// ---- Softmax + top-K (CPU) ----
 	if (g_timing_enabled) { t0 = now_ms(); }
 	double pipeline_route_start_ms =
@@ -14789,6 +14867,11 @@ static void fused_layer_forward(
 	int expert_indices[64];
 	float expert_weights[64];
 	cpu_topk_softmax_raw(gate_scores, NUM_EXPERTS, K, expert_indices, expert_weights);
+#ifdef FLASH_SESSION_STATE_DIAGNOSTICS
+    if(g_session_route_hook)g_session_route_hook(layer_idx,pos,K,expert_indices,expert_weights,gate_scores,
+        gpu_resident_this_layer?(const float *)g_metal->buf_h_mid.contents:h_mid,
+        gpu_resident_this_layer?(const float *)g_metal->buf_input.contents:h_post);
+#endif
 #ifdef TARGET_VERIFY_ROUTE_STATS
 	if (g_target_verify_route_stats_active) {
 		int tracked_k = K > MAX_K ? MAX_K : K;
@@ -15563,6 +15646,9 @@ static void fused_layer_forward(
 				[enc endEncoding];
 			}
 
+#ifdef FLASH_SESSION_STATE_DIAGNOSTICS
+            if(g_fe_combine_gpu)g_fe_combine_gpu(cmd_experts,layer_idx,pos,expert_indices,actual_K);
+#endif
 			// Enc C2: rms_norm_sum_sq (buf_moe_hidden -> buf_cmd3_sum_sq)
 			{
 				id<MTLComputeCommandEncoder> enc = [cmd_experts computeCommandEncoder];
@@ -15855,6 +15941,14 @@ static int run_all_layers_checked(
 							K, layer_fds[layer]);
 #ifdef FLASH_GPU_KV_PERFORMANCE
         if(kv_perf_active&&is_full)kv_perf_layer_ms[layer]+=now_ms()-kv_layer_start;
+#endif
+#ifdef FLASH_SESSION_STATE_DIAGNOSTICS
+        static int injected_forward_failure=0;
+        const char *test_failure=getenv("FLASH_SESSION_TEST_FORWARD_FAIL_POS");
+        if(test_failure && !injected_forward_failure && pos==atoi(test_failure) && layer==4) {
+            injected_forward_failure=1;g_forward_error=1;
+            fprintf(stderr,"[session-inject] simulated checked-forward failure pos=%d layer=4\n",pos);
+        }
 #endif
 		if (g_forward_error) {
 			discard_deferred_experts();
@@ -16602,6 +16696,13 @@ static uint64_t tool_set_signature(NSArray<NSDictionary *> *tools) {
 }
 
 static NSString *project_tool_set_cache_directory(void) {
+#ifdef FLASH_SESSION_STATE_DIAGNOSTICS
+    const char *test_root=getenv("FLASH_SESSION_TEST_CACHE_ROOT");
+    if(test_root && *test_root) {
+        NSString *root=[@(test_root) stringByStandardizingPath];
+        return root.isAbsolutePath?[root stringByAppendingPathComponent:@"warm-tools-cache"]:nil;
+    }
+#endif
     NSString *executable_dir = infer_executable_directory();
     if (![[executable_dir lastPathComponent] isEqualToString:@"metal_infer"])
         return nil;
@@ -18527,6 +18628,9 @@ typedef struct {
 static int serve_nrow_poll(void *opaque) {
     ServeNRowPollContext *ctx = (ServeNRowPollContext *)opaque;
     if (!ctx) return 1;
+#ifdef FLASH_SESSION_STATE_DIAGNOSTICS
+    sd_progress("prefill_nrow_poll",-1);
+#endif
     if (http_client_disconnected(ctx->client_fd)) {
         if (ctx->client_disconnected) *ctx->client_disconnected = 1;
         return 0;
@@ -19558,25 +19662,9 @@ static int flash_profile_self_test(const char *directory, const char *model_path
 }
 
 // The main serve loop. Model state must already be initialized.
-// Sync CPU linear attention state → GPU buffers
-static void sync_cpu_to_gpu_delta_state_serve(void **layer_states) {
-	if (!snapshot_uses_gpu_linear_state() || !layer_states) return;
-	int li = 0;
-	for (int i = 0; i < NUM_LAYERS; i++) {
-		if ((i + 1) % FULL_ATTN_INTERVAL == 0) continue;
-		if (!layer_states[i]) { li++; continue; }
-		LinearAttnState *la = (LinearAttnState *)layer_states[i];
-		if (li < g_cfg.num_linear_layers) {
-			if (g_metal->buf_delta_state[li] && la->ssm_state)
-				memcpy([g_metal->buf_delta_state[li] contents], la->ssm_state,
-					   LINEAR_NUM_V_HEADS * LINEAR_VALUE_DIM * LINEAR_KEY_DIM * sizeof(float));
-			if (g_metal->buf_conv_state[li] && la->conv_state)
-				memcpy([g_metal->buf_conv_state[li] contents], la->conv_state,
-					   (CONV_KERNEL_SIZE - 1) * LINEAR_CONV_DIM * sizeof(float));
-		}
-		li++;
-	}
-}
+#ifdef FLASH_SESSION_STATE_DIAGNOSTICS
+#include "session_state_diag.inc"
+#endif
 
 static void serve_loop(
 	int port,
@@ -19733,9 +19821,23 @@ printf("[serve] Tool API revision 9.4 — bounded cache + malformed-tool recover
 		}
 		if (sys_embed_batch) { free(sys_embed_batch); sys_embed_batch = NULL; }
 		// Sync CPU state → GPU for delta-net
-		sync_cpu_to_gpu_delta_state_serve(layer_states);
+#ifdef FLASH_SESSION_STATE_DIAGNOSTICS
+        if(sd_enabled())sd_write(@"startup-before-sync.json",sd_fingerprint(kv_caches,layer_states,sys_pos,"startup_before_sync"));
+#endif
+		// GPU recurrence/convolution buffers already contain the completed prefix.
+		// Never replace them with inactive CPU shadow state.
+#ifdef FLASH_SESSION_STATE_DIAGNOSTICS
+        if(sd_enabled())sd_write(@"startup-after-sync.json",sd_fingerprint(kv_caches,layer_states,sys_pos,"startup_after_sync"));
+#endif
 		fprintf(stderr, "[serve] System prompt cached: %d tokens prefilled\n", sys_pos);
 	}
+#ifdef FLASH_SESSION_STATE_DIAGNOSTICS
+    if(sd_enabled()) {
+        NSMutableArray *base=[NSMutableArray array];for(int i=0;i<sys_pt->count;i++)[base addObject:@(sys_pt->ids[i])];
+        sd_base_tokens=base;
+        sd_write([NSString stringWithFormat:@"base-%d.json",getpid()],@{@"token_ids":base,@"position":@(sys_pos)});
+    }
+#endif
 	if (sys_pt) {
 		free(sys_pt->ids);
 		free(sys_pt);
@@ -20146,6 +20248,9 @@ printf("[serve] Tool API revision 9.4 — bounded cache + malformed-tool recover
 	if (listen(server_fd, 8) < 0) {
 		perror("listen"); close(server_fd); return;
 	}
+#ifdef FLASH_SESSION_STATE_DIAGNOSTICS
+    if(sd_enabled())sd_write(@"server.json",@{@"server_pid":@(getpid()),@"port":@(port),@"limit":@(SESSION_DIAG_LIMIT),@"gpu_kv_capacity":@(GPU_KV_SEQ),@"scalar_qualification":@(!g_prefill_nrow_runtime_enabled)});
+#endif
 	fprintf(stderr, "[serve] Listening on http://127.0.0.1:%d\n[serve] Ready\n", port);
 
 	for (;;) {
@@ -20391,6 +20496,52 @@ printf("[serve] Tool API revision 9.4 — bounded cache + malformed-tool recover
             // corresponding exactly (and in order) to the pending tool calls.
             int same_session = has_session && active_session_id[0] &&
                 strcmp(req_session_id, active_session_id) == 0;
+            // Explicit lifecycle contract: a new session must declare creation;
+            // any other unknown session ID is a stale continuation, not a new chat.
+            // Stateless requests (no session_id) remain supported.
+            id create_value = request[@"flash_session_create"];
+            if (create_value && ![create_value isKindOfClass:[NSNumber class]]) {
+                http_write_str(client_fd,
+                    "HTTP/1.1 400 Bad Request\r\nContent-Type: application/json\r\n"
+                    "Connection: close\r\n\r\n"
+                    "{\"error\":\"flash_session_create must be boolean\"}\n");
+                free(reqbuf); close(client_fd); continue;
+            }
+            BOOL create_session = [create_value boolValue];
+            if (create_session && !has_session) {
+                http_write_str(client_fd,
+                    "HTTP/1.1 400 Bad Request\r\nContent-Type: application/json\r\n"
+                    "Connection: close\r\n\r\n"
+                    "{\"error\":\"flash_session_create requires session_id\"}\n");
+                free(reqbuf); close(client_fd); continue;
+            }
+            if (has_session && !same_session && !create_session) {
+                fprintf(stderr, "[serve] rejected stale/unknown session_id; full-history replay required\n");
+                if (stream_response) {
+                    // Early rejection occurs before the ordinary SSE response
+                    // headers have been sent. Write HTTP framing first; the
+                    // helper below emits only event data because later failures
+                    // may occur after streaming headers were already written.
+                    if (http_write_str(client_fd, SSE_HEADERS) == 0)
+                        send_session_invalidated_error(client_fd, 1,
+                            @"resident session unavailable; resend full history with flash_session_create");
+                } else {
+                    http_write_str(client_fd,
+                        "HTTP/1.1 409 Conflict\r\nContent-Type: application/json\r\n"
+                        "Connection: close\r\n\r\n"
+                        "{\"error\":{\"type\":\"session_invalidated\","
+                        "\"message\":\"resident session unavailable; resend full history\"},"
+                        "\"session_invalidated\":true,\"resend_full_history\":true}\n");
+                }
+                free(reqbuf); close(client_fd); continue;
+            }
+            if (same_session && create_session) {
+                http_write_str(client_fd,
+                    "HTTP/1.1 409 Conflict\r\nContent-Type: application/json\r\n"
+                    "Connection: close\r\n\r\n"
+                    "{\"error\":\"session_id already active; cannot create over resident session\"}\n");
+                free(reqbuf); close(client_fd); continue;
+            }
             if (same_session && !explicit_profile_selector)
                 request_profile_name = active_session_profile;
             if (same_session && !(active_session_profile == request_profile_name ||
@@ -20625,6 +20776,48 @@ printf("[serve] Tool API revision 9.4 — bounded cache + malformed-tool recover
             if (!pt) {
                 http_write_str(client_fd, "HTTP/1.1 500 Internal Server Error\r\nConnection: close\r\n\r\n{\"error\":\"tokenization failed\"}\n");
                 free(reqbuf); close(client_fd); continue;
+            }
+
+            // Diagnostic-only: record exact requested token IDs without prompt text.
+            // Opt in via FLASH_SESSION_TOKEN_TRACE_DIR; never enabled by default.
+            // Each file is written before inference and is unique per request.
+            NSString *token_trace_identity=nil;
+            const char *token_trace_dir = getenv("FLASH_SESSION_TOKEN_TRACE_DIR");
+            if(token_trace_dir && *token_trace_dir) {
+                id tag=request[@"flash_trace_id"];
+                NSCharacterSet *allowed=[NSCharacterSet characterSetWithCharactersInString:@"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_"];
+                if([tag isKindOfClass:[NSString class]] && [tag length]>0 && [tag length]<=64 && [tag rangeOfCharacterFromSet:allowed.invertedSet].location==NSNotFound)token_trace_identity=tag;
+                else token_trace_identity=[[NSUUID UUID] UUIDString];
+            }
+            if (token_trace_dir && token_trace_dir[0]) {
+                NSString *trace_dir = [NSString stringWithUTF8String:token_trace_dir];
+                BOOL trace_is_dir = NO;
+                if ([[NSFileManager defaultManager] fileExistsAtPath:trace_dir
+                    isDirectory:&trace_is_dir] && trace_is_dir) {
+                    NSMutableArray *ids = [NSMutableArray arrayWithCapacity:(NSUInteger)pt->count];
+                    for (int ti = 0; ti < pt->count; ++ti)
+                        [ids addObject:@(pt->ids[ti])];
+                    NSDictionary *trace = @{
+                        @"request_id": [NSString stringWithUTF8String:request_id],
+                        @"trace_identity":token_trace_identity, @"server_pid":@(getpid()),
+                        @"session_mode": is_continuation ? @"delta" : @"full",
+                        @"session_reused": @(is_continuation),
+                        @"session_ended_with_eos": @(session_ended_with_eos),
+                        @"thinking_enabled": @(request_enable_thinking),
+                        @"prompt_tokens": @(pt->count),
+                        @"token_ids": ids
+                    };
+                    NSError *trace_error = nil;
+                    NSData *trace_bytes = [NSJSONSerialization dataWithJSONObject:trace
+                        options:0 error:&trace_error];
+                    NSString *trace_path = [trace_dir stringByAppendingPathComponent:
+                        [token_trace_identity stringByAppendingString:@"-prompt.json"]];
+                    if (trace_bytes && ![trace_bytes writeToFile:trace_path
+                        options:NSDataWritingAtomic error:&trace_error]) {
+                        fprintf(stderr, "[session-token-trace] write failed: %s\n",
+                            trace_error.localizedDescription.UTF8String);
+                    }
+                }
             }
 
             // Temporary DSH request diagnostics: expose exactly which rendered
@@ -21095,6 +21288,9 @@ printf("[serve] Tool API revision 9.4 — bounded cache + malformed-tool recover
 				continue;
 			}
 
+#ifdef FLASH_SESSION_STATE_DIAGNOSTICS
+            sd_begin(token_trace_identity,is_continuation,pos,request_prefix_pt,kv_caches,layer_states);
+#endif
 			g_forward_error = 0;
 
 			// ---- Batch prefill ----
@@ -21160,6 +21356,9 @@ printf("[serve] Tool API revision 9.4 — bounded cache + malformed-tool recover
 					}
 					prefill_forward_ms += now_ms() - forward_started_ms;
 					i += PREFILL_NROW_CAPTURE_ROWS;
+#ifdef FLASH_SESSION_STATE_DIAGNOSTICS
+                    sd_complete_batch(pt->ids+i-PREFILL_NROW_CAPTURE_ROWS,PREFILL_NROW_CAPTURE_ROWS,pos,kv_caches,layer_states);
+#endif
 					pos += PREFILL_NROW_CAPTURE_ROWS;
 					prefill_completed_tokens += PREFILL_NROW_CAPTURE_ROWS;
 					prefill_nrow_chunks++;
@@ -21193,6 +21392,9 @@ printf("[serve] Tool API revision 9.4 — bounded cache + malformed-tool recover
 				prefill_forward_ms += now_ms() - forward_started_ms;
 				if (g_forward_error) break;
 				if (!discard_deferred_experts()) break;
+#ifdef FLASH_SESSION_STATE_DIAGNOSTICS
+                sd_complete(pt->ids[i],pos,"prefill",kv_caches,layer_states);
+#endif
 				pos++;
 				i++;
 				prefill_completed_tokens++;
@@ -21291,6 +21493,10 @@ printf("[serve] Tool API revision 9.4 — bounded cache + malformed-tool recover
                     free(request_prefix_pt);
                     request_prefix_pt = NULL;
                 }
+#ifdef FLASH_SESSION_STATE_DIAGNOSTICS
+                sd_abort_record(prefill_client_disconnected?"prefill_cancelled":"prefill_failed",kv_caches,layer_states);
+                sd_end(0,NO,YES);
+#endif
 				if (!prefill_client_disconnected)
 					send_session_invalidated_error(
 						client_fd, stream_response, @"prefill failed");
@@ -21319,6 +21525,9 @@ printf("[serve] Tool API revision 9.4 — bounded cache + malformed-tool recover
 					if (!complete_deferred_experts()) {
 						g_forward_error = 1;
 					} else {
+#ifdef FLASH_SESSION_STATE_DIAGNOSTICS
+                        sd_complete(pt->ids[pt->count-1],pos,"prefill_final",kv_caches,layer_states);
+#endif
 						pos++;
 					}
 				}
@@ -21339,6 +21548,10 @@ printf("[serve] Tool API revision 9.4 — bounded cache + malformed-tool recover
                     free(request_prefix_pt);
                     request_prefix_pt = NULL;
                 }
+#ifdef FLASH_SESSION_STATE_DIAGNOSTICS
+                sd_abort_record(prefill_client_disconnected?"prefill_cancelled":"prefill_failed",kv_caches,layer_states);
+                sd_end(0,NO,YES);
+#endif
 				if (!prefill_client_disconnected)
 					send_session_invalidated_error(
 						client_fd, stream_response, @"prefill failed");
@@ -21410,6 +21623,18 @@ printf("[serve] Tool API revision 9.4 — bounded cache + malformed-tool recover
 			int session_reusable = 1;
 			int request_client_disconnected = 0;
             session_ended_with_eos = 0;
+            // Opt-in diagnostic sequence of tokens fed through decode forward.
+            // Stored separately from requested prefill tokens; never modifies inference.
+            const char *generated_trace_dir = getenv("FLASH_SESSION_TOKEN_TRACE_DIR");
+            NSMutableArray *generated_token_ids = (generated_trace_dir &&
+                generated_trace_dir[0]) ? [NSMutableArray array] : nil;
+            // Attempted sample IDs may differ from the actual forward inputs
+            // (for example when the thinking-budget handoff replaces a token).
+            NSMutableArray *sampled_token_ids = generated_token_ids ? [NSMutableArray array] : nil;
+            NSMutableArray *forwarded_token_ids = generated_token_ids ? [NSMutableArray array] : nil;
+            NSMutableArray *forwarded_positions = generated_token_ids ? [NSMutableArray array] : nil;
+            NSMutableArray *completed_token_ids = generated_token_ids ? [NSMutableArray array] : nil;
+            NSMutableArray *completed_positions = generated_token_ids ? [NSMutableArray array] : nil;
 			int in_think = tokens_end_in_think(pt->ids, pt->count);
 			int think_tokens = 0;
 			uint32_t *think_stop_seq = NULL;
@@ -21450,6 +21675,7 @@ printf("[serve] Tool API revision 9.4 — bounded cache + malformed-tool recover
                 }
             }
 			for (int gen = 0; gen < max_gen; gen++) {
+                if(sampled_token_ids)[sampled_token_ids addObject:@(next_token)];
                 if ((gen & 7) == 0 && http_client_disconnected(client_fd)) {
                     fprintf(stderr, "[serve] %s client disconnected during decode\n", request_id);
                     request_client_disconnected = 1;
@@ -21480,11 +21706,17 @@ printf("[serve] Tool API revision 9.4 — bounded cache + malformed-tool recover
                         ? TOOL_CALL_END_TOKEN : (int)exact_read_tokens[exact_read_index];
                     exact_read_index++;
                 }
+                if (generated_token_ids)
+                    [generated_token_ids addObject:@(next_token)];
 				if (next_token == EOS_TOKEN_1 || next_token == EOS_TOKEN_2) {
 					completion_tokens++; // The emitted stop token belongs to completion usage.
 					session_ended_with_eos = next_token;
 					if (next_token == EOS_TOKEN_2) session_reusable = 0;
                     // Feed EOS through the model so session state includes it
+                    if (forwarded_token_ids) {
+                        [forwarded_token_ids addObject:@(next_token)];
+                        [forwarded_positions addObject:@(pos)];
+                    }
 					cache_telemetry_note_token();
 					embed_lookup(wf, next_token, hidden);
 					g_forward_error = !run_all_layers_checked(wf, hidden, kv_caches, layer_states,
@@ -21509,7 +21741,14 @@ printf("[serve] Tool API revision 9.4 — bounded cache + malformed-tool recover
 						session_ended_with_eos = 0;
 						break;
 					}
-					pos++;
+					if (completed_token_ids) {
+                        [completed_token_ids addObject:@(next_token)];
+                        [completed_positions addObject:@(pos)];
+                    }
+#ifdef FLASH_SESSION_STATE_DIAGNOSTICS
+                    sd_complete(next_token,pos,"decode_eos",kv_caches,layer_states);
+#endif
+                    pos++;
 					break;
 				}
 
@@ -21633,10 +21872,17 @@ printf("[serve] Tool API revision 9.4 — bounded cache + malformed-tool recover
 						if (piece) [(in_think ? reasoning_text : content_text) appendString:piece];
 					}
 				}
-				free(tok_str);
+                free(tok_str);
+                // A token may be sampled but fail during a later forward pass.
+                // Its inclusion here records the attempted decode token, not
+                // proof that the subsequent state update completed.
 				completion_tokens++;
 
 				// Generate next
+                if (forwarded_token_ids) {
+                    [forwarded_token_ids addObject:@(next_token)];
+                    [forwarded_positions addObject:@(pos)];
+                }
 				cache_telemetry_note_token();
 				embed_lookup(wf, next_token, hidden);
 				g_forward_error = !run_all_layers_checked(wf, hidden, kv_caches, layer_states,
@@ -21661,6 +21907,13 @@ printf("[serve] Tool API revision 9.4 — bounded cache + malformed-tool recover
 					session_ended_with_eos = 0;
 					break;
 				}
+                if (completed_token_ids) {
+                    [completed_token_ids addObject:@(next_token)];
+                    [completed_positions addObject:@(pos)];
+                }
+#ifdef FLASH_SESSION_STATE_DIAGNOSTICS
+                sd_complete(next_token,pos,"decode",kv_caches,layer_states);
+#endif
 				pos++;
 
 				if (final_norm_w) {
@@ -21987,6 +22240,40 @@ printf("[serve] Tool API revision 9.4 — bounded cache + malformed-tool recover
 			} else {
 				session_pos = pos;
 			}
+#ifdef FLASH_SESSION_STATE_DIAGNOSTICS
+            if(request_state_failed || !session_reusable)sd_abort_record("decode_or_output_invalidated",kv_caches,layer_states);
+            sd_end(session_pos,!request_state_failed && session_reusable,request_state_failed);
+#endif
+            if (generated_token_ids) {
+                NSString *trace_dir = [NSString stringWithUTF8String:generated_trace_dir];
+                BOOL is_dir = NO;
+                if ([[NSFileManager defaultManager] fileExistsAtPath:trace_dir
+                    isDirectory:&is_dir] && is_dir) {
+                    NSString *trace_path = [trace_dir stringByAppendingPathComponent:
+                        [token_trace_identity stringByAppendingString:@"-generated.json"]];
+                    NSDictionary *trace = @{
+                        @"request_id": [NSString stringWithUTF8String:request_id],
+                        @"trace_identity":token_trace_identity, @"server_pid":@(getpid()),
+                        @"sampled_token_ids":sampled_token_ids,
+                        @"generated_token_ids": generated_token_ids,
+                        @"generated_semantics": @"attempted_pre_substitution",
+                        @"generated_count": @(generated_token_ids.count),
+                        @"forwarded_token_ids": forwarded_token_ids,
+                        @"forwarded_positions": forwarded_positions,
+                        @"completed_token_ids": completed_token_ids,
+                        @"completed_positions": completed_positions,
+                        @"trace_semantics": @"completed means forward and deferred completion succeeded and position was advanced; overall session reuse is separately indicated",
+                        @"completion_tokens": @(completion_tokens),
+                        @"request_state_failed": @(request_state_failed),
+                        @"session_reusable": @(session_reusable),
+                        @"end_pos": @(session_pos),
+                        @"ended_with_eos": @(session_ended_with_eos)
+                    };
+                    NSData *bytes = [NSJSONSerialization dataWithJSONObject:trace
+                        options:0 error:NULL];
+                    if (bytes) [bytes writeToFile:trace_path options:NSDataWritingAtomic error:NULL];
+                }
+            }
 			fprintf(stderr, "[serve] %s session_pos=%d (session=%s)\n",
 					request_id, session_pos,
 					active_session_id[0] ? active_session_id : "(none)");
@@ -22038,6 +22325,10 @@ printf("[serve] Tool API revision 9.4 — bounded cache + malformed-tool recover
 #endif
 #ifdef FLASH_PREFILL_NROW_BENCH
 #include "prefill_nrow_control.inc"
+#endif
+#ifdef FLASH_SESSION_STATE_DIAGNOSTICS
+#include "session_nrow_oracle.inc"
+#include "session_disk_oracle.inc"
 #endif
 
 static void print_usage(const char *prog) {
@@ -23426,6 +23717,21 @@ if (g_temperature <= 0.0f) {
 			return 1;
 		}
 
+#ifdef FLASH_SESSION_STATE_DIAGNOSTICS
+        if(getenv("FLASH_SESSION_DISK_INPUT")) {
+            int result=sn_disk(wf,kv_caches,layer_states,(void **)layer_mmaps,layer_fds,K,hidden,weights_path,manifest_path,vocab_path);
+            complete_deferred_experts();io_pool_shutdown();return result;
+        }
+        if(getenv("FLASH_SESSION_NROW_ORACLE_INPUT")) {
+            int result=sn_oracle(wf,kv_caches,layer_states,(void **)layer_mmaps,layer_fds,K,final_norm_w);
+            complete_deferred_experts();io_pool_shutdown();return result;
+        }
+        if(getenv("FLASH_SESSION_REPLAY_INPUT")) {
+            int result=sd_replay(wf,kv_caches,layer_states,(void **)layer_mmaps,layer_fds,K,hidden);
+            complete_deferred_experts();io_pool_shutdown();
+            return result;
+        }
+#endif
 #ifdef FLASH_GPU_KV_QUALIFICATION
         if (getenv("FLASH_QUAL_ANCHOR")) {
             int result =
