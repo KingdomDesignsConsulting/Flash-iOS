@@ -3,7 +3,7 @@ import contextlib,json,os,pathlib,socket,struct,subprocess,time,urllib.request,u
 from run_session_state_mission import MODEL,gpu,stamp,sha
 P=pathlib.Path
 REPO=P(__file__).resolve().parents[1]
-BINARY=REPO/'metal_infer/infer-session-state-experiment'
+BINARY=P(os.environ.get('FLASH_QUALIFICATION_BINARY',str(REPO/'metal_infer/infer-session-state-experiment'))).resolve()
 SYS={'role':'system','content':'You are a helpful assistant.'}
 USER={'role':'user','content':'Remember identifier STATE-73941. Reply exactly READY.'}
 FOLLOW={'role':'user','content':'What identifier did I give? Reply only the identifier.'}
@@ -52,10 +52,10 @@ def server(out,cache=None,args=(),env_extra=None,binary=BINARY):
  out.mkdir(parents=True,exist_ok=False);trace=out/'trace';trace.mkdir();loads=gate()
  for port in [11241,11243]:assert not subprocess.run(['lsof','-t','-nP',f'-iTCP:{port}','-sTCP:LISTEN'],capture_output=True).stdout,'MODEL_PORT_BUSY_NOT_RUN'
  env=dict(os.environ,FLASH_SESSION_TOKEN_TRACE_DIR=str(trace),**(env_extra or {}))
- if cache:env['FLASH_SESSION_TEST_CACHE_ROOT']=str(cache)
+ env['FLASH_SESSION_TEST_CACHE_ROOT']=str(cache if cache is not None else out/'cache')
  cmd=[str(binary),'--model',MODEL,'--tiered','--no-prefill-nrow','--serve','11243',*args]
- write(out/'launch.json',dict(started=stamp(),command=cmd,pre_gpu=loads,binary_sha256=sha(binary),source_head=subprocess.check_output(['git','rev-parse','HEAD'],cwd=REPO,text=True).strip(),test_environment={k:v for k,v in env.items() if k.startswith('FLASH_SESSION_')}))
- print('SERVER_START',stamp(),out.name,flush=True);log=(out/'server.log').open('w');proc=subprocess.Popen(cmd,cwd=binary.parent,env=env,stdin=subprocess.DEVNULL,stdout=log,stderr=subprocess.STDOUT)
+ write(out/'launch.json',dict(started=stamp(),command=cmd,pre_gpu=loads,binary_sha256=sha(binary),source_head=subprocess.check_output(['git','rev-parse','HEAD'],cwd=REPO,text=True).strip(),test_environment={k:v for k,v in env.items() if k.startswith('FLASH_SESSION_') or k in ('FLASH_FE027_NUMERICS','FLASH_HTTP_QUALIFICATION')}))
+ print('SERVER_START',stamp(),out.name,flush=True);log=(out/'server.log').open('w');proc=subprocess.Popen(cmd,cwd=binary.parent,env=env,stdin=subprocess.DEVNULL,stdout=log,stderr=subprocess.STDOUT,start_new_session=True)
  try:
   end=time.monotonic()+120
   while time.monotonic()<end:
@@ -64,6 +64,6 @@ def server(out,cache=None,args=(),env_extra=None,binary=BINARY):
     with urllib.request.urlopen('http://127.0.0.1:11243/health',timeout=1):break
    except OSError:time.sleep(.1)
   else:raise TimeoutError('server ready')
-  yield dict(out=out,trace=trace)
+  yield dict(out=out,trace=trace,pid=proc.pid,process=proc)
  finally:
   proc.terminate();proc.wait(timeout=15);log.close();print('SERVER_STOP',stamp(),out.name,'exit',proc.returncode,flush=True)

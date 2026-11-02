@@ -2,15 +2,21 @@
 """Actual named-profile capture/restart/reject/fallback; isolated caches only."""
 import argparse,hashlib,pathlib,struct,uuid
 from session_gate_support import *
+TURN_COUNT=2
 def digest(p):return hashlib.sha256(p.read_bytes()).hexdigest()
 def conversation(s,profile):
  sid='profile-'+uuid.uuid4().hex;records=[]
- for n,msgs in enumerate([[SYS,USER],[FOLLOW]]):
+ for n,msgs in enumerate([[SYS,USER]]+[[FOLLOW]]*(TURN_COUNT-1)):
   b=body(msgs,sid,n==0,profile);status,reply=call(b);assert status==200,(status,reply)
   st=state(s,b);assert st['accepted'] and st['history_complete'];records.append(st)
  return sid,records
 def main():
- p=argparse.ArgumentParser(description=__doc__);p.add_argument('--out',type=P,required=True);p.add_argument('--engine-arg',action='append',default=[]);p.add_argument('--compatible-only',action='store_true');a=p.parse_args();a.out.mkdir(parents=True,exist_ok=False)
+ p=argparse.ArgumentParser(description=__doc__);p.add_argument('--out',type=P,required=True);p.add_argument('--engine-arg',action='append',default=[]);p.add_argument('--compatible-only',action='store_true');p.add_argument('--prefix-words',type=int,default=0);p.add_argument('--turns',type=int,default=2);a=p.parse_args();
+ global TURN_COUNT
+ assert 2<=a.turns<=3 and 0<=a.prefix_words<=160
+ TURN_COUNT=a.turns
+ if a.prefix_words:SYS['content']+=' Context labels:'+(' x'*a.prefix_words)
+ a.out.mkdir(parents=True,exist_ok=False)
  cache=a.out/'cache';profile='qual-'+uuid.uuid4().hex[:12];cases=[]
  with server(a.out/'capture',cache,args=a.engine_arg) as s:old_sid,baseline=conversation(s,profile)
  checkpoints=list((cache/'warm-state').glob('zstd-*.state'));assert len(checkpoints)==1,checkpoints
@@ -27,7 +33,7 @@ def main():
   _,recovery=conversation(s,profile)
   for x,y in zip(baseline,recovery):equal(x,y)
  cases.append(dict(case='compatible_restart_and_prefix_mismatch',status='PASS',old_session_rejected=True,state_exact=True))
- variants=[] if a.compatible_only else [('version',8,a.engine_arg),('model_config_signature',24,a.engine_arg),('execution_mode',None,[*a.engine_arg,'--prefill-nrow'])]
+ variants=[] if a.compatible_only else [('version',8,a.engine_arg),('model_config_signature',24,a.engine_arg),('execution_mode',None,[*a.engine_arg,'--no-prefill-nrow' if '--prefill-nrow' in a.engine_arg else '--prefill-nrow'])]
  for name,offset,args in variants:
   damaged=bytearray(saved)
   if offset is not None:

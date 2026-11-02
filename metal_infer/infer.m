@@ -8790,6 +8790,13 @@ static int serve_state_snapshot_capture(ServeStateSnapshot *snap,
         return 0;
     }
     if (!complete_deferred_experts()) return 0;
+#ifdef FLASH_SESSION_STATE_DIAGNOSTICS
+    static int release_snapshot_oom_consumed;
+    const char *release_snapshot_arm=getenv("FLASH_SESSION_TEST_SNAPSHOT_OOM_ARM");
+    int release_snapshot_oom=snapshot_uses_gpu_linear_state() && release_snapshot_arm &&
+        access(release_snapshot_arm,F_OK)==0 &&
+        __sync_bool_compare_and_swap(&release_snapshot_oom_consumed,0,1);
+#endif
     serve_state_snapshot_free(snap);
 
     const size_t kv_dim = (size_t)NUM_KV_HEADS * HEAD_DIM;
@@ -8829,6 +8836,14 @@ static int serve_state_snapshot_capture(ServeStateSnapshot *snap,
                 size_t sz = 64 * 128 * 128 * sizeof(float);
                 snap->gpu_delta_snapshot[i] = malloc(sz);
                 if (!snap->gpu_delta_snapshot[i]) goto fail;
+#ifdef FLASH_SESSION_STATE_DIAGNOSTICS
+                // Controlled failure after partial allocation, not physical OOM.
+                // Exercise the ordinary fail cleanup with active state untouched.
+                if(release_snapshot_oom) {
+                    fprintf(stderr,"[session-inject] simulated snapshot allocation failure after partial capture\n");
+                    goto fail;
+                }
+#endif
                 memcpy(snap->gpu_delta_snapshot[i],
                        [g_metal->buf_delta_state[i] contents], sz);
             }
@@ -10303,6 +10318,17 @@ static void *io_pool_worker(void *arg) {
                 t->error_no = (t->result < 0) ? errno : 0;
             }
 
+#ifdef FLASH_SESSION_STATE_DIAGNOSTICS
+            // Once-per-process simulated expert read failure; publication follows
+            // the real worker result/error path. Never touches the model file.
+            static int release_io_failure_consumed;
+            const char *release_io_arm=getenv("FLASH_SESSION_TEST_EXPERT_IO_FAIL");
+            if(release_io_arm && access(release_io_arm,F_OK)==0 &&
+               __sync_bool_compare_and_swap(&release_io_failure_consumed,0,1)) {
+                t->result=-1;t->error_no=EIO;
+                fprintf(stderr,"[session-inject] simulated expert-worker EIO\n");
+            }
+#endif
             if (profile_io_task)
                 t->profile_end_ms = now_ms();
 
@@ -19178,6 +19204,9 @@ static PromptTokens *tokenize_rendered_messages(NSArray<NSDictionary *> *message
                                                  generation_prompt, enable_thinking);
 }
 
+#ifdef FLASH_SESSION_STATE_DIAGNOSTICS
+#include "release_render_diag.inc"
+#endif
 // Load custom system prompt from ~/.flash-moe/system.md, or use default
 static char *load_system_prompt(void) {
 	static const size_t MAX_SYSTEM_PROMPT = 1024 * 1024;
@@ -23068,6 +23097,10 @@ if (g_use_tiered) {
 		if (!validate_target_architecture()) {
 			return 1;
 		}
+#ifdef FLASH_SESSION_STATE_DIAGNOSTICS
+        if(getenv("FLASH_SESSION_RENDER_INPUT"))
+            return release_render_only(getenv("FLASH_SESSION_RENDER_INPUT"),getenv("FLASH_SESSION_RENDER_OUTPUT"));
+#endif
 		if (validate_model_layout_only) {
 			WeightFile *layout_wf = open_weights(weights_path, manifest_path);
 			int layout_ok = layout_wf && validate_native_tensor_layout(layout_wf);

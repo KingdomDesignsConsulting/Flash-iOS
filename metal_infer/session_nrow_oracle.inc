@@ -1,3 +1,5 @@
+#include <malloc/malloc.h>
+#include "release_memory_diag.inc"
 // Routing observations are real per-layer decisions, not intermediate model-state claims.
 static NSMutableDictionary *sn_routes[2];
 static int sn_route_phase,sn_probe_lo,sn_probe_hi,sn_probe_layers;
@@ -106,7 +108,12 @@ static NSArray *sn_state(const ServeStateSnapshot *ref,const ServeStateSnapshot 
         if(kv[l]) {
             int fi=(l+1)/FULL_ATTN_INTERVAL-1;
             size_t bytes=(size_t)pos*NUM_KV_HEADS*HEAD_DIM*sizeof(float);
-            if(ref->kv_len[l]!=pos || cand->kv_len[l]!=pos || bytes>g_metal->buf_kv_k[fi].length || bytes>g_metal->buf_kv_v[fi].length) {
+            if(!ref->valid || !cand->valid || ref->pos!=pos || cand->pos!=pos || pos<0 || pos>g_kv_seq_len ||
+               ref->kv_len[l]!=pos || cand->kv_len[l]!=pos ||
+               (bytes && (!ref->k_snapshot[l] || !ref->v_snapshot[l] || !cand->k_snapshot[l] || !cand->v_snapshot[l])) ||
+               bytes>malloc_size(ref->k_snapshot[l]) || bytes>malloc_size(ref->v_snapshot[l]) ||
+               bytes>malloc_size(cand->k_snapshot[l]) || bytes>malloc_size(cand->v_snapshot[l]) ||
+               bytes>g_metal->buf_kv_k[fi].length || bytes>g_metal->buf_kv_v[fi].length) {
                 [parts addObject:@{@"component":@"invalid_cache_extent",@"layer":@(l),@"floats":@0,@"different":@0,@"max_abs":@0,@"rms":@0,@"nonfinite":@0,@"invalid_extent":@YES}];continue;
             }
             size_t n=(size_t)pos*NUM_KV_HEADS*HEAD_DIM;
@@ -115,6 +122,16 @@ static NSArray *sn_state(const ServeStateSnapshot *ref,const ServeStateSnapshot 
             [parts addObject:sn_diff("mirror_k",l,cand->k_snapshot[l],g_metal->buf_kv_k[fi].contents,n)];
             [parts addObject:sn_diff("mirror_v",l,cand->v_snapshot[l],g_metal->buf_kv_v[fi].contents,n)];
         } else {
+            const size_t ssm=LINEAR_NUM_V_HEADS*LINEAR_VALUE_DIM*LINEAR_KEY_DIM*sizeof(float);
+            const size_t conv=(CONV_KERNEL_SIZE-1)*LINEAR_CONV_DIM*sizeof(float);
+            if(!snapshot_uses_gpu_linear_state() ||
+               malloc_size(ref->gpu_delta_snapshot[li])<ssm || malloc_size(cand->gpu_delta_snapshot[li])<ssm ||
+               malloc_size(ref->gpu_conv_snapshot[li])<conv || malloc_size(cand->gpu_conv_snapshot[li])<conv ||
+               malloc_size(ref->la_ssm_snapshot[l])<ssm || malloc_size(cand->la_ssm_snapshot[l])<ssm ||
+               malloc_size(ref->la_conv_snapshot[l])<conv || malloc_size(cand->la_conv_snapshot[l])<conv ||
+               g_metal->buf_delta_state[li].length<ssm || g_metal->buf_conv_state[li].length<conv) {
+                [parts addObject:@{@"component":@"invalid_recurrent_extent",@"layer":@(l),@"floats":@0,@"different":@0,@"max_abs":@0,@"rms":@0,@"nonfinite":@0,@"invalid_extent":@YES}];li++;continue;
+            }
             [parts addObject:sn_diff("gpu_gdn",l,ref->gpu_delta_snapshot[li],cand->gpu_delta_snapshot[li],LINEAR_NUM_V_HEADS*LINEAR_VALUE_DIM*LINEAR_KEY_DIM)];
             [parts addObject:sn_diff("gpu_conv",l,ref->gpu_conv_snapshot[li],cand->gpu_conv_snapshot[li],(CONV_KERNEL_SIZE-1)*LINEAR_CONV_DIM)];
             [parts addObject:sn_diff("cpu_gdn_shadow",l,ref->la_ssm_snapshot[l],cand->la_ssm_snapshot[l],LINEAR_NUM_V_HEADS*LINEAR_VALUE_DIM*LINEAR_KEY_DIM)];
@@ -162,8 +179,10 @@ static int sn_oracle(WeightFile *wf,KVCache **kv,void **states,void **maps,int *
     float *rl=malloc(VOCAB_SIZE*sizeof(float)),*cl=malloc(VOCAB_SIZE*sizeof(float));
     float raw_ref[HIDDEN_DIM];
     int ok=rh&&ch&&rl&&cl;int batches=0,pos=0,exact=1;
+    NSMutableArray *memory=[NSMutableArray array];
     reset_delta_net_state();g_forward_error=0;
     if(ok)ok=serve_state_snapshot_capture(&ref,kv,states,0)&&serve_state_snapshot_capture(&cand,kv,states,0);
+    [memory addObject:rm_observe(kv,states,&ref,&cand,0)];
     NSString *initial_digest=sd_fingerprint(kv,states,0,"oracle_zero")[@"digest"];
     while(ok && pos<count) {
         BOOL batch=[starts containsObject:@(pos)];int n=(batch || [scalar_slabs containsObject:@(pos)])?PREFILL_NROW_CAPTURE_ROWS:1;
@@ -193,6 +212,7 @@ static int sn_oracle(WeightFile *wf,KVCache **kv,void **states,void **maps,int *
         exact&=changed==0 && [h[@"different"] unsignedLongValue]==0 && [logits[@"different"] unsignedLongValue]==0;
         [rows addObject:@{@"position":@(pos),@"candidate_digest":candidate_digest,@"reference_digest":reference_digest,@"batch_rows":@(batch?n:0),@"step_rows":@(n),@"state_max_abs":@(state_max),@"state_different":@(changed),@"hidden":h,@"logits":logits,@"greedy_equal":@(rt==ct),@"kv_lengths_and_mirrors":@(lengths),@"finite":@(finite),@"pass":@(pass),@"components":parts}];
         fprintf(stderr,"[session-n128] pos=%d batch=%d state=%.9g hidden=%.9g logits=%.9g greedy=%d pass=%d\n",pos,batch,state_max,[h[@"max_abs"] doubleValue],[logits[@"max_abs"] doubleValue],rt==ct,pass);
+        [memory addObject:rm_observe(kv,states,&ref,&cand,pos)];
         if(!pass){ok=0;break;}
     }
     BOOL cb_observed=cb_records[0]!=nil;
@@ -221,6 +241,7 @@ static int sn_oracle(WeightFile *wf,KVCache **kv,void **states,void **maps,int *
             sd_write(@"counterfactual-rebase.json",@{@"qualification":@"FAIL retained; diagnostic intervention only",@"reference_anchor":@(sn_probe_lo),@"end_position":@(pos),@"step_rows":@(sn_probe_hi-sn_probe_lo),@"batch_rows":@((sn_probe_hi-sn_probe_lo==PREFILL_NROW_CAPTURE_ROWS)?PREFILL_NROW_CAPTURE_ROWS:0),@"state_max_abs":@(maximum),@"hidden":h,@"logits":logits,@"greedy_equal":@(cpu_argmax(rl,VOCAB_SIZE)==cpu_argmax(cl,VOCAB_SIZE)),@"components":parts});
         }
     }
+    sd_write(@"memory-observations.json",@{@"samples":memory,@"status":ok?@"PASS":@"FAIL"});
     serve_state_snapshot_free(&probe_anchor);
     serve_state_snapshot_free(&ref);serve_state_snapshot_free(&cand);free(rh);free(ch);free(rl);free(cl);
     return ok?0:3;

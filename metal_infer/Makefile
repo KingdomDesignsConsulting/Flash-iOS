@@ -385,22 +385,22 @@ integration-kv-candidates: $(INFER_SRC) $(INFER_DEPS)
 
 # Bounded private resident/continuous state diagnostics; production targets unchanged.
 .PHONY: session-state-experiment
-session-state-experiment: $(INFER_SRC) $(INFER_DEPS) session_state_diag.inc session_nrow_oracle.inc session_disk_oracle.inc fe027_full_attention_diag.inc fe027_combine_diag.inc fe027_combine_trace.metal
+session-state-experiment: $(INFER_SRC) $(INFER_DEPS) release_memory_diag.inc release_render_diag.inc session_state_diag.inc session_nrow_oracle.inc session_disk_oracle.inc fe027_full_attention_diag.inc fe027_combine_diag.inc fe027_combine_trace.metal
 	$(CC) $(INFER_CFLAGS) -DFLASH_SESSION_STATE_DIAGNOSTICS -DFLASH_EXPERIMENTAL_LAZY_SHARED_GPU_KV_32K $(FRAMEWORKS) $(LDFLAGS) $(INFER_SRC) -o infer-session-state-experiment
 
 # Isolated legacy KV control for within-mode resident-state qualification.
 .PHONY: session-state-legacy-experiment
-session-state-legacy-experiment: $(INFER_SRC) $(INFER_DEPS) session_state_diag.inc session_nrow_oracle.inc session_disk_oracle.inc fe027_full_attention_diag.inc fe027_combine_diag.inc fe027_combine_trace.metal
+session-state-legacy-experiment: $(INFER_SRC) $(INFER_DEPS) release_memory_diag.inc release_render_diag.inc session_state_diag.inc session_nrow_oracle.inc session_disk_oracle.inc fe027_full_attention_diag.inc fe027_combine_diag.inc fe027_combine_trace.metal
 	$(CC) $(INFER_CFLAGS) -DFLASH_SESSION_STATE_DIAGNOSTICS $(FRAMEWORKS) $(LDFLAGS) $(INFER_SRC) -o infer-session-state-legacy-experiment
 
 # FE-027 same-input arithmetic probe, isolated from production and prior binaries.
 .PHONY: fe027-probe
-fe027-probe: $(INFER_SRC) $(INFER_DEPS) session_state_diag.inc session_nrow_oracle.inc session_disk_oracle.inc fe027_full_attention_diag.inc fe027_combine_diag.inc fe027_combine_trace.metal
+fe027-probe: $(INFER_SRC) $(INFER_DEPS) release_memory_diag.inc release_render_diag.inc session_state_diag.inc session_nrow_oracle.inc session_disk_oracle.inc fe027_full_attention_diag.inc fe027_combine_diag.inc fe027_combine_trace.metal
 	$(CC) $(INFER_CFLAGS) -DFLASH_SESSION_STATE_DIAGNOSTICS -DFLASH_EXPERIMENTAL_LAZY_SHARED_GPU_KV_32K $(FRAMEWORKS) $(LDFLAGS) $(INFER_SRC) -o infer-fe027-probe
 
 # Opt-in FE-027 normalization alignment; default/production targets unchanged.
 .PHONY: fe027-experiment fe027-performance
-fe027-experiment: $(INFER_SRC) $(INFER_DEPS) fe027_alignment.inc fe027_attention_reference.inc fe027_combine_reference.inc fe027_q4.inc session_state_diag.inc session_nrow_oracle.inc session_disk_oracle.inc fe027_full_attention_diag.inc fe027_combine_diag.inc fe027_combine_trace.metal
+fe027-experiment: $(INFER_SRC) $(INFER_DEPS) fe027_alignment.inc fe027_attention_reference.inc fe027_combine_reference.inc fe027_q4.inc release_memory_diag.inc release_render_diag.inc session_state_diag.inc session_nrow_oracle.inc session_disk_oracle.inc fe027_full_attention_diag.inc fe027_combine_diag.inc fe027_combine_trace.metal
 	$(CC) $(INFER_CFLAGS) -DFLASH_FE027_NUMERICS -DFLASH_SESSION_STATE_DIAGNOSTICS -DFLASH_EXPERIMENTAL_LAZY_SHARED_GPU_KV_32K $(FRAMEWORKS) $(LDFLAGS) $(INFER_SRC) -o infer-fe027-experiment
 fe027-performance: $(INFER_SRC) $(INFER_DEPS) fe027_alignment.inc fe027_attention_reference.inc fe027_combine_reference.inc fe027_q4.inc
 	$(CC) $(INFER_CFLAGS) -DFLASH_FE027_NUMERICS -DFLASH_EXPERIMENTAL_LAZY_SHARED_GPU_KV_32K $(FRAMEWORKS) $(LDFLAGS) $(INFER_SRC) -o infer-fe027-performance
@@ -409,3 +409,12 @@ fe027-performance: $(INFER_SRC) $(INFER_DEPS) fe027_alignment.inc fe027_attentio
 .PHONY: fe027-control
 fe027-control: $(INFER_SRC) $(INFER_DEPS)
 	$(CC) $(INFER_CFLAGS) -DFLASH_EXPERIMENTAL_LAZY_SHARED_GPU_KV_32K $(FRAMEWORKS) $(LDFLAGS) $(INFER_SRC) -o infer-fe027-control
+
+# Isolated overnight release qualification; never writes production infer.
+.PHONY: release-qualification release-legacy-qualification
+RELEASE_QUAL_BINARY ?= infer-release-qualification
+RELEASE_QUAL_EXTRA_CFLAGS ?=
+release-qualification: $(INFER_SRC) $(INFER_DEPS) release_render_diag.inc release_memory_diag.inc release_render_diag.inc session_state_diag.inc session_nrow_oracle.inc session_disk_oracle.inc fe027_alignment.inc fe027_attention_reference.inc fe027_combine_reference.inc fe027_combine_diag.inc fe027_combine_trace.metal fe027_full_attention_diag.inc fe027_q4.inc
+	$(CC) $(INFER_CFLAGS) -DFLASH_FE027_NUMERICS -DFLASH_SESSION_STATE_DIAGNOSTICS -DFLASH_EXPERIMENTAL_LAZY_SHARED_GPU_KV_32K $(RELEASE_QUAL_EXTRA_CFLAGS) $(FRAMEWORKS) $(LDFLAGS) $(INFER_SRC) -o $(RELEASE_QUAL_BINARY)
+release-legacy-qualification: $(INFER_SRC) $(INFER_DEPS) release_render_diag.inc release_memory_diag.inc release_render_diag.inc session_state_diag.inc session_nrow_oracle.inc session_disk_oracle.inc fe027_alignment.inc fe027_attention_reference.inc fe027_combine_reference.inc fe027_combine_diag.inc fe027_combine_trace.metal fe027_full_attention_diag.inc fe027_q4.inc
+	$(CC) $(INFER_CFLAGS) -DFLASH_FE027_NUMERICS -DFLASH_SESSION_STATE_DIAGNOSTICS $(FRAMEWORKS) $(LDFLAGS) $(INFER_SRC) -o infer-release-legacy-qualification

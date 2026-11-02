@@ -24,7 +24,7 @@ def main():
    for x,y in zip(baseline,recovered):equal(x,y)
   cases.append(dict(case=name,status='PASS',http_status=status,stale_status=stale,fresh_state_exact=True,method='Once-per-process diagnostic post-layer checked-forward failure; not real hardware failure'))
  control=a.out/'control';control.mkdir();inputfile=a.out/'input.json';final=baseline[-1];write(inputfile,dict(token_ids=final['effective_token_ids'],expected_digests={str(r['position']):r['digest'] for r in final['steps']}))
- env=dict(os.environ,FLASH_SESSION_TOKEN_TRACE_DIR=str(control),FLASH_SESSION_REPLAY_INPUT=str(inputfile));print('FAULT_CONTROL_START',stamp(),flush=True)
+ env=dict(os.environ,FLASH_SESSION_TOKEN_TRACE_DIR=str(control),FLASH_SESSION_REPLAY_INPUT=str(inputfile));gate();print('FAULT_CONTROL_START',stamp(),flush=True)
  with (a.out/'control.log').open('w') as f:r=subprocess.run([str(BINARY),'--model',MODEL,'--tiered','--no-prefill-nrow'],cwd=BINARY.parent,env=env,stdin=subprocess.DEVNULL,stdout=f,stderr=subprocess.STDOUT,timeout=180)
  print('FAULT_CONTROL_STOP',stamp(),'exit',r.returncode,flush=True);assert r.returncode==0
  write(a.out/'result.json',dict(status='PASS',cases=cases,baseline_matches_scalar_control=True,hardware_faults='NOT ESTABLISHED',executor_callbacks='NOT APPLICABLE: HTTP infer returns tool calls; it does not execute external tools'))

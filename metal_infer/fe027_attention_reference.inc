@@ -84,6 +84,13 @@ static int fe027_reference_full_attention(PrefillNRowGrouped *p,int layer,int ba
     for(int row=0;row<PREFILL_NROW_ROWS;row++) {
         int sl=base+row+1;NSUInteger offset=(size_t)row*qdim*sizeof(float);
         if(sl>=32) {
+#ifdef FLASH_SESSION_STATE_DIAGNOSTICS
+            // Candidate-specific evidence: scalar trace de-duplication otherwise
+            // suppresses this second route at the same layer and sequence length.
+            if(getenv("FLASH_TRACE_GPU_KV_BOUNDARY") &&
+               (sl==8192 || sl==8193 || sl==16384 || sl==16385 || sl==24576 || sl==32768))
+                fprintf(stderr,"[release-n128-attention] seq=%d layer=%d cap=%d backend=GPU\n",sl,layer,GPU_KV_SEQ);
+#endif
             id<MTLBuffer> raw=nil;
 #ifdef FLASH_SESSION_STATE_DIAGNOSTICS
             if(g_fe_fa_gpu)raw=g_metal->buf_attn_out;

@@ -34,6 +34,12 @@
 | FE-003 | P0 | QUALIFIED | Work | Actual half-close and client timeout, synthetic checked-forward failure, partial temp checkpoint write EIO: invalidation/recreation or safe completion as specified; old sessions rejected; exact recovery. **Only these scenarios qualified** | [Release-gates handback](docs/resident-release-gates-2026-10-28.md); real device/OOM/disk hardware faults unverified; external tool executor N/A |
 | FE-004 | P1 | QUALIFIED | Work | Seven **short within-mode** persistent-state comparisons pass, including CPU-linear/profile restart and legacy KV. Bypass is an ablation, not model-quality pass | [Release-gates handback](docs/resident-release-gates-2026-10-28.md); long mode cross-products and cross-mode numerical parity not established |
 
+## Overnight promotion qualification — in progress
+
+| ID | Priority | State | Owner | Evidence / remaining gate |
+| --- | --- | --- | --- | --- |
+| FE-038 | P0 | ACTIVE | Work | [Working release report](docs/mask63-production-readiness-2026-11-02.md): six independent histories/455 endpoints and full 16K/128 slabs PASS with exact persistent fingerprints. 32K, final allocation/tool faults, long HTTP replay and performance remain in progress. Keep PR #2 draft; no promotion/default change. |
+
 ## Completed or bounded-qualified groundwork
 
 | ID | Status | Scope actually supported | Evidence |
@@ -81,10 +87,10 @@
 | FE-032 | P2 | TRIAGED | Measure resumed short-prefix forward/pass and state-copy counts; assert exact accepted-boundary publish, immutable cached state, cancellation behavior before considering fixed running/checkpoint slots | vLLM #64303; FE-019 overlap; GB200 results not M4 evidence |
 | FE-033 | P1 | TRIAGED | Checked offset multiplication and index-width audit for host/Metal QKV, GDN, convolution and checkpoint paths; bounded synthetic near-overflow tests without giant allocations | vLLM #63759/#63761; CUDA failure not established in Flash's 32K geometry |
 
-| FE-034 | P0 | TRIAGED | Mid-stream inference failure after HTTP 200 must emit explicit stream error, invalidate uncertain hybrid state, prevent partial tool invocation, and require fresh recovery | Ollama PR #19458 (Nov 1); promotion gate FE-003 hardening |
-| FE-035 | P0 | TRIAGED | Release admission ledger for tiered experts, full attention KV, GDN/conv, checkpoints, N128 workspace, CPU/GPU unified memory; compare predicted vs actual 16K/32K peaks and fail safely | SGLang #47830 (Nov 2), MLX Swift LM #748, Ollama #19417/#19419 |
+| FE-034 | P0 | ACTIVE | Bounded real-SSE tests PASS before output, after six visible content deltas, and simulated expert-worker EIO: explicit errors, invalidation, stale 409 and exact scalar recovery. Actual partial tool-envelope failure remains pending; no hardware-reset claim | Ollama PR #19458 (Nov 1); promotion gate FE-003 hardening |
+| FE-035 | P0 | ACTIVE | Measured Metal/host/snapshot inventory and 16K oracle PASS (observed RSS 9,559,293,952 bytes); RSS is not unified-memory total. Independent 32K runs with RSS/timeout and host-pressure guards. Allocation cleanup, live write fault and final admission verdict pending | SGLang #47830 (Nov 2), MLX Swift LM #748, Ollama #19417/#19419 |
 | FE-036 | P1 | TRIAGED | Quantization/manifest exclusion names must map to actual tensor dtype, layout, shape and aliases fail-closed before allocation; never silently reclassify mixed precision | vLLM #65034 (Nov 2); existing FE-016 |
-| FE-037 | P2 | TRIAGED | Buffered/streaming cache-token accounting parity, distinguish reused prefix token counts from hybrid bytes, preserve provider-specific semantics | vLLM #65035 (Nov 2); FE-017/FE-025 |
+| FE-037 | P2 | QUALIFIED (BOUNDED) | Five bounded buffered/SSE pairs PASS with identical native prompt/sample IDs, normalized events/state, full logical usage on prefix hits, and usage before DONE. Includes thinking off/on and actual content+tool; no general provider/GUI claim | vLLM #65035 (Nov 2); FE-017/FE-025 |
 
 ## Next disposition queue
 
@@ -110,3 +116,5 @@
 - **2026-10-28 (Work handback / architectural triage):** FE-001 long N128 FAIL at 1920 (state 0.967838436 versus <1e-3). FE-002, FE-003 and FE-004 qualified only within bounded executed scopes. Created FE-027 Architect investigation of near-tied MoE route flip with inherited numerical drift; no production promotion.
 - **2026-10-28 (operating-model amendment):** Lead Architect is also the default experiment implementer; user runs local Mac tests. Work is used selectively for many short experiments that can run unattended. Existing FE-001–004 batch delegation retained.
 - **2026-10-28:** Ledger established. Existing qualified short-scalar/N128/lifecycle findings recorded as bounded, and four active release gates identified. Research findings triaged without claiming current Flash bugs. No production promotion.
+
+- **2026-11-02 (Work checkpoint, not release disposition):** Accepted documentation HEAD 64a5d51; added isolated corpus/rendering, extent guards, per-category memory observations, controlled worker/snapshot faults and bounded release drivers. Independent histories, 16K, short lifecycle/protocol/modes and model-free tests pass within reported scope. 32K is still running. Selective state identity/execution version unchanged; no full executable hashing, template/math/default/production edits. Pending research Library artifact unavailable through connected searches; canonical Drive remains unchanged.

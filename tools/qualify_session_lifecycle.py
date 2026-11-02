@@ -22,7 +22,7 @@ def waitfile(p,timeout=30,predicate=lambda x:True):
  raise TimeoutError(str(p))
 def main():
  p=argparse.ArgumentParser(description=__doc__);p.add_argument('--out',required=True,type=P);a=p.parse_args();a.out.mkdir(parents=True,exist_ok=False)
- repo=P(__file__).resolve().parents[1];binary=repo/'metal_infer/infer-session-state-experiment';trace=a.out/'http';trace.mkdir();stable=0;loads=[]
+ repo=P(__file__).resolve().parents[1];binary=P(os.environ.get('FLASH_QUALIFICATION_BINARY',str(repo/'metal_infer/infer-session-state-experiment'))).resolve();trace=a.out/'http';trace.mkdir();stable=0;loads=[]
  for _ in range(10):
   g=gpu();loads.append(g);stable=stable+1 if g is not None and g<30 else 0
   if stable==3:break
@@ -67,7 +67,8 @@ def main():
  finally:
   proc.terminate();proc.wait(timeout=15);log.close();print('SERVER_STOP',stamp(),'exit',proc.returncode,flush=True)
  control=a.out/'control';control.mkdir();inputfile=a.out/'replay.json';write(inputfile,dict(token_ids=recoveries[-1]['effective_token_ids'],expected_digests={str(x['position']):x['digest'] for x in recoveries[-1]['steps']}))
- env=dict(os.environ,FLASH_SESSION_TOKEN_TRACE_DIR=str(control),FLASH_SESSION_REPLAY_INPUT=str(inputfile));print('RECOVERY_CONTROL_START',stamp(),flush=True)
+ env=dict(os.environ,FLASH_SESSION_TOKEN_TRACE_DIR=str(control),FLASH_SESSION_REPLAY_INPUT=str(inputfile));from session_gate_support import gate
+ gate();print('RECOVERY_CONTROL_START',stamp(),flush=True)
  with (a.out/'control.log').open('w') as f:r=subprocess.run([str(binary),'--model',MODEL,'--tiered','--no-prefill-nrow'],cwd=binary.parent,env=env,stdin=subprocess.DEVNULL,stdout=f,stderr=subprocess.STDOUT,timeout=180)
  print('RECOVERY_CONTROL_STOP',stamp(),'exit',r.returncode,flush=True)
  write(a.out/'result.json',dict(status='PASS' if r.returncode==0 else 'FAIL',cases=cases,recovery_exact=r.returncode==0,pre_gpu=loads,binary_sha256=sha(binary),source_head=subprocess.check_output(['git','rev-parse','HEAD'],cwd=repo,text=True).strip()))

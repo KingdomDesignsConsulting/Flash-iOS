@@ -1,8 +1,32 @@
 // Bounded diagnostic build only. Never changes the chat template or sampler.
 #include <CommonCrypto/CommonDigest.h>
+#ifndef SESSION_DIAG_LIMIT
 #define SESSION_DIAG_LIMIT 512
+#endif
+#ifndef SESSION_PREFILL_OBSERVE_STRIDE
+#define SESSION_PREFILL_OBSERVE_STRIDE 1
+#endif
+#if SESSION_DIAG_LIMIT < 512 || SESSION_DIAG_LIMIT > 32768 || SESSION_PREFILL_OBSERVE_STRIDE < 1 || SESSION_PREFILL_OBSERVE_STRIDE > 128
+#error diagnostic history/observation bounds exceeded
+#endif
 #define SESSION_ORACLE_LIMIT 32768
 static int sd_state_limit=SESSION_DIAG_LIMIT;
+static NSDictionary *sd_replay_expected_points;
+static BOOL sd_should_observe(int position,const char *phase) {
+    if(sd_replay_expected_points)
+        return sd_replay_expected_points[[NSString stringWithFormat:@"%d",position]]!=nil;
+    // Retain every input token. Only scalar prefill observations may be sparse;
+    // final prefill, decode/EOS and request boundaries remain explicit.
+    return SESSION_PREFILL_OBSERVE_STRIDE==1 || strcmp(phase,"prefill") ||
+        position%SESSION_PREFILL_OBSERVE_STRIDE==0;
+}
+#if SESSION_PREFILL_OBSERVE_STRIDE > 1
+static BOOL sd_sparse_points_valid(id points,NSUInteger count) {
+    if(![points isKindOfClass:NSDictionary.class] || ![points count] || !count)return NO;
+    id final=points[[NSString stringWithFormat:@"%lu",(unsigned long)count]];
+    return [final isKindOfClass:NSString.class] && [final length]==64;
+}
+#endif
 static NSMutableArray *sd_history,*sd_steps;
 static NSArray *sd_base_tokens;
 static NSString *sd_identity;
@@ -93,6 +117,7 @@ static void sd_complete(uint32_t token,int position,const char *phase,KVCache **
     if(!sd_enabled() || !sd_steps)return;
     if(position>=SESSION_DIAG_LIMIT || sd_history.count!=(NSUInteger)position){sd_history_complete=NO;return;}
     [sd_history addObject:@(token)];
+    if(!sd_should_observe(position+1,phase)){sd_progress(phase,position+1);return;}
     NSMutableDictionary *row=[sd_fingerprint(kv,states,position+1,phase) mutableCopy];row[@"token_id"]=@(token);[sd_steps addObject:row];sd_progress(phase,position+1);
 }
 // A slab exposes its completed endpoint, not intermediate row states.
@@ -127,13 +152,18 @@ static void sd_abort_record(const char *reason,KVCache **kv,void **states) {
 static int sd_replay(WeightFile *wf,KVCache **kv,void **states,void **maps,int *fds,int K,float *hidden) {
     const char *input=getenv("FLASH_SESSION_REPLAY_INPUT");if(!input)return -1;
     NSData *bytes=[NSData dataWithContentsOfFile:@(input)];
-    if(!bytes || bytes.length>65536)return 2;
+    if(!bytes || bytes.length>MAX((size_t)65536,(size_t)SESSION_DIAG_LIMIT*32))return 2;
     id object=[NSJSONSerialization JSONObjectWithData:bytes options:0 error:NULL];
     NSArray *ids=[object isKindOfClass:[NSDictionary class]]?object[@"token_ids"]:nil;
     if(![ids isKindOfClass:[NSArray class]] || !ids.count || ids.count>SESSION_DIAG_LIMIT || !sd_enabled())return 2;
     for(id n in ids)if(![n isKindOfClass:[NSNumber class]] || [n intValue]<0 || [n intValue]>=VOCAB_SIZE)return 2;
     id expected_digests=object[@"expected_digests"];
     if(expected_digests && ![expected_digests isKindOfClass:[NSDictionary class]])return 2;
+#if SESSION_PREFILL_OBSERVE_STRIDE > 1
+    // Never silently omit the final state from a sparse continuous reference.
+    if(!sd_sparse_points_valid(expected_digests,ids.count))return 2;
+    sd_replay_expected_points=expected_digests;
+#endif
     reset_delta_net_state();g_forward_error=0;
     sd_begin(@"continuous-replay",NO,0,NULL,kv,states);
     NSString *initial_expected=expected_digests[@"0"];
@@ -150,6 +180,7 @@ static int sd_replay(WeightFile *wf,KVCache **kv,void **states,void **maps,int *
         }
     }
     sd_end((int)ids.count,YES,NO);
+    sd_replay_expected_points=nil;
     fprintf(stderr,"[session-state] continuous completed=%lu\n",(unsigned long)ids.count);
     return 0;
 }
