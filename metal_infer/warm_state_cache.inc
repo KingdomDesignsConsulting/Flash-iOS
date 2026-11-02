@@ -121,6 +121,13 @@ static uint64_t fe027_execution_identity(uint64_t h, unsigned mask) {
 }
 #endif
 
+// Old N128 identities aliased prefetch on/off. Invalidate that entire affected
+// execution class once; preserve scalar/CPU identities and rebuild stability.
+// Advance this marker for further state-affecting N128 I/O-ownership changes.
+static uint64_t warm_nrow_ownership_identity(uint64_t h, int eligible) {
+    return eligible ? warm_hash_string(h, "nrow-prefetch-ownership-v2") : h;
+}
+
 static uint64_t warm_execution_mode_hash(int K) {
     uint64_t nrow_mode=0;
 #ifdef FLASH_PREFILL_NROW_PRODUCTION
@@ -154,7 +161,8 @@ static uint64_t warm_execution_mode_hash(int K) {
     // checkpoints retain their exact pre-existing compatibility identity.
     if (!gpu_linear_attn_enabled && !linear_attn_bypass)
         h = warm_hash_string(h, "cpu-linear-recurrence-v2");
-    return h;
+    return warm_nrow_ownership_identity(h, nrow_mode && g_use_tiered && K==8 &&
+        snapshot_uses_gpu_linear_state());
 }
 
 static int warm_state_compatibility_identity_ex(const char *weights,
@@ -1011,6 +1019,11 @@ static int warm_state_self_test(const char *directory) {
         if(!distinct)failures++;
     }
 #endif
+    uint64_t ownership_seed=UINT64_C(0x4e313238);
+    int ownership_selective=warm_nrow_ownership_identity(ownership_seed,0)==ownership_seed &&
+        warm_nrow_ownership_identity(ownership_seed,1)!=ownership_seed;
+    printf("[warm-state-test] N128 ownership epoch / unaffected identity preserved: %s\n",ownership_selective?"PASS":"FAIL");
+    if(!ownership_selective)failures++;
     uint64_t base_mode = warm_execution_mode_hash(8);
     int saved_gpu_moe = g_gpu_resident_moe_enabled;
     int saved_oproj = g_oproj_v3_enabled;

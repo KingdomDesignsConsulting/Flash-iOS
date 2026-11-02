@@ -48,10 +48,10 @@ def equal(a,b):
  assert left==right and a['end_position'] in left
  assert a['accepted'] and b['accepted']
 @contextlib.contextmanager
-def server(out,cache=None,args=(),env_extra=None,binary=BINARY):
+def server(out,cache=None,args=(),env_extra=None,binary=BINARY,diagnostic_trace=True):
  out.mkdir(parents=True,exist_ok=False);trace=out/'trace';trace.mkdir();loads=gate()
  for port in [11241,11243]:assert not subprocess.run(['lsof','-t','-nP',f'-iTCP:{port}','-sTCP:LISTEN'],capture_output=True).stdout,'MODEL_PORT_BUSY_NOT_RUN'
- env=dict(os.environ,FLASH_SESSION_TOKEN_TRACE_DIR=str(trace),**(env_extra or {}))
+ env=dict(os.environ,FLASH_SESSION_TOKEN_TRACE_DIR=str(trace) if diagnostic_trace else "",**(env_extra or {}))
  env['FLASH_SESSION_TEST_CACHE_ROOT']=str(cache if cache is not None else out/'cache')
  cmd=[str(binary),'--model',MODEL,'--tiered','--no-prefill-nrow','--serve','11243',*args]
  write(out/'launch.json',dict(started=stamp(),command=cmd,pre_gpu=loads,binary_sha256=sha(binary),source_head=subprocess.check_output(['git','rev-parse','HEAD'],cwd=REPO,text=True).strip(),test_environment={k:v for k,v in env.items() if k.startswith('FLASH_SESSION_') or k in ('FLASH_FE027_NUMERICS','FLASH_HTTP_QUALIFICATION')}))
@@ -67,3 +67,25 @@ def server(out,cache=None,args=(),env_extra=None,binary=BINARY):
   yield dict(out=out,trace=trace,pid=proc.pid,process=proc)
  finally:
   proc.terminate();proc.wait(timeout=15);log.close();print('SERVER_STOP',stamp(),out.name,'exit',proc.returncode,flush=True)
+
+
+def stream_request(payload,timeout=1800):
+ start=time.monotonic();first=None;events=[];visible='';finished=False;done=False
+ request=urllib.request.Request('http://127.0.0.1:11243/v1/chat/completions',json.dumps(payload).encode(),{'Content-Type':'application/json'})
+ with urllib.request.urlopen(request,timeout=timeout) as response:
+  for line in response:
+   if not line.startswith(b'data:'):continue
+   raw=line[5:].strip()
+   if raw==b'[DONE]':done=True;break
+   event=json.loads(raw);events.append(event)
+   assert not event.get('error') and not event.get('session_invalidated'),event
+   for choice in event.get('choices',[]):
+    content=choice.get('delta',{}).get('content','')
+    if content:
+     if first is None:first=time.monotonic()
+     visible+=content
+    if choice.get('finish_reason') is not None:finished=True
+ end=time.monotonic();assert done and finished and first is not None
+ timing=next(event['flash_timings'] for event in reversed(events) if 'flash_timings' in event)
+ usage=next(event['usage'] for event in reversed(events) if event.get('usage'))
+ return dict(wall_ms=(end-start)*1000,wire_ttft_ms=(first-start)*1000,timings=timing,usage=usage,visible=visible,events=events)

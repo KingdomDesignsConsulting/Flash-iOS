@@ -13250,6 +13250,11 @@ static void fused_layer_forward(
 	// read, and cap speculative reads per layer. Wrong predictions never enter
 	// the cache.
 	if (g_expert_prefetch_enabled && g_expert_prefetch_generating &&
+#ifdef FLASH_PREFILL_NROW_ENABLED
+        // Capture returns before this layer's expert I/O consumption. It must
+        // not leave an unrelated short prefetch in the scalar read slot.
+        !g_prefill_nrow_capture &&
+#endif
 		packed_fd >= 0 && g_malloc_cache && g_metal &&
 		g_metal->buf_multi_expert_data_B[0] && !g_use_lz4) {
 		int selected[MAX_K] = {0};
@@ -21212,6 +21217,12 @@ printf("[serve] Tool API revision 9.4 — bounded cache + malformed-tool recover
 				continue;
 			}
 
+            // Decode-only prediction state must not leak into a subsequent
+            // request's prefill, especially N128 attention-only capture. Drain
+            // old scratch writes before restoring/recycling model buffers.
+            if (g_async_pread.active) async_pread_wait();
+            g_pred_generating = 0;
+            g_expert_prefetch_generating = 0;
 			int pos;
 			if (is_continuation) {
 				// ---- Continue from existing session state ----

@@ -978,7 +978,16 @@
       ]
     },
     "long_http": {
-      "status": "RUNNING"
+      "status": "PASS",
+      "end_position": 16470,
+      "resident_turns": 3,
+      "candidate_observation_points": 150,
+      "exact_shared_observations": true,
+      "reference_exit": 0,
+      "reference_stop_reason": null,
+      "resident_turns_observed": 3,
+      "candidate_end_position": 16470,
+      "candidate_native_nrow_observed": true
     },
     "disk_restore": {
       "status": "EXACT_RESTART_PASS",
@@ -994,11 +1003,337 @@
       "rejection_exit": 3,
       "load_binary_sha256": "c9e5deb7997c6a1bc76f56ca815d551b48272e15771b3cacf70b891838d5a119"
     },
-    "live_adapter": {
-      "status": "NOT_RUN"
+    "live_adapter_original": {
+      "status": "FAIL"
+    },
+    "prefetch_fix_stateless": {
+      "status": "PASS",
+      "turns": 3,
+      "prefetch_enabled": true,
+      "end_positions": [
+        174,
+        207,
+        240
+      ],
+      "candidate_observations": [
+        48,
+        81,
+        114
+      ],
+      "references": [
+        {
+          "index": 0,
+          "exit": 0,
+          "stop_reason": null,
+          "pre_gpu": [
+            47,
+            16,
+            0,
+            18
+          ],
+          "observed_rss_bytes": 1242447872,
+          "expected_positions": 48,
+          "input_tokens": 174,
+          "exact": true
+        },
+        {
+          "index": 1,
+          "exit": 0,
+          "stop_reason": null,
+          "pre_gpu": [
+            45,
+            17,
+            19,
+            17
+          ],
+          "observed_rss_bytes": 1244921856,
+          "expected_positions": 81,
+          "input_tokens": 207,
+          "exact": true
+        },
+        {
+          "index": 2,
+          "exit": 0,
+          "stop_reason": null,
+          "pre_gpu": [
+            49,
+            15,
+            17,
+            16
+          ],
+          "observed_rss_bytes": 1245020160,
+          "expected_positions": 114,
+          "input_tokens": 240,
+          "exact": true
+        }
+      ],
+      "server_budget": {
+        "exit": -15,
+        "observed_rss_bytes": 5709512704,
+        "stop_reason": null
+      },
+      "model_followup_literal_honored": false
+    },
+    "prefetch_fix_resident": {
+      "status": "PASS",
+      "turns": 3,
+      "prefetch_enabled": true,
+      "end_positions": [
+        174,
+        325,
+        476
+      ],
+      "candidate_observations": [
+        48,
+        25,
+        25
+      ],
+      "references": [
+        {
+          "index": 0,
+          "exit": 0,
+          "stop_reason": null,
+          "pre_gpu": [
+            48,
+            20,
+            20,
+            14
+          ],
+          "observed_rss_bytes": 1220165632,
+          "expected_positions": 96,
+          "input_tokens": 476,
+          "exact": true
+        }
+      ],
+      "server_budget": {
+        "exit": -15,
+        "observed_rss_bytes": 7589429248,
+        "stop_reason": null
+      },
+      "model_followup_literal_honored": null
     }
   },
   "performance": "No new performance claim; mandatory gates decide eligibility",
   "production_modified": false,
-  "raw_tokens_exported": false
+  "raw_tokens_exported": false,
+  "prefetch_ownership": {
+    "before": {
+      "status": "AUTHENTICATED_MISMATCH",
+      "binary_sha256": "1181b66b73b325d82ce5a93419a5e8ce521d86ad54c9f910ff733b5e99d9ba9a",
+      "first_position": 129,
+      "state_max_abs": 18.87463927268982,
+      "state_byte_exact": false,
+      "all_state_finite": true,
+      "layer0_combine": {
+        "expert_order_exact": true,
+        "parts": [
+          {
+            "name": "mid",
+            "byte_exact": true,
+            "max_abs": 0,
+            "rms": 0.0,
+            "different_values": 0,
+            "floats": 2048
+          },
+          {
+            "name": "shared",
+            "byte_exact": true,
+            "max_abs": 0,
+            "rms": 0.0,
+            "different_values": 0,
+            "floats": 2048
+          },
+          {
+            "name": "expert0",
+            "byte_exact": true,
+            "max_abs": 0,
+            "rms": 0.0,
+            "different_values": 0,
+            "floats": 2048
+          },
+          {
+            "name": "expert1",
+            "byte_exact": true,
+            "max_abs": 0,
+            "rms": 0.0,
+            "different_values": 0,
+            "floats": 2048
+          },
+          {
+            "name": "expert2",
+            "byte_exact": false,
+            "max_abs": 0.3544964352622628,
+            "rms": 0.07838178749283534,
+            "different_values": 2048,
+            "floats": 2048
+          },
+          {
+            "name": "expert3",
+            "byte_exact": false,
+            "max_abs": 0.31752911303192377,
+            "rms": 0.08587478937482364,
+            "different_values": 2048,
+            "floats": 2048
+          },
+          {
+            "name": "expert4",
+            "byte_exact": false,
+            "max_abs": 0.31174628902226686,
+            "rms": 0.0855610828653141,
+            "different_values": 2048,
+            "floats": 2048
+          },
+          {
+            "name": "expert5",
+            "byte_exact": false,
+            "max_abs": 0.31497206818312407,
+            "rms": 0.08841460791317463,
+            "different_values": 2048,
+            "floats": 2048
+          },
+          {
+            "name": "expert6",
+            "byte_exact": false,
+            "max_abs": 0.36902662040665746,
+            "rms": 0.09706576091391092,
+            "different_values": 2048,
+            "floats": 2048
+          },
+          {
+            "name": "expert7",
+            "byte_exact": false,
+            "max_abs": 2.112206880003214,
+            "rms": 0.2435514008107923,
+            "different_values": 2048,
+            "floats": 2048
+          },
+          {
+            "name": "combined",
+            "byte_exact": false,
+            "max_abs": 0.00884255487471819,
+            "rms": 0.002455958882625475,
+            "different_values": 2048,
+            "floats": 2048
+          },
+          {
+            "name": "params_used",
+            "byte_exact": false,
+            "max_abs": 0.1853717714548111,
+            "rms": 0.10812786912497553,
+            "different_values": 6,
+            "floats": 9
+          }
+        ]
+      }
+    },
+    "after": {
+      "status": "AUTHENTICATED_EXACT_PASS",
+      "binary_sha256": "4b77108f5afd1b47e48346599e8690dac845e33e408f7e2fb622899ed2525225",
+      "first_position": 129,
+      "state_max_abs": 0,
+      "state_byte_exact": true,
+      "all_state_finite": true,
+      "layer0_combine": {
+        "expert_order_exact": true,
+        "parts": [
+          {
+            "name": "mid",
+            "byte_exact": true,
+            "max_abs": 0,
+            "rms": 0.0,
+            "different_values": 0,
+            "floats": 2048
+          },
+          {
+            "name": "shared",
+            "byte_exact": true,
+            "max_abs": 0,
+            "rms": 0.0,
+            "different_values": 0,
+            "floats": 2048
+          },
+          {
+            "name": "expert0",
+            "byte_exact": true,
+            "max_abs": 0,
+            "rms": 0.0,
+            "different_values": 0,
+            "floats": 2048
+          },
+          {
+            "name": "expert1",
+            "byte_exact": true,
+            "max_abs": 0,
+            "rms": 0.0,
+            "different_values": 0,
+            "floats": 2048
+          },
+          {
+            "name": "expert2",
+            "byte_exact": true,
+            "max_abs": 0,
+            "rms": 0.0,
+            "different_values": 0,
+            "floats": 2048
+          },
+          {
+            "name": "expert3",
+            "byte_exact": true,
+            "max_abs": 0,
+            "rms": 0.0,
+            "different_values": 0,
+            "floats": 2048
+          },
+          {
+            "name": "expert4",
+            "byte_exact": true,
+            "max_abs": 0,
+            "rms": 0.0,
+            "different_values": 0,
+            "floats": 2048
+          },
+          {
+            "name": "expert5",
+            "byte_exact": true,
+            "max_abs": 0,
+            "rms": 0.0,
+            "different_values": 0,
+            "floats": 2048
+          },
+          {
+            "name": "expert6",
+            "byte_exact": true,
+            "max_abs": 0,
+            "rms": 0.0,
+            "different_values": 0,
+            "floats": 2048
+          },
+          {
+            "name": "expert7",
+            "byte_exact": true,
+            "max_abs": 0,
+            "rms": 0.0,
+            "different_values": 0,
+            "floats": 2048
+          },
+          {
+            "name": "combined",
+            "byte_exact": true,
+            "max_abs": 0,
+            "rms": 0.0,
+            "different_values": 0,
+            "floats": 2048
+          },
+          {
+            "name": "params_used",
+            "byte_exact": true,
+            "max_abs": 0,
+            "rms": 0.0,
+            "different_values": 0,
+            "floats": 9
+          }
+        ]
+      }
+    }
+  }
 }

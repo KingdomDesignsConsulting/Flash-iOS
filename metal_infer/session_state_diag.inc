@@ -32,6 +32,32 @@ static NSArray *sd_base_tokens;
 static NSString *sd_identity;
 static BOOL sd_history_complete;
 static int sd_initial_pos,sd_polled_layers;
+static id<MTLBuffer> sd_combine_capture;
+static NSDictionary *sd_combine_capture_metadata;
+static BOOL sd_dump_identity_selected(void) {
+    const char *identity=getenv("FLASH_SESSION_STATE_DUMP_IDENTITY");
+    return !identity || (sd_identity && [sd_identity isEqualToString:@(identity)]);
+}
+// Diagnostic producer-ordered copy: no early fence or inference-state writes.
+static void sd_capture_combine(id<MTLCommandBuffer> cmd,int layer,int pos,const int *ids,int count) {
+    const char *enabled=getenv("FLASH_SESSION_COMBINE_CAPTURE");
+    const char *at=getenv("FLASH_SESSION_STATE_DUMP_POSITION");
+    const char *selected=getenv("FLASH_SESSION_COMBINE_LAYER");
+    if(!enabled || strcmp(enabled,"1") || !at || pos!=atoi(at)-1 ||
+       layer!=(selected?atoi(selected):0) || count!=8 || !sd_dump_identity_selected())return;
+    size_t bytes=HIDDEN_DIM*sizeof(float);
+    id<MTLBuffer> dst=[g_metal->device newBufferWithLength:11*bytes+10*sizeof(float) options:MTLResourceStorageModeShared];
+    id<MTLBlitCommandEncoder> encoder=dst?[cmd blitCommandEncoder]:nil;
+    if(!encoder){fprintf(stderr,"[session-state] combine capture unavailable\n");return;}
+    [encoder copyFromBuffer:g_metal->buf_h_mid sourceOffset:0 toBuffer:dst destinationOffset:0 size:bytes];
+    [encoder copyFromBuffer:g_metal->buf_shared_out sourceOffset:0 toBuffer:dst destinationOffset:bytes size:bytes];
+    for(int k=0;k<8;k++)[encoder copyFromBuffer:g_metal->buf_multi_expert_out[k] sourceOffset:0 toBuffer:dst destinationOffset:(2+k)*bytes size:bytes];
+    [encoder copyFromBuffer:g_metal->buf_moe_hidden sourceOffset:0 toBuffer:dst destinationOffset:10*bytes size:bytes];
+    [encoder copyFromBuffer:g_metal->buf_combine_params sourceOffset:0 toBuffer:dst destinationOffset:11*bytes size:10*sizeof(float)];
+    [encoder endEncoding];sd_combine_capture=dst;
+    NSMutableArray *experts=[NSMutableArray array];for(int k=0;k<8;k++)[experts addObject:@(ids[k])];
+    sd_combine_capture_metadata=@{@"trace_identity":sd_identity,@"layer":@(layer),@"input_position":@(pos),@"expert_ids":experts,@"hidden_dim":@(HIDDEN_DIM),@"layout":@"h_mid, shared_out, expert_out[8], combined_out, combine_params[10]; native float32"};
+}
 static void sd_progress(const char *phase,int position);
 static BOOL sd_enabled(void) {
     const char *p=getenv("FLASH_SESSION_TOKEN_TRACE_DIR");return p && *p;
@@ -55,7 +81,8 @@ static NSDictionary *sd_component(const char *kind,int layer,const void *data,si
     const char *filter=getenv("FLASH_SESSION_STATE_DUMP_COMPONENT");
     const char *at=getenv("FLASH_SESSION_STATE_DUMP_POSITION");
     char component[80];snprintf(component,sizeof(component),"%s:%d",kind,layer);
-    if(filter && at && !strcmp(filter,component) && atoi(at)==position && sd_identity) {
+    if(filter && at && atoi(at)==position && sd_identity && sd_dump_identity_selected() &&
+       (!strcmp(filter,component) || (!strcmp(filter,"active") && active && position<=512))) {
         NSString *name=[NSString stringWithFormat:@"%@-p%d-%s-%d.f32",sd_identity,position,kind,layer];
         NSString *path=[@(getenv("FLASH_SESSION_TOKEN_TRACE_DIR")) stringByAppendingPathComponent:name];
         [[NSData dataWithBytes:data length:bytes] writeToFile:path atomically:YES];
@@ -65,6 +92,14 @@ static NSDictionary *sd_component(const char *kind,int layer,const void *data,si
 }
 static NSDictionary *sd_fingerprint(KVCache **kv,void **states,int pos,const char *phase) {
     if(!state_snapshot_restore_fence())return @{@"position":@(pos),@"error":@"GPU fence failed"};
+    if(sd_combine_capture && [sd_combine_capture_metadata[@"input_position"] intValue]+1==pos &&
+       [sd_combine_capture_metadata[@"trace_identity"] isEqual:sd_identity]) {
+        NSString *name=[NSString stringWithFormat:@"%@-combine-p%d-l%@",sd_identity,pos,sd_combine_capture_metadata[@"layer"]];
+        NSString *path=[@(getenv("FLASH_SESSION_TOKEN_TRACE_DIR")) stringByAppendingPathComponent:[name stringByAppendingString:@".f32"]];
+        [[NSData dataWithBytes:sd_combine_capture.contents length:sd_combine_capture.length] writeToFile:path atomically:YES];
+        sd_write([name stringByAppendingString:@".json"],sd_combine_capture_metadata);
+        sd_combine_capture=nil;sd_combine_capture_metadata=nil;
+    }
     NSMutableArray *parts=[NSMutableArray array];BOOL lengths=YES;
     const size_t kv_unit=NUM_KV_HEADS*HEAD_DIM*sizeof(float);
     const size_t ssm=LINEAR_NUM_V_HEADS*LINEAR_VALUE_DIM*LINEAR_KEY_DIM*sizeof(float);
@@ -102,6 +137,7 @@ static NSDictionary *sd_fingerprint(KVCache **kv,void **states,int pos,const cha
 }
 static void sd_begin(NSString *identity,BOOL continuation,int pos,PromptTokens *prefix,KVCache **kv,void **states) {
     if(!sd_enabled())return;
+    if(getenv("FLASH_SESSION_COMBINE_CAPTURE") && !g_fe_combine_gpu)g_fe_combine_gpu=sd_capture_combine;
     sd_identity=identity;sd_steps=[NSMutableArray array];sd_initial_pos=pos;sd_polled_layers=0;
     if(!continuation) {
         sd_history=[NSMutableArray array];sd_history_complete=YES;

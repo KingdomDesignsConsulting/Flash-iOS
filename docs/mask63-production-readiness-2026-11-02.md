@@ -1,6 +1,6 @@
 # Mask-63 production-readiness qualification — 2026-11-02
 
-WORKING REPORT — long-context and final safety checks are still running. This file is not a promotion decision. Production defaults, branch, binary, model, user profiles and port 11241 remain unchanged. PR #2 stays draft.
+WORKING REPORT — post-repair serving and performance qualification remains incomplete. This file is not a promotion decision. Production defaults, branch, binary, model, user profiles and port 11241 remain unchanged. PR #2 stays draft.
 
 ## Baseline and scope
 
@@ -9,6 +9,12 @@ Accepted engineering baseline: `eda0e73fd2eca1c8d48caebf9d4d124232eb0d0f`; adopt
 Inference arithmetic is unchanged from the accepted mask-63 implementation. Changes add diagnostic-only native rendering, snapshot/mirror extent checks, allocation inventories, controlled expert-worker failure and candidate routing observations, plus bounded test drivers. No template, routing, tie policy, cache format, execution version or full-binary identity changes. Full executable hashing remains disabled.
 
 The ordinary-N128 failures in earlier reports remain valid historical controls. Exact persistent fingerprints do not imply universally bitwise-identical hidden vectors or logits. Candidate state evolves independently; it is never periodically rebased from scalar.
+
+## New multi-request blocker and short repair
+
+The live SDK smoke exposed a second-stateless-prefill failure at 129 after exact state through 128. Authenticated captures show six omitted experts and maximum active-state error 18.87463927268982. Decode-prefetch phase leaked into N128 capture, leaving an unrelated short async read whose validity flags could suppress six routed experts. Disabling prefetch isolates the cause. The narrow ownership repair passes exact all-active/combine captures and three-turn stateless/resident tests through 476. [Detailed evidence and focused regression](prefetch-n128-ownership-2026-11-02.md).
+
+This introduces a selective `nrow-prefetch-ownership-v2` identity only for eligible GPU N128; old prefetch on/off identities aliased, so both affected variants invalidate once. Scalar/CPU identities, global execution version 3, checkpoint format and disabled executable hashing remain unchanged. Full post-repair lifecycle/long-serving/performance qualification is still pending; do not promote based on the earlier single-history passes.
 
 ## Current release-gate matrix
 
@@ -56,7 +62,7 @@ The original partial-tool follow-up used an invalid mixed tool/user resident del
 
 Live diagnostic partial snapshot-allocation failure and a 4096-byte checkpoint-write EIO both passed recovery/restart checks, finishing 11:49:57 PST. These simulate controlled failures, not real system OOM or disk exhaustion. Exact capacity-plus-one admission (`65537` required tokens) rejected fresh and resident requests before mutation, preserving all existing KV/state and allowing an exact valid follow-up.
 
-Native compressed state save and reload across different diagnostic executables passed **11:50:00–11:51:59 PST** with the same selective compatibility identity; wrong numerical mode was rejected without changing the checkpoint. The long HTTP resident test started 11:52:01 PST and remains pending. The actual LM Studio SDK/adapter harness is prepared; installed GUI remains untested.
+Native compressed state save and reload across different diagnostic executables passed **11:50:00–11:51:59 PST** with the same selective compatibility identity; wrong numerical mode was rejected without changing the checkpoint. The long HTTP server ran 11:52:01–12:12:52 PST. All three turns completed, ending at position 16470; both follow-ups retained the identifier, with valid recorded KV/finite-state checks. Independent scalar replay ran 12:12:54–12:49:10 PST and PASSed all 150 observed fingerprints through 16470, before the subsequent ownership repair. The actual LM Studio SDK/adapter harness is prepared; installed GUI remains untested.
 
 The optional global host-memory guard stops only its owned process group after three low readings. Missing memory or RSS monitors fail closed. A denied `ps` call originally escaped as an exception in a model-free test; the runner now handles it as `RSS_MONITOR_ERROR`, terminates the child and returns 125. Six focused watchdog tests pass, including this regression. No inference code was changed by this repair.
 
