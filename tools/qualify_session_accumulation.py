@@ -6,13 +6,26 @@ import argparse,csv,hashlib,json,os,pathlib,resource,signal,struct,subprocess,ti
 from run_session_state_mission import MODEL,gpu,stamp,sha
 P=pathlib.Path
 FIXTURE='/Users/Shared/Main Hard Drive/AI Storage/Apps/Flash-iOS/Testing/Temporary Testing Files/Resources/prefill-4k-4096-from-1k.bin'
-def wait_bounded_process(proc,timeout,max_rss_bytes):
+def host_free_percent():
+ import re
+ try:r=subprocess.run(['memory_pressure','-Q'],capture_output=True,text=True,timeout=5)
+ except (OSError,subprocess.TimeoutExpired):return None
+ m=re.search(r'free percentage:\s*(\d+)%',r.stdout)
+ return int(m[1]) if r.returncode==0 and m else None
+
+def wait_bounded_process(proc,timeout,max_rss_bytes,host_free_floor=0,pressure_interval=10):
  """Watch only the owned native process; macOS ps reports RSS in KiB."""
- deadline=time.monotonic()+timeout;peak=0;reason=None
+ deadline=time.monotonic()+timeout;peak=0;reason=None;next_pressure=0;low_pressure=0
  while proc.poll() is None:
   if time.monotonic()>=deadline:reason='TIMEOUT';break
+  if host_free_floor and time.monotonic()>=next_pressure:
+   free=host_free_percent();next_pressure=time.monotonic()+pressure_interval
+   if free is None:reason='HOST_MEMORY_MONITOR_ERROR';break
+   low_pressure=low_pressure+1 if free<host_free_floor else 0
+   if low_pressure>=3:reason='HOST_MEMORY_PRESSURE';break
   if max_rss_bytes:
-   sample=subprocess.run(['ps','-o','rss=','-p',str(proc.pid)],capture_output=True,text=True)
+   try:sample=subprocess.run(['ps','-o','rss=','-p',str(proc.pid)],capture_output=True,text=True,timeout=5)
+   except (OSError,subprocess.TimeoutExpired):reason='RSS_MONITOR_ERROR';break
    if sample.returncode and proc.poll() is None:reason='RSS_MONITOR_ERROR';break
    if sample.stdout.strip():
     rss=int(sample.stdout.strip())*1024;peak=max(peak,rss)
@@ -27,8 +40,8 @@ def wait_bounded_process(proc,timeout,max_rss_bytes):
  return proc.returncode,peak,None
 def main():
  p=argparse.ArgumentParser(description=__doc__);p.add_argument('--out',type=P,required=True);p.add_argument('--fixture',type=P,default=P(FIXTURE));p.add_argument('--count',type=int,default=2057);p.add_argument('--full-final-slab',action='store_true');p.add_argument('--scalar-slab',type=int,action='append',default=[]);p.add_argument('--timeout',type=int,default=600);p.add_argument('--gpu-wait',type=int,default=10);p.add_argument('--binary',type=P);p.add_argument('--source-ref');p.add_argument('--operations',action='store_true');p.add_argument('--numerics',type=int,default=0);p.add_argument('--route-probe-layers',type=int,default=12);p.add_argument('--route-probe-start',type=int)
- p.add_argument('--max-rss-gib',type=float,default=16,help='Stop owned native process above this RSS; zero disables the watchdog');a=p.parse_args()
- assert a.max_rss_gib>=0
+ p.add_argument('--min-host-free-percent',type=int,default=15);p.add_argument('--max-rss-gib',type=float,default=16,help='Stop owned native process above this RSS; zero disables the watchdog');a=p.parse_args()
+ assert a.max_rss_gib>=0 and 0<=a.min_host_free_percent<=50
  a.out.mkdir(parents=True,exist_ok=False);raw=a.fixture.read_bytes();assert len(raw)%4==0
  values=list(struct.unpack('<'+'I'*(len(raw)//4),raw));assert values[0]==len(values)-1
  ids=values[1:];assert 0<a.count<=len(ids) and a.count<=32768
@@ -62,9 +75,9 @@ def main():
  print('ACCUMULATION_START',stamp(),'tokens',a.count,flush=True)
  with (a.out/'engine.log').open('w') as f:
   proc=subprocess.Popen(command,cwd=binary.parent,env=env,stdin=subprocess.DEVNULL,stdout=f,stderr=subprocess.STDOUT,start_new_session=True)
-  code,observed_rss,stop_reason=wait_bounded_process(proc,a.timeout,int(a.max_rss_gib*1024**3))
+  code,observed_rss,stop_reason=wait_bounded_process(proc,a.timeout,int(a.max_rss_gib*1024**3),host_free_floor=a.min_host_free_percent)
  print('ACCUMULATION_STOP',stamp(),'exit',code,flush=True)
- report.update(ended=stamp(),exit=code,peak_child_rss_bytes=resource.getrusage(resource.RUSAGE_CHILDREN).ru_maxrss,observed_native_rss_bytes=observed_rss,rss_limit_gib=a.max_rss_gib,stop_reason=stop_reason,status='PASS' if code==0 else 'FAIL' if code==3 else 'EXECUTION_ERROR')
+ report.update(ended=stamp(),exit=code,peak_child_rss_bytes=resource.getrusage(resource.RUSAGE_CHILDREN).ru_maxrss,observed_native_rss_bytes=observed_rss,rss_limit_gib=a.max_rss_gib,host_free_floor_percent=a.min_host_free_percent,stop_reason=stop_reason,status='PASS' if code==0 else 'FAIL' if code==3 else 'EXECUTION_ERROR')
  native=a.out/'nrow-oracle.json'
  if native.exists():
   r=json.loads(native.read_text());rows=r['rows'];report.update(completed_position=r['completed_position'],batches=r['batches'],bit_exact=bool(r['bit_exact']))

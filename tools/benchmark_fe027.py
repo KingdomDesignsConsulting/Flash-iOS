@@ -35,7 +35,7 @@ def main():
    log=a.out/f'{trial}-{label}.log';start=stamp();usage_before=resource.getrusage(resource.RUSAGE_CHILDREN);wall_start=time.perf_counter();print('BENCH_START',start,label,trial,flush=True)
    with log.open('w') as f:
     proc=subprocess.Popen(cmd,cwd=binary.parent,env=env,stdin=subprocess.DEVNULL,stdout=f,stderr=subprocess.STDOUT,start_new_session=True)
-    code,observed_rss,stop_reason=wait_bounded_process(proc,a.timeout,int(a.max_rss_gib*1024**3))
+    code,observed_rss,stop_reason=wait_bounded_process(proc,a.timeout,int(a.max_rss_gib*1024**3),host_free_floor=15)
    end=stamp();elapsed_wall_ms=(time.perf_counter()-wall_start)*1000;print('BENCH_STOP',end,label,trial,'exit',code,flush=True);assert code==0
    text=log.read_text();m=re.search(r'\[prefill\] (\d+)/(\d+) tokens: ([\d.]+) ms',text);assert m,'Missing prefill timing'
    row=dict(trial=trial,mode=label,started=start,ended=end,command=cmd,binary_sha256=sha(binary),pre_gpu=readings,prefill_tokens=int(m[1]),prompt_tokens=int(m[2]),prefill_ms=float(m[3]),reported_generated_ids=[int(x) for x in re.findall(r'\[gen \d+/\d+\] token_id=(\d+)',text)])

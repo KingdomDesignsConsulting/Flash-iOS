@@ -29,7 +29,7 @@ def main():
   try:
    with server(a.out/'server',args=['--prefill-nrow'],binary=b,env_extra={'FLASH_HTTP_QUALIFICATION':'1','FLASH_TRACE_GPU_KV_BOUNDARY':'1'}) as s:
     def monitor_server():
-     code,peak,reason=wait_bounded_process(s['process'],7200,16*1024**3)
+     code,peak,reason=wait_bounded_process(s['process'],7200,16*1024**3,host_free_floor=15)
      item=dict(exit=code,observed_rss_bytes=peak,stop_reason=reason);budget.append(item);write(a.out/'server-budget.json',item)
     monitor_thread=threading.Thread(target=monitor_server,daemon=True);monitor_thread.start()
     manifest=waitfile(s['trace']/'server.json');assert manifest['limit']==32768 and manifest['gpu_kv_capacity']==32768
@@ -44,9 +44,10 @@ def main():
      assert st['steps'][-1]['position']==st['end_position'] and generated['end_pos']==st['end_position']
      assert all(x['kv_lengths_match'] and not any(c['nonfinite'] for c in x['components']) for x in st['steps'])
      assert bool(reply['flash_timings']['session_reused'])==(n>0)
-     if n:assert 'STATE-73941' in reply['choices'][0]['message'].get('content','')
      records.append(dict(state=st,prompt=prompt,generated=generated,request_wall_ms=wall));responses.append(reply)
      write(a.out/'http-records.json',dict(binary_sha256=sha(b),traces=records,responses=responses));print('LONG_HTTP_TURN',stamp(),n,'position',st['end_position'],'observations',len(st['steps']),flush=True)
+     if n==0:assert any('batch_rows' in point for point in st['steps']),'No actual N128 slab observed'
+     if n:assert 'STATE-73941' in reply['choices'][0]['message'].get('content',''),('identifier recall',n,reply['choices'][0]['message'])
   finally:
    if monitor_thread:monitor_thread.join(timeout=20)
   assert budget and budget[0]['stop_reason'] is None,budget
@@ -60,7 +61,7 @@ def main():
  env=dict(os.environ,FLASH_FE027_NUMERICS='63',FLASH_SESSION_TOKEN_TRACE_DIR=str(control),FLASH_SESSION_REPLAY_INPUT=str(f));cmd=[str(b),'--model',MODEL,'--tiered','--no-prefill-nrow'];print('LONG_HTTP_CONTROL_START',stamp(),'tokens',len(ids),'COMMAND',json.dumps(cmd),flush=True)
  with (control/'engine.log').open('w') as log:
   proc=subprocess.Popen(cmd,cwd=b.parent,env=env,stdin=subprocess.DEVNULL,stdout=log,stderr=subprocess.STDOUT,start_new_session=True)
-  code,peak,reason=wait_bounded_process(proc,7200,16*1024**3)
+  code,peak,reason=wait_bounded_process(proc,7200,16*1024**3,host_free_floor=15)
  print('LONG_HTTP_CONTROL_STOP',stamp(),'exit',code,flush=True)
  result=dict(status='PASS' if code==0 else 'FAIL',reference_exit=code,reference_stop_reason=reason,observed_reference_rss_bytes=peak,end_position=len(ids),candidate_observation_points=len(expected),resident_turns=len(records),binary_sha256=sha(b),comparison='Exact synchronized active KV/GDN/convolution fingerprints at actual completed slabs, selected scalar prefill points, final prefill, every decode/EOS and request boundary; no intermediate batch-state claims')
  if (control/'continuous-replay-state.json').exists():

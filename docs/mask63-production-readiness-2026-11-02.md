@@ -15,10 +15,10 @@ The ordinary-N128 failures in earlier reports remain valid historical controls. 
 | Gate | Current result | Scope and outstanding evidence |
 | --- | --- | --- |
 | 1. Independent histories | PASS | Six complete native-rendered histories, 455 observed completed endpoints/tail positions; exact fingerprints, finite values, greedy identity, all ten KV/mirror checks |
-| 2. Long context | 16K PASS; 32K IN PROGRESS | All 128 slabs at 16K have exact fingerprints, zero state error, hidden max 9.53674316e-7 and logits max 3.81469727e-6. Independent 32K started 04:07:33 PST; conservative measured preflight, bounds checks, GPU routes, timeout/RSS watchdog. Runtime-capacity rejection and recovery PASS |
+| 2. Long context | 16K PASS; 32K PASS | All 128 slabs at 16K have exact fingerprints, zero state error, hidden max 9.53674316e-7 and logits max 3.81469727e-6. Independent 32K completed 06:47:26 PST: 256 exact endpoints, zero state error, hidden max 4.76837158e-7, logits max 5.72204590e-6; all ten layers on GPU through 32768. Runtime-capacity rejection and recovery PASS |
 | 3. Lifecycle | PASS for short executed cases | Three resident turns; profile capture/restart; prefix/version/model-signature/mode mismatch; completed-prefix publication inside a slab; reset during N128 prefill/decode. Long serving remains pending |
-| 4. Controlled failures | PARTIAL | Before output, after six visible deltas, and expert-worker EIO PASS with explicit SSE errors, zero reusable state, stale 409 and exact scalar recovery. Tool-envelope interruption and live checkpoint/allocation faults pending |
-| 5. 24GB memory | PARTIAL | Measured categories and conservative preflight available; watchdog/resource tests PASS. Long peaks, allocation-failure cleanup and final production-capacity analysis pending |
+| 4. Controlled failures | PARTIAL | Before output, after six visible deltas, and expert-worker EIO PASS with explicit SSE errors, zero reusable state, stale 409 and exact scalar recovery. Actual incomplete tool-envelope interruption, partial snapshot-allocation failure and checkpoint-write EIO now PASS; failed sessions reject and recovery remains exact |
+| 5. 24GB memory | PARTIAL | Measured categories and conservative preflight available; watchdog/resource tests PASS. 32K observed native RSS 10,177,478,656 bytes; charged-footprint peak 9,376,072,264 bytes. Partial allocation cleanup PASS; final serving-capacity analysis pending |
 | 6. Modes | PASS within short scope | Default GPU; CPU-linear + no linear chain; both chains off; legacy KV; disabled arithmetic. Two illegal combinations rejected before model loading. Not cross-mode or long other-mode qualification |
 | 7. Protocol | PASS within executed scope | Five buffered/SSE pairs, thinking off/on, structured tools, actual content+tool, exact native IDs/state, logical usage and usage-before-DONE. LM Studio build + 19 mock tests PASS; installed GUI/live adapter not claimed |
 | 8. Performance | NOT RUN in this assignment | Mandatory gates must finish first. Previous accepted 1K exploratory results remain historical evidence, not a new long-context measurement |
@@ -45,6 +45,20 @@ The 16,384-token legal history passed at 04:05:55 PST, exit 0, after starting at
 Observed native RSS peak: 9,559,293,952 bytes; child high-water RSS: 9,612,099,584 bytes. Mach charged-footprint peak: 5,783,074,832 bytes; maximum sampled resident size: 9,561,391,104 bytes. Metal allocation remained 5,357,207,552 bytes. Two oracle snapshot banks reached 1,734,410,240 malloc bytes. The 16GiB RSS watchdog did not trip. A separate 04:02:08 sample showed 47% host memory free. These overlapping metrics are not additive physical allocations.
 
 The outer driver was deliberately paused while the native 16K process and its watchdog continued. After PASS it was retired with SIGTERM/SIGCONT (exit 143); this is not a native failure. The 32K run validates the saved 16K evidence and identical binary before starting independently from zero, with a 10,800-second timeout and unchanged 16GiB RSS limit. A separate ownership-checked host guard stops only this native process group after three readings below 15% host memory availability.
+
+## Completed 32K and final safety follow-up
+
+The independent 32,768-token history completed at **06:47:26 PST**, exit 0, after starting at 04:07:33. All 256 observed slab endpoints have exact persistent fingerprints, zero state error, identical greedy tokens, finite state and valid ten-layer KV/mirrors. Maximum hidden/logit errors are `4.76837158203125e-7` / `5.7220458984375e-6`. GPU routing includes all ten layers through position 32768.
+
+Observed native RSS was 10,177,478,656 bytes; child high-water RSS 10,238,558,208; charged-footprint peak 9,376,072,264; sampled resident maximum 10,136,109,056; Metal allocation 5,357,207,552; two diagnostic banks 3,076,587,520 bytes. These overlapping measurements must not be summed. Host availability never fell below 29% across 936 external guard samples. No safety guard fired.
+
+The original partial-tool follow-up used an invalid mixed tool/user resident delta; preserve that failed harness attempt. The corrected tool-only retry passed: interrupted tool envelope produced an explicit error rather than an executable partial call, invalidated the session, rejected its stale ID, and recovered with exact fresh and tool-result continuation state. Servers ran 11:42:15–11:43:21 and 11:43:24–11:44:39; independent scalar control finished 11:45:49 PST.
+
+Live diagnostic partial snapshot-allocation failure and a 4096-byte checkpoint-write EIO both passed recovery/restart checks, finishing 11:49:57 PST. These simulate controlled failures, not real system OOM or disk exhaustion. Exact capacity-plus-one admission (`65537` required tokens) rejected fresh and resident requests before mutation, preserving all existing KV/state and allowing an exact valid follow-up.
+
+Native compressed state save and reload across different diagnostic executables passed **11:50:00–11:51:59 PST** with the same selective compatibility identity; wrong numerical mode was rejected without changing the checkpoint. The long HTTP resident test started 11:52:01 PST and remains pending. The actual LM Studio SDK/adapter harness is prepared; installed GUI remains untested.
+
+The optional global host-memory guard stops only its owned process group after three low readings. Missing memory or RSS monitors fail closed. A denied `ps` call originally escaped as an exception in a model-free test; the runner now handles it as `RSS_MONITOR_ERROR`, terminates the child and returns 125. Six focused watchdog tests pass, including this regression. No inference code was changed by this repair.
 
 ## Failure and protocol observations
 
@@ -89,7 +103,7 @@ Handoff findings are treated as test prompts, not assumed Flash defects: Ollama 
 
 Private artifacts: `/Users/knagel/My Drive/Flash-iOS/Testing/HTTP-Prefix-Reuse/2026-11-02-mask63-release/`. Root project logs: `benchmark-logs/mask63-release-*.log`. Raw tokens, tensor fingerprints, checkpoints and SSE payloads remain private.
 
-Build provenance has four phases: unchanged corpus binary A; memory/unarmed-worker diagnostic B1; corrected armed HTTP diagnostic B2; candidate boundary logging B3. The phase-A oracle source is reconstructed and hash-checked against its first launch; later source-at-launch hashes may reflect diagnostic edits made while that unchanged binary ran. Exact phase-B1 source hashes were independently reconstructed and checked. Private source manifests retain 45 files per B phase. Final committed source will be distinguished from these tested build variants.
+Build provenance includes phases: unchanged corpus binary A; memory/unarmed-worker diagnostic B1; corrected armed HTTP diagnostic B2; candidate boundary logging B3. The phase-A oracle source is reconstructed and hash-checked against its first launch; later source-at-launch hashes may reflect diagnostic edits made while that unchanged binary ran. Exact phase-B1 source hashes were independently reconstructed and checked. Private source manifests retain 45 files per B phase. B4 adds partial-allocation injection and corrected alias accounting; B5 adds explicitly bounded 32768-token sparse HTTP tracing. The B3 binary is unchanged between the 16K and 32K runs. Final committed source will be distinguished from these tested build variants.
 
 ```bash
 cd '/Users/knagel/.codex/worktrees/http-session-validation/Flash-iOS'
@@ -98,7 +112,7 @@ make -C metal_infer release-qualification release-legacy-qualification
 python3 tools/build_release_corpus.py --binary "$PWD/metal_infer/infer-release-qualification" --out "$PRIVATE_OUT/corpus"
 python3 tools/qualify_release_histories.py --binary "$PWD/metal_infer/infer-release-qualification" --corpus "$PRIVATE_OUT/corpus/corpus.json" --out "$PRIVATE_OUT/independent"
 python3 tools/qualify_session_accumulation.py --binary "$PWD/metal_infer/infer-release-qualification" --fixture "$PRIVATE_OUT/corpus/technical.bin" --count 257 --numerics 63 --gpu-wait 60 --timeout 240 --max-rss-gib 16 --out "$PRIVATE_OUT/preflight257"
-python3 tools/qualify_release_long.py --binary "$PWD/metal_infer/infer-release-qualification" --corpus "$PRIVATE_OUT/corpus/corpus.json" --preflight "$PRIVATE_OUT/preflight257/memory-observations.json" --out "$PRIVATE_OUT/long"
+python3 tools/qualify_release_long.py --binary "$PWD/metal_infer/infer-release-qualification" --corpus "$PRIVATE_OUT/corpus/corpus.json" --preflight "$PRIVATE_OUT/preflight257/memory-observations.json" --timeout 10800 --out "$PRIVATE_OUT/long"
 ```
 
 The opt-in extended HTTP diagnostic raises its history bound to 32768 and records actual slab endpoints, selected scalar-prefill positions, final prefill, every decode/EOS and request boundaries. Sparse scalar replay requires a final expected digest and checks exactly the observed positions. Default diagnostics retain 512 tokens/every scalar step. Native model-free checks of these guards pass; the live long HTTP experiment remains pending.

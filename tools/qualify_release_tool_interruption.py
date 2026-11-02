@@ -24,8 +24,8 @@ def main():
   stale,error=call(body([FOLLOW],sid));assert stale==409
   fresh=request('tool-recovery-'+uuid.uuid4().hex);code,recovered=call(fresh);assert code==200;equal(baseline,state(s,fresh))
   tool=recovered['choices'][0]['message']['tool_calls'][0]
-  follow=body([{'role':'tool','tool_call_id':tool['id'],'content':'synthetic success; no external action executed'},{'role':'user','content':'Reply exactly RECEIVED.'}],fresh['session_id']);follow.update(tools=tools,max_tokens=16)
-  code,answer=call(follow);assert code==200 and answer['flash_timings']['session_reused'];final=state(s,follow);assert final['accepted'] and final['history_complete']
+  follow=body([{'role':'tool','tool_call_id':tool['id'],'content':'synthetic success; no external action executed'}],fresh['session_id']);follow.update(tools=tools,max_tokens=16)
+  code,answer=call(follow);write(a.out/'followup-response.json',dict(http_status=code,response=answer));assert code==200 and answer['flash_timings']['session_reused'],(code,answer);final=state(s,follow);assert final['accepted'] and final['history_complete']
  control=a.out/'control';control.mkdir();f=a.out/'replay.json';write(f,dict(token_ids=final['effective_token_ids'],expected_digests={str(x['position']):x['digest'] for x in final['steps']}));gate();env=dict(os.environ,FLASH_SESSION_TOKEN_TRACE_DIR=str(control),FLASH_SESSION_REPLAY_INPUT=str(f));print('TOOL_CONTROL_START',stamp(),flush=True)
  with (control/'engine.log').open('w') as log:r=subprocess.run([str(BINARY),'--model',MODEL,'--tiered','--no-prefill-nrow'],cwd=BINARY.parent,env=env,stdin=subprocess.DEVNULL,stdout=log,stderr=subprocess.STDOUT,timeout=240)
  print('TOOL_CONTROL_STOP',stamp(),'exit',r.returncode,flush=True);assert r.returncode==0

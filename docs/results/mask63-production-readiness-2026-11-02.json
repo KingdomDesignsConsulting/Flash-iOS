@@ -342,7 +342,85 @@
       }
     },
     "32768": {
-      "status": "RUNNING"
+      "status": "PASS",
+      "exit": 0,
+      "input_tokens": 32768,
+      "completed_position": 32768,
+      "batches": 256,
+      "binary_sha256": "18ca5bf2c1a19590c8ca95a23e00adf875d9831378527896ed14328bc050274e",
+      "fixture_sha256": "59471a6b8a9215ebc7c0358c36b6d841b8c8efc98aee2d47c0f8e2cd91717f89",
+      "source_head": "64a5d51bb76c928e8d6ff0ee8535cee64286e597",
+      "source_sha256": {
+        "metal_infer/infer.m": "33c0e09a79c6fbdba9843c27919ce28cf7fd9762c6e138415c22814768b36470",
+        "metal_infer/session_state_diag.inc": "fb60d2fee59a2589b0cfc54638237d76db4c6acdcf88221be26d82c1faf37a7f",
+        "metal_infer/session_nrow_oracle.inc": "e63803bf1c5e587914a536f000cd3ebcc21b68fbecb2010b429e2364bc0c09fe",
+        "metal_infer/warm_state_cache.inc": "bab801fcb0b3e71a29cec589b3dbd8e06454c1c8dbe55bc3e279ea7b06e1c7fe",
+        "metal_infer/prefill_nrow_grouped_async.inc": "983f87a3193ff7e92ddaf04b93f1fffe0e8895630af985ccfed69377d89be8a8",
+        "metal_infer/Makefile": "ed9a4ad54f3b6d76aa5e22f868dd8251d586965c625d78b0449ebe10f731fb08",
+        "metal_infer/fe027_alignment.inc": "16e4a39e194cefe59453382ad6faf0cf3cd7f71bde60e4535be30304ea989bcd",
+        "metal_infer/fe027_q4.inc": "6149eb0d5e4e2fa838614e88ed06c376956ba48906fdb72f92fcfceda30f7ad3",
+        "metal_infer/fe027_attention_reference.inc": "1d62d52257cfee8e424f4450916f090b8c1b183c947c0748c53bdcb59c97ca59",
+        "metal_infer/fe027_full_attention_diag.inc": "6d5b2b615573598f7355f07d1bd1f193413b82205da55a925b8aa27a88772d0a",
+        "metal_infer/fe027_combine_reference.inc": "e245865c9d82043866243e5bb212d565592806948649063884118ea1062e5cdb",
+        "metal_infer/fe027_combine_diag.inc": "918b20d2527de6fbe6f28c3f0655d0866f770a9d8466f8416e48b38bac688fcc",
+        "metal_infer/fe027_combine_trace.metal": "d1db56472e0a6b5ba17384e7d4a2f57da2bfc7838ffe7fb8e6b660279c6cde26"
+      },
+      "peak_child_rss_bytes": 10238558208,
+      "observed_native_rss_bytes": 10177478656,
+      "rss_limit_gib": 16.0,
+      "stop_reason": null,
+      "pre_gpu": [
+        0,
+        0,
+        0
+      ],
+      "observed_endpoints": 256,
+      "max_errors": {
+        "state": 0.0,
+        "hidden": 4.76837158203125e-07,
+        "logits": 5.7220458984375e-06
+      },
+      "exact_recorded_persistent_fingerprints": true,
+      "all_observed_greedy_finite_kv_checks": true,
+      "memory": {
+        "peak_observed": {
+          "physical_footprint_bytes": 9318974000,
+          "physical_footprint_peak_bytes": 9376072264,
+          "resident_bytes": 10136109056,
+          "metal_current_allocated_bytes": 5357207552,
+          "two_oracle_snapshots_malloc_bytes": 3076587520
+        },
+        "final": {
+          "two_oracle_snapshots_malloc_bytes": 3076587520,
+          "physical_footprint_peak_bytes": 9376072264,
+          "position": 32768,
+          "task_info_status": 0,
+          "physical_footprint_bytes": 8729968888,
+          "metal_current_allocated_bytes": 5357207552,
+          "resident_bytes": 7047397376,
+          "metal_inventory_reserved_bytes": 5356534836,
+          "metal_categories_reserved_bytes": {
+            "gdn_state": 125829120,
+            "expert_cache": 905969664,
+            "attention_kv": 1342177280,
+            "n128_workspace": 511115776,
+            "expert_staging": 35323904,
+            "convolution_state": 4423680,
+            "scalar_workspace": 35699252,
+            "immutable_weights": 2395996160
+          },
+          "cpu_kv_reserved_bytes": 2684354560,
+          "future_speculative_state_bytes": 0,
+          "active_kv_bytes": 1342177280,
+          "interpretation": "Do not sum footprint, RSS, Metal allocation, CPU aliases or reserved lengths. Host runtime/allocator overhead and unmapped/paged expert backing are not fully attributed. This is measurement, not a production admission guarantee.",
+          "metal_recommended_working_set_bytes": 19069665280,
+          "cpu_gdn_malloc_bytes": 62914560,
+          "cpu_convolution_malloc_bytes": 2949120,
+          "cpu_kv_shared_view_span_bytes": 1342177280,
+          "cpu_kv_base_alias_reservation_bytes": 2684354560,
+          "alias_counter_note": "Schema 1 counted the CPU reservation after base-address alias detection. Actual shared view span is bounded by GPU view lengths; raw source data remains private and unchanged."
+        }
+      }
     }
   },
   "short": {
@@ -870,12 +948,53 @@
       "padding_words": 0
     },
     "tool_interruption": {
-      "status": "NOT_RUN"
+      "status": "PASS",
+      "injection_position": 411,
+      "inside_actual_incomplete_tool_envelope": true,
+      "partial_tool_delta_emitted": false,
+      "scalar_recovery_and_followup_exact": true
     },
     "cache_allocation_faults": {
-      "status": "NOT_RUN"
+      "status": "PASS",
+      "cases": [
+        {
+          "case": "snapshot_allocation",
+          "status": "PASS",
+          "request_and_followup_state_exact": true,
+          "fresh_state_exact": true,
+          "restart_state_exact": true,
+          "temp_files_remaining": 0,
+          "real_resource_exhaustion": false
+        },
+        {
+          "case": "checkpoint_write",
+          "status": "PASS",
+          "request_and_followup_state_exact": true,
+          "fresh_state_exact": true,
+          "restart_state_exact": true,
+          "temp_files_remaining": 0,
+          "real_resource_exhaustion": false
+        }
+      ]
     },
     "long_http": {
+      "status": "RUNNING"
+    },
+    "disk_restore": {
+      "status": "EXACT_RESTART_PASS",
+      "checkpoint_bytes": 67370561,
+      "prefix": 141,
+      "end_position": 470,
+      "positions_compared": 330,
+      "save_ms": 525.052001953125,
+      "restore_ms": 368.843017578125,
+      "wrong_prefix_and_mode_rejected": true,
+      "different_numerics_rejected": true,
+      "rejected_mask": 31,
+      "rejection_exit": 3,
+      "load_binary_sha256": "c9e5deb7997c6a1bc76f56ca815d551b48272e15771b3cacf70b891838d5a119"
+    },
+    "live_adapter": {
       "status": "NOT_RUN"
     }
   },
