@@ -81,6 +81,11 @@
 | FE-032 | P2 | TRIAGED | Measure resumed short-prefix forward/pass and state-copy counts; assert exact accepted-boundary publish, immutable cached state, cancellation behavior before considering fixed running/checkpoint slots | vLLM #64303; FE-019 overlap; GB200 results not M4 evidence |
 | FE-033 | P1 | TRIAGED | Checked offset multiplication and index-width audit for host/Metal QKV, GDN, convolution and checkpoint paths; bounded synthetic near-overflow tests without giant allocations | vLLM #63759/#63761; CUDA failure not established in Flash's 32K geometry |
 
+| FE-034 | P0 | TRIAGED | Mid-stream inference failure after HTTP 200 must emit explicit stream error, invalidate uncertain hybrid state, prevent partial tool invocation, and require fresh recovery | Ollama PR #19458 (Nov 1); promotion gate FE-003 hardening |
+| FE-035 | P0 | TRIAGED | Release admission ledger for tiered experts, full attention KV, GDN/conv, checkpoints, N128 workspace, CPU/GPU unified memory; compare predicted vs actual 16K/32K peaks and fail safely | SGLang #47830 (Nov 2), MLX Swift LM #748, Ollama #19417/#19419 |
+| FE-036 | P1 | TRIAGED | Quantization/manifest exclusion names must map to actual tensor dtype, layout, shape and aliases fail-closed before allocation; never silently reclassify mixed precision | vLLM #65034 (Nov 2); existing FE-016 |
+| FE-037 | P2 | TRIAGED | Buffered/streaming cache-token accounting parity, distinguish reused prefix token counts from hybrid bytes, preserve provider-specific semantics | vLLM #65035 (Nov 2); FE-017/FE-025 |
+
 ## Next disposition queue
 
 1. **Work (explicit FE-027 delegation), Architect review:** Mask 63 fixes all known counterexamples and passes complete 4K twice. Active persistent fingerprints match the unchanged scalar reference; hidden/logit errors are small but not universally bit-exact. FE-001 remains blocked for default/production pending review. Ordinary N128 and earlier mask-15/31 failures remain historical controls.
@@ -89,6 +94,8 @@
 4. **Verifier:** Keep FE-021 blocked until a bounded M4 design beats serial end-to-end with exact hybrid-state rollback. Microbenchmarks, acceptance length and off-target draft models alone do not unblock it.
 
 ## Decision log
+
+- **2026-11-02 (research-watch recovery):** Canonical Drive research file still at 2026-10-29 06:43:59Z due to connector in-place write failures. Read the saved 56-findings pending research artifact in the Library; triaged its four newest findings as FE-034–037. Its older October 29–November 1 findings remain a separate research-intake backlog for deduplication; do not claim canonical Drive persistence. High-priority promotion gates now include fail-closed mid-stream errors and 24GB hybrid-state admission.\n
 
 - **2026-10-29 (Work Phase 4 final qualification):** All known counterexamples, full 4K twice, five fresh HTTP histories, native checkpoint/identity/default checks and 8K PASS. Active persistent fingerprints match at all 64 8K endpoints; peak child RSS 9.57 GiB. Three-way timing (3 trials/path): corrected prefill 31.434 s, ordinary N128 29.345 s, scalar 49.001 s for 1024 measured tokens. Observed +7.12% cost, not attributable solely to combine; no steady-state decode claim. FE-027 QUALIFIED only in documented default-GPU/tiered scope; FE-001 production/default remains BLOCKED pending Architect acceptance. PR #2 draft, production NO-GO.
 
