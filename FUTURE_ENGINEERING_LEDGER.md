@@ -93,6 +93,9 @@
 | FE-036 | P1 | TRIAGED | Quantization/manifest exclusion names must map to actual tensor dtype, layout, shape and aliases fail-closed before allocation; never silently reclassify mixed precision | vLLM #65034 (Nov 2); existing FE-016 |
 | FE-037 | P2 | QUALIFIED (BOUNDED) | Five bounded buffered/SSE pairs PASS with identical native prompt/sample IDs, normalized events/state, full logical usage on prefix hits, and usage before DONE. Includes thinking off/on and actual content+tool; no general provider/GUI claim | vLLM #65035 (Nov 2); FE-017/FE-025 |
 
+| FE-040 | P1 | TRIAGED | Reject or namespace duplicate MCP server names so advertised tool schema, stable server identity, and actual dispatch target cannot diverge; test collision and reconnect | vLLM #65073; [research reconciliation](docs/research-reconciliation-2026-11-04.md); Gateway/client scope |
+| FE-041 | P1 | TRIAGED | Exhaust cursor-paginated MCP tools/list before atomic tool-manifest publication; dedupe, detect cursor cycles, enforce bounded page count, and invalidate prompt identity on catalog change | vLLM #65074; [research reconciliation](docs/research-reconciliation-2026-11-04.md); Gateway/client scope |
+
 ## Next disposition queue
 
 1. **Work (explicit FE-027 delegation), Architect review:** Mask 63 fixes all known counterexamples and passes complete 4K twice. Active persistent fingerprints match the unchanged scalar reference; hidden/logit errors are small but not universally bit-exact. FE-001 remains blocked for default/production pending review. Ordinary N128 and earlier mask-15/31 failures remain historical controls.
@@ -101,6 +104,8 @@
 4. **Verifier:** Keep FE-021 blocked until a bounded M4 design beats serial end-to-end with exact hybrid-state rollback. Microbenchmarks, acceptance length and off-target draft models alone do not unblock it.
 
 ## Decision log
+
+- **2026-11-04 (historical and incremental research reconciliation):** Re-read canonical Research Discoveries (modified Nov 4) and explicitly audited all seven dated Oct 8–15 discovery headings, including grouped Oct 15 references, plus Nov 2–4 additions. Documented applicability and certainty in [research reconciliation](docs/research-reconciliation-2026-11-04.md). Added FE-040/041 for distinct MCP registry/pagination failure classes; folded other items into FE-011/012/016/017/019/021/024/029/031/034/035/036/038. No fabricated Oct 10–14 reports, no duplicate FE-034–037 entries. Production release NO-GO remains unchanged.\n
 
 - **2026-11-02 (research-watch recovery):** Canonical Drive research file still at 2026-10-29 06:43:59Z due to connector in-place write failures. Read the saved 56-findings pending research artifact in the Library; triaged its four newest findings as FE-034–037. Its older October 29–November 1 findings remain a separate research-intake backlog for deduplication; do not claim canonical Drive persistence. High-priority promotion gates now include fail-closed mid-stream errors and 24GB hybrid-state admission.\n
 
