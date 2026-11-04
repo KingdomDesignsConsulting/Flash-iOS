@@ -1,0 +1,49 @@
+{
+  "status": "PARTIAL QUALIFICATION \u2014 REMAINING GAPS",
+  "starting_head": "66adf92e2ea950528917000d1b59b788e1687371",
+  "adapter_tests": {
+    "passed": 44,
+    "failed": 0,
+    "original_regression_run": {
+      "passed": 20,
+      "failed": 9,
+      "registered": 29
+    }
+  },
+  "native_tools": "PASS",
+  "native_api": "PASS",
+  "control_resolution_cases": 53,
+  "control_resolution_source_sha256": "b21ce65dd1f9cec3459a0ff80b98dcac8018d7fdf76da055cc6d5d24f03112c8",
+  "render_only": {
+    "status": "PASS",
+    "scope": "Native render/tokenization only; no model generation or HTTP inference",
+    "cases": [
+      {
+        "name": "direct-False",
+        "count": 380,
+        "token_ids_sha256": "51587950d13e882d34755ae937e32f8a2cf9962f1e02e35c94cfd7e88db4f28f"
+      },
+      {
+        "name": "announce-False",
+        "count": 385,
+        "token_ids_sha256": "2fb494762bef6922548e3a6da0807e6a111005038ab3cb2b1987838de5e834d9"
+      },
+      {
+        "name": "direct-True",
+        "count": 378,
+        "token_ids_sha256": "78f3c2c640b9ca13288477930c78fe85700da755f5eb1b30eeb4e0642001da22"
+      },
+      {
+        "name": "announce-True",
+        "count": 383,
+        "token_ids_sha256": "8983a873c52ae6f9275acffd1cfdd995d49ee188a9112e4a776ac4a4f1244055"
+      }
+    ]
+  },
+  "installed_lmstudio_service": "ATTEMPT FAILED: unreachable",
+  "GUI": "NOT RUN",
+  "MCP": "Fixture wire checks only; actual Gateway unavailable",
+  "model_inference": false,
+  "native_source_modified": false,
+  "external_actions_executed": false
+}
