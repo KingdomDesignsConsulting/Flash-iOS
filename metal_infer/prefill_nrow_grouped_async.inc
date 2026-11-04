@@ -1,3 +1,6 @@
+#if defined(FLASH_FE027_NUMERICS) && (!defined(FLASH_PREFILL_NROW_GATEUP_M4_8ROW_BITSPLIT) || !defined(FLASH_PREFILL_NROW_DOWN_M4_2ROW))
+#error FE027 numerical alignment requires the documented production gate/up and down geometry
+#endif
 #if (defined(FLASH_PREFILL_NROW_GATEUP_M4_2ROW) + defined(FLASH_PREFILL_NROW_GATEUP_M4_4ROW) + defined(FLASH_PREFILL_NROW_GATEUP_M4_8ROW) + defined(FLASH_PREFILL_NROW_GATEUP_M4_8ROW_XCACHE) + defined(FLASH_PREFILL_NROW_GATEUP_M4_8ROW_BITSPLIT) + defined(FLASH_PREFILL_NROW_GATEUP_M4_16ROW) + defined(FLASH_PREFILL_NROW_GATEUP_M8_2ROW)) > 1
 #error choose exactly one routed gate+up candidate
 #endif
@@ -34,6 +37,9 @@ static id<MTLComputePipelineState> g_prefill_nrow_dense_m2 = nil;
 #endif
 
 typedef struct {
+#ifdef FLASH_FE027_NUMERICS
+    id<MTLComputePipelineState> fe027_gate, fe027_down;
+#endif
     id<MTLComputePipelineState> projection;
 #ifdef FLASH_PREFILL_NROW_DOWN_ACC16
     id<MTLComputePipelineState> projection_acc16;
@@ -139,6 +145,9 @@ static __attribute__((unused)) void prefill_nrow_grouped_release(PrefillNRowGrou
     if (!p) return;
 #ifdef FLASH_PREFILL_NROW_DENSE_M2
     g_prefill_nrow_dense_m2 = nil;
+#endif
+#ifdef FLASH_FE027_NUMERICS
+    p->fe027_gate = nil; p->fe027_down = nil;
 #endif
     p->projection = nil;
 #ifdef FLASH_PREFILL_NROW_DOWN_ACC16
@@ -251,6 +260,9 @@ static int prefill_nrow_grouped_init(PrefillNRowGrouped *p) {
     }
     if (!source) { fprintf(stderr, "[prefill-nrow] missing grouped Metal kernels\n"); return 0; }
     fprintf(stderr, "[prefill-nrow] shader source=%s\n", source_path.UTF8String);
+#ifdef FLASH_FE027_NUMERICS
+    if(fe027_numerics_mask()&8)source=[source stringByAppendingString:@(fe027_q4_source)];
+#endif
     NSError *error = nil;
     id<MTLLibrary> library = [g_metal->device newLibraryWithSource:source
         options:nil error:&error];
@@ -259,6 +271,15 @@ static int prefill_nrow_grouped_init(PrefillNRowGrouped *p) {
         return 0;
     }
     id<MTLFunction> fn = nil;
+#ifdef FLASH_FE027_NUMERICS
+    if(fe027_numerics_mask()&8) {
+        fn=[library newFunctionWithName:@"fe027_gate_up_q4_scalar_math"];
+        p->fe027_gate=[g_metal->device newComputePipelineStateWithFunction:fn error:&error];
+        fn=[library newFunctionWithName:@"fe027_down_q4_scalar_math"];
+        p->fe027_down=[g_metal->device newComputePipelineStateWithFunction:fn error:&error];
+        if(!p->fe027_gate || !p->fe027_down){fprintf(stderr,"[FE027] Q4 pipeline failed: %s\n",error.localizedDescription.UTF8String);return 0;}
+    }
+#endif
 #ifdef FLASH_PREFILL_NROW_DENSE_M2
     fn = [library newFunctionWithName:@"dense_affine_q4_m2"];
     g_prefill_nrow_dense_m2 =
@@ -705,6 +726,12 @@ static int prefill_nrow_encode_dense_rows(
 }
 
 
+#ifdef FLASH_FE027_NUMERICS
+#include "fe027_alignment.inc"
+#include "fe027_attention_reference.inc"
+#include "fe027_combine_reference.inc"
+#endif
+
 // V4: project full-attention Q/K/V for all 16 rows in one command buffer.
 // Downstream Q/K norm, RoPE, KV-cache publication, causal attention and o_proj
 // deliberately remain on the existing row-wise path for this gate.
@@ -718,6 +745,13 @@ static int prefill_nrow_full_qkv_layer(PrefillNRowGrouped *p,
 
     double started = now_ms();
     float *normed_rows = (float *)[p->normed_rows contents];
+#ifdef FLASH_FE027_NUMERICS
+    if(fe027_numerics_mask()>63)return 0;
+    if((fe027_numerics_mask()&2) && layer>0) {
+        memcpy(p->linear_hpost_rows.contents,slab,(size_t)PREFILL_NROW_ROWS*HIDDEN_DIM*sizeof(float));
+        if(!fe027_normalize_rows(p->linear_hpost_rows,p->normed_rows,lc->input_norm_w))return 0;
+    } else
+#endif
     for (int row = 0; row < PREFILL_NROW_ROWS; row++) {
         cpu_rms_norm(slab + (size_t)row * HIDDEN_DIM,
             lc->input_norm_w,
@@ -759,6 +793,17 @@ static int prefill_nrow_full_qkv_layer(PrefillNRowGrouped *p,
                 cmd.error.localizedDescription.UTF8String);
         return 0;
     }
+#ifdef FLASH_SESSION_STATE_DIAGNOSTICS
+    if(g_fe_fa_cpu)for(int row=0;row<PREFILL_NROW_ROWS;row++) {
+        // Runtime chunk supplies absolute positions through the diagnostic base.
+        int pos=g_fe_fa_base+row;
+        g_fe_fa_cpu("layer_input",layer,pos,slab+(size_t)row*HIDDEN_DIM,HIDDEN_DIM);
+        g_fe_fa_cpu("input_norm",layer,pos,normed_rows+(size_t)row*HIDDEN_DIM,HIDDEN_DIM);
+        g_fe_fa_cpu("qproj",layer,pos,(float *)p->full_qproj_rows.contents+(size_t)row*q_proj_dim,q_proj_dim);
+        g_fe_fa_cpu("kproj",layer,pos,(float *)p->full_k_rows.contents+(size_t)row*kv_dim,kv_dim);
+        g_fe_fa_cpu("vproj",layer,pos,(float *)p->full_v_rows.contents+(size_t)row*kv_dim,kv_dim);
+    }
+#endif
     return 1;
 }
 
@@ -769,6 +814,9 @@ static __attribute__((unused)) int prefill_nrow_full_attention_batch(PrefillNRow
     LayerWeightCache *lc = &layer_cache[layer];
     if (!lc->q_norm_w || !lc->k_norm_w) return 0;
 
+#ifdef FLASH_FE027_NUMERICS
+    if(fe027_numerics_mask()&16)return fe027_reference_full_attention(p,layer,base_pos,kv);
+#endif
     const int q_dim = NUM_ATTN_HEADS * HEAD_DIM;
     const int q_proj_dim = q_dim * 2;
     const int kv_dim = NUM_KV_HEADS * HEAD_DIM;
@@ -803,6 +851,9 @@ static __attribute__((unused)) int prefill_nrow_full_attention_batch(PrefillNRow
             memcpy(gate + h * HEAD_DIM, src + HEAD_DIM, HEAD_DIM * sizeof(float));
         }
 
+#ifdef FLASH_SESSION_STATE_DIAGNOSTICS
+        if(g_fe_fa_cpu){g_fe_fa_cpu("q_raw",layer,base_pos+row,q,q_dim);g_fe_fa_cpu("k_raw",layer,base_pos+row,k,kv_dim);}
+#endif
         for (int h = 0; h < NUM_ATTN_HEADS; h++) {
             float *qh = q + h * HEAD_DIM;
             float ss = 0.0f;
@@ -820,8 +871,14 @@ static __attribute__((unused)) int prefill_nrow_full_attention_batch(PrefillNRow
                 kh[d] = kh[d] * inv * bf16_to_f32(lc->k_norm_w[d]);
         }
 
+#ifdef FLASH_SESSION_STATE_DIAGNOSTICS
+        if(g_fe_fa_cpu){g_fe_fa_cpu("q_norm",layer,base_pos+row,q,q_dim);g_fe_fa_cpu("k_norm",layer,base_pos+row,k,kv_dim);}
+#endif
         apply_rotary_emb(q, k, base_pos + row,
             NUM_ATTN_HEADS, NUM_KV_HEADS, HEAD_DIM, ROTARY_DIM);
+#ifdef FLASH_SESSION_STATE_DIAGNOSTICS
+        if(g_fe_fa_cpu){g_fe_fa_cpu("q_rope",layer,base_pos+row,q,q_dim);g_fe_fa_cpu("k_rope",layer,base_pos+row,k,kv_dim);}
+#endif
 
         const int cache_pos = base_cache_pos + row;
         memcpy(kv->k_cache + (size_t)cache_pos * kv_dim,
@@ -888,6 +945,13 @@ static __attribute__((unused)) int prefill_nrow_full_attention_batch(PrefillNRow
         "[prefill-nrow-attn128] layer=%d base=%d prep=%.3fms gpu=%.3fms\n",
         layer, base_cache_pos,
         gpu_started - prep_started, now_ms() - gpu_started);
+#ifdef FLASH_SESSION_STATE_DIAGNOSTICS
+    if(g_fe_fa_cpu)for(int row=0;row<PREFILL_NROW_ROWS;row++)g_fe_fa_cpu("attention_gated",layer,base_pos+row,(float *)p->full_attn_rows.contents+(size_t)row*q_dim,q_dim);
+    if(g_fe_fa_cpu && base_cache_pos+PREFILL_NROW_ROWS<=4096) {
+        g_fe_fa_cpu("kv_k",layer,base_pos+PREFILL_NROW_ROWS-1,kv->k_cache,(size_t)(base_cache_pos+PREFILL_NROW_ROWS)*kv_dim);
+        g_fe_fa_cpu("kv_v",layer,base_pos+PREFILL_NROW_ROWS-1,kv->v_cache,(size_t)(base_cache_pos+PREFILL_NROW_ROWS)*kv_dim);
+    }
+#endif
     return 1;
 }
 
@@ -903,6 +967,13 @@ static int prefill_nrow_linear_layer(PrefillNRowGrouped *p, WeightFile *wf,
 
     double started = now_ms();
     float *normed_rows = (float *)[p->normed_rows contents];
+#ifdef FLASH_FE027_NUMERICS
+    if(fe027_numerics_mask()>63)return 0;
+    if((fe027_numerics_mask()&2) && layer>0) {
+        memcpy(p->linear_hpost_rows.contents,slab,(size_t)PREFILL_NROW_ROWS*HIDDEN_DIM*sizeof(float));
+        if(!fe027_normalize_rows(p->linear_hpost_rows,p->normed_rows,lc->input_norm_w))return 0;
+    } else
+#endif
     for (int row = 0; row < PREFILL_NROW_ROWS; row++) {
         cpu_rms_norm(slab + (size_t)row * HIDDEN_DIM,
             lc->input_norm_w,
@@ -1116,7 +1187,11 @@ static void prefill_nrow_encode_down_m4_2row(id<MTLCommandBuffer> cmd,
     id<MTLBuffer> output, NSUInteger output_offset,
     uint32_t in_dim, uint32_t out_dim, uint32_t count, uint32_t bits) {
     id<MTLComputeCommandEncoder> enc = [cmd computeCommandEncoder];
+#ifdef FLASH_FE027_NUMERICS
+    [enc setComputePipelineState:(bits==4u && (fe027_numerics_mask()&8))?p->fe027_down:p->projection_m4_2row];
+#else
     [enc setComputePipelineState:p->projection_m4_2row];
+#endif
     [enc setBuffer:data offset:data_base + w atIndex:0];
     [enc setBuffer:data offset:data_base + s atIndex:1];
     [enc setBuffer:data offset:data_base + b atIndex:2];
@@ -1271,7 +1346,11 @@ static void prefill_nrow_encode_gate_up(id<MTLCommandBuffer> cmd,
     [enc setComputePipelineState:p->gate_up_projection_m4_8row_xcache];
 #elif defined(FLASH_PREFILL_NROW_GATEUP_M4_8ROW_BITSPLIT)
     [enc setComputePipelineState:(bits == 4u
+#ifdef FLASH_FE027_NUMERICS
+        ? ((fe027_numerics_mask()&8)?p->fe027_gate:p->gate_up_projection_m4_8row_q4)
+#else
         ? p->gate_up_projection_m4_8row_q4
+#endif
         : p->gate_up_projection_m4_8row_q2)];
 #elif defined(FLASH_PREFILL_NROW_GATEUP_M4_8ROW)
     [enc setComputePipelineState:p->gate_up_projection_m4_8row];
@@ -1468,10 +1547,22 @@ static __attribute__((unused)) int prefill_nrow_linear_post_capture(PrefillNRowG
         float *mid = cap->h_mid[row];
         float *post = hpost_rows + (size_t)row * HIDDEN_DIM;
         for (int i = 0; i < HIDDEN_DIM; i++) mid[i] = src[i] + proj[i];
-        cpu_rms_norm(mid, lc->post_attn_norm_w, post, HIDDEN_DIM, RMS_NORM_EPS);
-        memcpy(cap->h_post[row], post, HIDDEN_DIM * sizeof(float));
+#ifdef FLASH_FE027_NUMERICS
+        if(!(fe027_numerics_mask()&1))
+#endif
+        {
+            cpu_rms_norm(mid, lc->post_attn_norm_w, post, HIDDEN_DIM, RMS_NORM_EPS);
+            memcpy(cap->h_post[row], post, HIDDEN_DIM * sizeof(float));
+        }
     }
 
+#ifdef FLASH_FE027_NUMERICS
+    if(fe027_numerics_mask()&1) {
+        for(int row=0;row<PREFILL_NROW_ROWS;row++)memcpy((float *)p->normed_rows.contents+(size_t)row*HIDDEN_DIM,cap->h_mid[row],HIDDEN_DIM*sizeof(float));
+        if(!fe027_normalize_rows(p->normed_rows,p->linear_hpost_rows,lc->post_attn_norm_w))return 0;
+        for(int row=0;row<PREFILL_NROW_ROWS;row++)memcpy(cap->h_post[row],hpost_rows+(size_t)row*HIDDEN_DIM,HIDDEN_DIM*sizeof(float));
+    }
+#endif
     id<MTLCommandBuffer> route_cmd = [g_metal->queue commandBuffer];
     enc = [route_cmd computeCommandEncoder];
     if (!enc) return 0;
@@ -1949,6 +2040,15 @@ static int prefill_nrow_grouped_layer(PrefillNRowGrouped *p,
     // Preserve the already-validated CPU SwiGLU arithmetic, but prepare all
     // rows up front so the down projection can be submitted as one GPU batch.
     float *shared_act_rows = (float *)[p->shared_act_rows contents];
+#ifdef FLASH_FE027_NUMERICS
+    if(fe027_numerics_mask()&4) {
+        for(int row=0;row<PREFILL_NROW_ROWS;row++) {
+            memcpy((float *)p->shared_gate_rows.contents+(size_t)row*SHARED_INTERMEDIATE,cap->shared_gate[row],SHARED_INTERMEDIATE*sizeof(float));
+            memcpy((float *)p->shared_up_rows.contents+(size_t)row*SHARED_INTERMEDIATE,cap->shared_up[row],SHARED_INTERMEDIATE*sizeof(float));
+        }
+        if(!fe027_shared_swiglu(p->shared_gate_rows,p->shared_up_rows,p->shared_act_rows))return 0;
+    } else
+#endif
     for (int row = 0; row < PREFILL_NROW_ROWS; row++) {
         cpu_swiglu(cap->shared_gate[row], cap->shared_up[row],
                    shared_act_rows + (size_t)row * SHARED_INTERMEDIATE,
@@ -1968,23 +2068,51 @@ static int prefill_nrow_grouped_layer(PrefillNRowGrouped *p,
     const float *shared_out_rows =
         (const float *)[p->shared_out_rows contents];
     double combine_started = now_ms();
+    BOOL aligned_combine=NO;
+#ifdef FLASH_FE027_NUMERICS
+    // Match scalar CMD3 eligibility, including its CPU final-layer combine.
+    aligned_combine=(fe027_numerics_mask()&32) && layer<NUM_LAYERS-1 &&
+        !disable_gpu_combine_debug() && g_metal->rms_norm_sum &&
+        g_metal->rms_norm_apply_bf16 && g_metal->wf_buf &&
+        layer_cache[layer+1].input_norm_w!=NULL;
+    if(aligned_combine && !fe027_combine_rows(p,cap,assignment_index))return 0;
+#endif
     for (int row = 0; row < PREFILL_NROW_ROWS; row++) {
         float moe_out[2048];
         memset(moe_out, 0, sizeof(moe_out));
-        for (int k = 0; k < PREFILL_NROW_K; k++) {
+        if(!aligned_combine)for (int k = 0; k < PREFILL_NROW_K; k++) {
             int packed = assignment_index[row][k];
             if (packed < 0 || packed >= PREFILL_NROW_ASSIGNMENTS) return 0;
             cpu_vec_madd(moe_out,
                 (float *)[p->output contents] + (size_t)packed * HIDDEN_DIM,
                 cap->expert_weight[row][k], HIDDEN_DIM);
         }
-        float shared_weight = cpu_sigmoid(cap->shared_score[row]);
+        float shared_weight = aligned_combine?0.0f:cpu_sigmoid(cap->shared_score[row]);
         const float *shared_out =
             shared_out_rows + (size_t)row * HIDDEN_DIM;
         float *dest = slab + (size_t)row * HIDDEN_DIM;
-        for (int i = 0; i < HIDDEN_DIM; i++)
-            dest[i] = cap->h_mid[row][i] + moe_out[i] +
-                      shared_weight * shared_out[i];
+        if(aligned_combine)memcpy(dest,(float *)p->normed_rows.contents+(size_t)row*HIDDEN_DIM,HIDDEN_DIM*sizeof(float));
+        else for (int i = 0; i < HIDDEN_DIM; i++)
+                dest[i] = cap->h_mid[row][i] + moe_out[i] +
+                          shared_weight * shared_out[i];
+#ifdef FLASH_SESSION_STATE_DIAGNOSTICS
+        if(g_fe_combine_cpu) {
+            const float *outputs[PREFILL_NROW_K];
+            for(int k=0;k<PREFILL_NROW_K;k++)outputs[k]=(float *)p->output.contents+(size_t)assignment_index[row][k]*HIDDEN_DIM;
+            g_fe_combine_cpu(layer,g_fe_fa_base+row,cap->h_mid[row],shared_out,outputs,cap->expert_weight[row],cap->expert_id[row],cap->shared_score[row],dest);
+        }
+        if(g_session_expert_hook) {
+            const float *outputs[PREFILL_NROW_K],*stages[PREFILL_NROW_K*3];
+            for(int k=0;k<PREFILL_NROW_K;k++) {
+                size_t packed=assignment_index[row][k];
+                outputs[k]=(const float *)p->output.contents+packed*HIDDEN_DIM;
+                stages[k*3]=(const float *)p->gate.contents+packed*MOE_INTERMEDIATE;
+                stages[k*3+1]=(const float *)p->up.contents+packed*MOE_INTERMEDIATE;
+                stages[k*3+2]=(const float *)p->act.contents+packed*MOE_INTERMEDIATE;
+            }
+            g_session_expert_hook(layer,row,outputs,stages,shared_out,dest);
+        }
+#endif
     }
     p->combine_ms += now_ms() - combine_started;
     p->shared_ms += now_ms() - shared_started;
@@ -2075,6 +2203,9 @@ static int prefill_nrow_runtime_chunk(
         !layer_states || !layer_mmaps || !layer_fds)
         return 0;
 
+#ifdef FLASH_SESSION_STATE_DIAGNOSTICS
+    g_fe_fa_base=base_pos;
+#endif
     float *slab = g_prefill_nrow_runtime_slab;
     PrefillNRowCapture *capture = g_prefill_nrow_runtime_capture;
     const double prof_qk0 = g_prefill_nrow_prof_qk_rope_ms;
@@ -2178,6 +2309,12 @@ static int prefill_nrow_runtime_chunk(
         g_prefill_nrow_full_k = NULL;
         g_prefill_nrow_full_v = NULL;
         g_prefill_nrow_full_attn_out = NULL;
+#ifdef FLASH_SESSION_STATE_DIAGNOSTICS
+        if(ok && !full && g_session_route_hook)for(int row=0;row<PREFILL_NROW_ROWS;row++)
+            g_session_route_hook(layer,base_pos+row,PREFILL_NROW_K,capture->expert_id[row],capture->expert_weight[row],
+                (const float *)g_prefill_nrow_runtime_pipes.linear_gate_scores.contents+(size_t)row*NUM_EXPERTS,
+                capture->h_mid[row],capture->h_post[row]);
+#endif
         if (ok) {
             double direct_grouped_started = now_ms();
             const double grouped_grouping0 = g_prefill_nrow_runtime_pipes.grouping_ms;

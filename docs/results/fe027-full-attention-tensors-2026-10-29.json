@@ -1,0 +1,2199 @@
+{
+  "causal_validation_pass": true,
+  "validation_failures": [],
+  "positions": [
+    0,
+    1,
+    7,
+    30,
+    31,
+    32,
+    63,
+    127
+  ],
+  "geometry": {
+    "heads": 16,
+    "head_dim": 256,
+    "rotary_dim": 64
+  },
+  "actual_stages": {
+    "attention_gated": [
+      {
+        "layer": 3,
+        "position": 0,
+        "row": 0,
+        "dimensions": [
+          16,
+          256
+        ],
+        "floats": 4096,
+        "exact": 0,
+        "max_abs": 2.9802322387695312e-08,
+        "rms": 1.7435164639932975e-09,
+        "different": 3312,
+        "bit_different": 3312,
+        "first_different": 0,
+        "reference_path": "actual CPU-visible tensor",
+        "candidate_path": "actual CPU-visible tensor"
+      },
+      {
+        "layer": 3,
+        "position": 127,
+        "row": 127,
+        "dimensions": [
+          16,
+          256
+        ],
+        "floats": 4096,
+        "exact": 0,
+        "max_abs": 1.043081283569336e-07,
+        "rms": 5.441895167742837e-09,
+        "different": 3826,
+        "bit_different": 3826,
+        "first_different": 0,
+        "reference_path": "actual GPU tensor, ordered private blit",
+        "candidate_path": "actual CPU-visible tensor"
+      },
+      {
+        "layer": 3,
+        "position": 1,
+        "row": 1,
+        "dimensions": [
+          16,
+          256
+        ],
+        "floats": 4096,
+        "exact": 0,
+        "max_abs": 4.470348358154297e-07,
+        "rms": 1.467762632708287e-08,
+        "different": 4050,
+        "bit_different": 4050,
+        "first_different": 0,
+        "reference_path": "actual CPU-visible tensor",
+        "candidate_path": "actual CPU-visible tensor"
+      },
+      {
+        "layer": 3,
+        "position": 30,
+        "row": 30,
+        "dimensions": [
+          16,
+          256
+        ],
+        "floats": 4096,
+        "exact": 0,
+        "max_abs": 1.4901161193847656e-07,
+        "rms": 7.576059724199111e-09,
+        "different": 3942,
+        "bit_different": 3942,
+        "first_different": 0,
+        "reference_path": "actual CPU-visible tensor",
+        "candidate_path": "actual CPU-visible tensor"
+      },
+      {
+        "layer": 3,
+        "position": 31,
+        "row": 31,
+        "dimensions": [
+          16,
+          256
+        ],
+        "floats": 4096,
+        "exact": 0,
+        "max_abs": 7.450580596923828e-08,
+        "rms": 4.196220681996071e-09,
+        "different": 3870,
+        "bit_different": 3870,
+        "first_different": 0,
+        "reference_path": "actual GPU tensor, ordered private blit",
+        "candidate_path": "actual CPU-visible tensor"
+      },
+      {
+        "layer": 3,
+        "position": 32,
+        "row": 32,
+        "dimensions": [
+          16,
+          256
+        ],
+        "floats": 4096,
+        "exact": 0,
+        "max_abs": 1.341104507446289e-07,
+        "rms": 7.255195775846689e-09,
+        "different": 3901,
+        "bit_different": 3901,
+        "first_different": 0,
+        "reference_path": "actual GPU tensor, ordered private blit",
+        "candidate_path": "actual CPU-visible tensor"
+      },
+      {
+        "layer": 3,
+        "position": 63,
+        "row": 63,
+        "dimensions": [
+          16,
+          256
+        ],
+        "floats": 4096,
+        "exact": 0,
+        "max_abs": 2.086162567138672e-07,
+        "rms": 6.405318488385581e-09,
+        "different": 3886,
+        "bit_different": 3886,
+        "first_different": 0,
+        "reference_path": "actual GPU tensor, ordered private blit",
+        "candidate_path": "actual CPU-visible tensor"
+      },
+      {
+        "layer": 3,
+        "position": 7,
+        "row": 7,
+        "dimensions": [
+          16,
+          256
+        ],
+        "floats": 4096,
+        "exact": 0,
+        "max_abs": 6.984919309616089e-08,
+        "rms": 5.57372206689681e-09,
+        "different": 3891,
+        "bit_different": 3891,
+        "first_different": 0,
+        "reference_path": "actual CPU-visible tensor",
+        "candidate_path": "actual CPU-visible tensor"
+      }
+    ],
+    "input_norm": [
+      {
+        "layer": 3,
+        "position": 0,
+        "row": 0,
+        "dimensions": [
+          2048
+        ],
+        "floats": 2048,
+        "exact": 0,
+        "max_abs": 4.76837158203125e-07,
+        "rms": 2.945134240115379e-08,
+        "different": 681,
+        "bit_different": 681,
+        "first_different": 0,
+        "reference_path": "actual GPU tensor, ordered private blit",
+        "candidate_path": "actual CPU-visible tensor"
+      },
+      {
+        "layer": 3,
+        "position": 127,
+        "row": 127,
+        "dimensions": [
+          2048
+        ],
+        "floats": 2048,
+        "exact": 0,
+        "max_abs": 1.9073486328125e-06,
+        "rms": 1.8653611126528598e-07,
+        "different": 1808,
+        "bit_different": 1808,
+        "first_different": 0,
+        "reference_path": "actual GPU tensor, ordered private blit",
+        "candidate_path": "actual CPU-visible tensor"
+      },
+      {
+        "layer": 3,
+        "position": 1,
+        "row": 1,
+        "dimensions": [
+          2048
+        ],
+        "floats": 2048,
+        "exact": 0,
+        "max_abs": 7.62939453125e-06,
+        "rms": 3.390235850391854e-07,
+        "different": 1864,
+        "bit_different": 1864,
+        "first_different": 0,
+        "reference_path": "actual GPU tensor, ordered private blit",
+        "candidate_path": "actual CPU-visible tensor"
+      },
+      {
+        "layer": 3,
+        "position": 30,
+        "row": 30,
+        "dimensions": [
+          2048
+        ],
+        "floats": 2048,
+        "exact": 0,
+        "max_abs": 1.9073486328125e-06,
+        "rms": 1.8652127711984042e-07,
+        "different": 1794,
+        "bit_different": 1794,
+        "first_different": 0,
+        "reference_path": "actual GPU tensor, ordered private blit",
+        "candidate_path": "actual CPU-visible tensor"
+      },
+      {
+        "layer": 3,
+        "position": 31,
+        "row": 31,
+        "dimensions": [
+          2048
+        ],
+        "floats": 2048,
+        "exact": 0,
+        "max_abs": 1.9073486328125e-06,
+        "rms": 2.150396451198958e-07,
+        "different": 1856,
+        "bit_different": 1856,
+        "first_different": 0,
+        "reference_path": "actual GPU tensor, ordered private blit",
+        "candidate_path": "actual CPU-visible tensor"
+      },
+      {
+        "layer": 3,
+        "position": 32,
+        "row": 32,
+        "dimensions": [
+          2048
+        ],
+        "floats": 2048,
+        "exact": 0,
+        "max_abs": 2.384185791015625e-06,
+        "rms": 2.2930214623802878e-07,
+        "different": 1867,
+        "bit_different": 1867,
+        "first_different": 0,
+        "reference_path": "actual GPU tensor, ordered private blit",
+        "candidate_path": "actual CPU-visible tensor"
+      },
+      {
+        "layer": 3,
+        "position": 63,
+        "row": 63,
+        "dimensions": [
+          2048
+        ],
+        "floats": 2048,
+        "exact": 0,
+        "max_abs": 3.814697265625e-06,
+        "rms": 2.410112741144507e-07,
+        "different": 1865,
+        "bit_different": 1865,
+        "first_different": 0,
+        "reference_path": "actual GPU tensor, ordered private blit",
+        "candidate_path": "actual CPU-visible tensor"
+      },
+      {
+        "layer": 3,
+        "position": 7,
+        "row": 7,
+        "dimensions": [
+          2048
+        ],
+        "floats": 2048,
+        "exact": 0,
+        "max_abs": 3.814697265625e-06,
+        "rms": 1.8818984100922853e-07,
+        "different": 1828,
+        "bit_different": 1828,
+        "first_different": 0,
+        "reference_path": "actual GPU tensor, ordered private blit",
+        "candidate_path": "actual CPU-visible tensor"
+      }
+    ],
+    "k_norm": [
+      {
+        "layer": 3,
+        "position": 0,
+        "row": 0,
+        "dimensions": [
+          2,
+          256
+        ],
+        "floats": 512,
+        "exact": 0,
+        "max_abs": 7.152557373046875e-07,
+        "rms": 1.326597703026632e-07,
+        "different": 349,
+        "bit_different": 349,
+        "first_different": 0,
+        "reference_path": "actual CPU-visible tensor",
+        "candidate_path": "actual CPU-visible tensor"
+      },
+      {
+        "layer": 3,
+        "position": 1,
+        "row": 1,
+        "dimensions": [
+          2,
+          256
+        ],
+        "floats": 512,
+        "exact": 0,
+        "max_abs": 1.6689300537109375e-06,
+        "rms": 4.0421421584576963e-07,
+        "different": 465,
+        "bit_different": 465,
+        "first_different": 0,
+        "reference_path": "actual CPU-visible tensor",
+        "candidate_path": "actual CPU-visible tensor"
+      },
+      {
+        "layer": 3,
+        "position": 30,
+        "row": 30,
+        "dimensions": [
+          2,
+          256
+        ],
+        "floats": 512,
+        "exact": 0,
+        "max_abs": 1.1026859283447266e-06,
+        "rms": 3.4173532515460196e-07,
+        "different": 450,
+        "bit_different": 450,
+        "first_different": 0,
+        "reference_path": "actual CPU-visible tensor",
+        "candidate_path": "actual CPU-visible tensor"
+      },
+      {
+        "layer": 3,
+        "position": 7,
+        "row": 7,
+        "dimensions": [
+          2,
+          256
+        ],
+        "floats": 512,
+        "exact": 0,
+        "max_abs": 1.430511474609375e-06,
+        "rms": 3.188465413704761e-07,
+        "different": 431,
+        "bit_different": 431,
+        "first_different": 0,
+        "reference_path": "actual CPU-visible tensor",
+        "candidate_path": "actual CPU-visible tensor"
+      }
+    ],
+    "k_raw": [
+      {
+        "layer": 3,
+        "position": 0,
+        "row": 0,
+        "dimensions": [
+          2,
+          256
+        ],
+        "floats": 512,
+        "exact": 0,
+        "max_abs": 3.5762786865234375e-07,
+        "rms": 7.527310644187103e-08,
+        "different": 370,
+        "bit_different": 370,
+        "first_different": 0,
+        "reference_path": "actual CPU-visible tensor",
+        "candidate_path": "actual CPU-visible tensor"
+      },
+      {
+        "layer": 3,
+        "position": 1,
+        "row": 1,
+        "dimensions": [
+          2,
+          256
+        ],
+        "floats": 512,
+        "exact": 0,
+        "max_abs": 1.430511474609375e-06,
+        "rms": 2.9136687596374735e-07,
+        "different": 467,
+        "bit_different": 467,
+        "first_different": 0,
+        "reference_path": "actual CPU-visible tensor",
+        "candidate_path": "actual CPU-visible tensor"
+      },
+      {
+        "layer": 3,
+        "position": 30,
+        "row": 30,
+        "dimensions": [
+          2,
+          256
+        ],
+        "floats": 512,
+        "exact": 0,
+        "max_abs": 9.5367431640625e-07,
+        "rms": 2.4639115163844427e-07,
+        "different": 447,
+        "bit_different": 447,
+        "first_different": 0,
+        "reference_path": "actual CPU-visible tensor",
+        "candidate_path": "actual CPU-visible tensor"
+      },
+      {
+        "layer": 3,
+        "position": 7,
+        "row": 7,
+        "dimensions": [
+          2,
+          256
+        ],
+        "floats": 512,
+        "exact": 0,
+        "max_abs": 9.5367431640625e-07,
+        "rms": 2.0399751517266024e-07,
+        "different": 433,
+        "bit_different": 433,
+        "first_different": 0,
+        "reference_path": "actual CPU-visible tensor",
+        "candidate_path": "actual CPU-visible tensor"
+      }
+    ],
+    "k_rope": [
+      {
+        "layer": 3,
+        "position": 0,
+        "row": 0,
+        "dimensions": [
+          2,
+          256
+        ],
+        "floats": 512,
+        "exact": 0,
+        "max_abs": 7.152557373046875e-07,
+        "rms": 1.326597703026632e-07,
+        "different": 349,
+        "bit_different": 349,
+        "first_different": 0,
+        "reference_path": "actual CPU-visible tensor",
+        "candidate_path": "actual CPU-visible tensor"
+      },
+      {
+        "layer": 3,
+        "position": 127,
+        "row": 127,
+        "dimensions": [
+          2,
+          256
+        ],
+        "floats": 512,
+        "exact": 0,
+        "max_abs": 1.1920928955078125e-06,
+        "rms": 3.6581335808831586e-07,
+        "different": 455,
+        "bit_different": 455,
+        "first_different": 1,
+        "reference_path": "actual GPU tensor, ordered private blit",
+        "candidate_path": "actual GPU tensor, ordered private blit"
+      },
+      {
+        "layer": 3,
+        "position": 1,
+        "row": 1,
+        "dimensions": [
+          2,
+          256
+        ],
+        "floats": 512,
+        "exact": 0,
+        "max_abs": 1.6689300537109375e-06,
+        "rms": 4.0413172834881767e-07,
+        "different": 467,
+        "bit_different": 467,
+        "first_different": 0,
+        "reference_path": "actual CPU-visible tensor",
+        "candidate_path": "actual CPU-visible tensor"
+      },
+      {
+        "layer": 3,
+        "position": 30,
+        "row": 30,
+        "dimensions": [
+          2,
+          256
+        ],
+        "floats": 512,
+        "exact": 0,
+        "max_abs": 1.1026859283447266e-06,
+        "rms": 3.41587765671548e-07,
+        "different": 449,
+        "bit_different": 449,
+        "first_different": 0,
+        "reference_path": "actual CPU-visible tensor",
+        "candidate_path": "actual CPU-visible tensor"
+      },
+      {
+        "layer": 3,
+        "position": 31,
+        "row": 31,
+        "dimensions": [
+          2,
+          256
+        ],
+        "floats": 512,
+        "exact": 0,
+        "max_abs": 1.3113021850585938e-06,
+        "rms": 3.6672037372947956e-07,
+        "different": 467,
+        "bit_different": 467,
+        "first_different": 0,
+        "reference_path": "actual GPU tensor, ordered private blit",
+        "candidate_path": "actual GPU tensor, ordered private blit"
+      },
+      {
+        "layer": 3,
+        "position": 32,
+        "row": 32,
+        "dimensions": [
+          2,
+          256
+        ],
+        "floats": 512,
+        "exact": 0,
+        "max_abs": 1.9073486328125e-06,
+        "rms": 4.056089920394155e-07,
+        "different": 453,
+        "bit_different": 453,
+        "first_different": 1,
+        "reference_path": "actual GPU tensor, ordered private blit",
+        "candidate_path": "actual GPU tensor, ordered private blit"
+      },
+      {
+        "layer": 3,
+        "position": 63,
+        "row": 63,
+        "dimensions": [
+          2,
+          256
+        ],
+        "floats": 512,
+        "exact": 0,
+        "max_abs": 1.1324882507324219e-06,
+        "rms": 3.44987424822936e-07,
+        "different": 434,
+        "bit_different": 434,
+        "first_different": 0,
+        "reference_path": "actual GPU tensor, ordered private blit",
+        "candidate_path": "actual GPU tensor, ordered private blit"
+      },
+      {
+        "layer": 3,
+        "position": 7,
+        "row": 7,
+        "dimensions": [
+          2,
+          256
+        ],
+        "floats": 512,
+        "exact": 0,
+        "max_abs": 1.430511474609375e-06,
+        "rms": 3.1957661907258837e-07,
+        "different": 438,
+        "bit_different": 438,
+        "first_different": 0,
+        "reference_path": "actual CPU-visible tensor",
+        "candidate_path": "actual CPU-visible tensor"
+      }
+    ],
+    "kproj": [
+      {
+        "layer": 3,
+        "position": 0,
+        "row": 0,
+        "dimensions": [
+          2,
+          256
+        ],
+        "floats": 512,
+        "exact": 0,
+        "max_abs": 3.5762786865234375e-07,
+        "rms": 7.527310644187103e-08,
+        "different": 370,
+        "bit_different": 370,
+        "first_different": 0,
+        "reference_path": "actual GPU tensor, ordered private blit",
+        "candidate_path": "actual CPU-visible tensor"
+      },
+      {
+        "layer": 3,
+        "position": 127,
+        "row": 127,
+        "dimensions": [
+          2,
+          256
+        ],
+        "floats": 512,
+        "exact": 0,
+        "max_abs": 8.344650268554688e-07,
+        "rms": 2.2108408297880912e-07,
+        "different": 456,
+        "bit_different": 456,
+        "first_different": 0,
+        "reference_path": "actual GPU tensor, ordered private blit",
+        "candidate_path": "actual CPU-visible tensor"
+      },
+      {
+        "layer": 3,
+        "position": 1,
+        "row": 1,
+        "dimensions": [
+          2,
+          256
+        ],
+        "floats": 512,
+        "exact": 0,
+        "max_abs": 1.430511474609375e-06,
+        "rms": 2.9136687596374735e-07,
+        "different": 467,
+        "bit_different": 467,
+        "first_different": 0,
+        "reference_path": "actual GPU tensor, ordered private blit",
+        "candidate_path": "actual CPU-visible tensor"
+      },
+      {
+        "layer": 3,
+        "position": 30,
+        "row": 30,
+        "dimensions": [
+          2,
+          256
+        ],
+        "floats": 512,
+        "exact": 0,
+        "max_abs": 9.5367431640625e-07,
+        "rms": 2.4639115163844427e-07,
+        "different": 447,
+        "bit_different": 447,
+        "first_different": 0,
+        "reference_path": "actual GPU tensor, ordered private blit",
+        "candidate_path": "actual CPU-visible tensor"
+      },
+      {
+        "layer": 3,
+        "position": 31,
+        "row": 31,
+        "dimensions": [
+          2,
+          256
+        ],
+        "floats": 512,
+        "exact": 0,
+        "max_abs": 8.344650268554688e-07,
+        "rms": 2.40525662337634e-07,
+        "different": 453,
+        "bit_different": 453,
+        "first_different": 0,
+        "reference_path": "actual GPU tensor, ordered private blit",
+        "candidate_path": "actual CPU-visible tensor"
+      },
+      {
+        "layer": 3,
+        "position": 32,
+        "row": 32,
+        "dimensions": [
+          2,
+          256
+        ],
+        "floats": 512,
+        "exact": 0,
+        "max_abs": 7.748603820800781e-07,
+        "rms": 2.5602966353359396e-07,
+        "different": 452,
+        "bit_different": 452,
+        "first_different": 0,
+        "reference_path": "actual GPU tensor, ordered private blit",
+        "candidate_path": "actual CPU-visible tensor"
+      },
+      {
+        "layer": 3,
+        "position": 63,
+        "row": 63,
+        "dimensions": [
+          2,
+          256
+        ],
+        "floats": 512,
+        "exact": 0,
+        "max_abs": 7.152557373046875e-07,
+        "rms": 2.284724765389375e-07,
+        "different": 448,
+        "bit_different": 448,
+        "first_different": 0,
+        "reference_path": "actual GPU tensor, ordered private blit",
+        "candidate_path": "actual CPU-visible tensor"
+      },
+      {
+        "layer": 3,
+        "position": 7,
+        "row": 7,
+        "dimensions": [
+          2,
+          256
+        ],
+        "floats": 512,
+        "exact": 0,
+        "max_abs": 9.5367431640625e-07,
+        "rms": 2.0399751517266024e-07,
+        "different": 433,
+        "bit_different": 433,
+        "first_different": 0,
+        "reference_path": "actual GPU tensor, ordered private blit",
+        "candidate_path": "actual CPU-visible tensor"
+      }
+    ],
+    "layer_input": [
+      {
+        "layer": 3,
+        "position": 0,
+        "row": 0,
+        "dimensions": [
+          2048
+        ],
+        "floats": 2048,
+        "exact": 0,
+        "max_abs": 1.4901161193847656e-08,
+        "rms": 1.1660868400994243e-09,
+        "different": 780,
+        "bit_different": 780,
+        "first_different": 0,
+        "reference_path": "actual GPU tensor, ordered private blit",
+        "candidate_path": "actual CPU-visible tensor"
+      },
+      {
+        "layer": 3,
+        "position": 127,
+        "row": 127,
+        "dimensions": [
+          2048
+        ],
+        "floats": 2048,
+        "exact": 0,
+        "max_abs": 1.1920928955078125e-07,
+        "rms": 7.319406405984195e-09,
+        "different": 1864,
+        "bit_different": 1864,
+        "first_different": 0,
+        "reference_path": "actual GPU tensor, ordered private blit",
+        "candidate_path": "actual CPU-visible tensor"
+      },
+      {
+        "layer": 3,
+        "position": 1,
+        "row": 1,
+        "dimensions": [
+          2048
+        ],
+        "floats": 2048,
+        "exact": 0,
+        "max_abs": 6.705522537231445e-08,
+        "rms": 1.4436973208000336e-08,
+        "different": 1908,
+        "bit_different": 1908,
+        "first_different": 0,
+        "reference_path": "actual GPU tensor, ordered private blit",
+        "candidate_path": "actual CPU-visible tensor"
+      },
+      {
+        "layer": 3,
+        "position": 30,
+        "row": 30,
+        "dimensions": [
+          2048
+        ],
+        "floats": 2048,
+        "exact": 0,
+        "max_abs": 5.960464477539063e-08,
+        "rms": 7.632422688779372e-09,
+        "different": 1865,
+        "bit_different": 1865,
+        "first_different": 0,
+        "reference_path": "actual GPU tensor, ordered private blit",
+        "candidate_path": "actual CPU-visible tensor"
+      },
+      {
+        "layer": 3,
+        "position": 31,
+        "row": 31,
+        "dimensions": [
+          2048
+        ],
+        "floats": 2048,
+        "exact": 0,
+        "max_abs": 5.960464477539063e-08,
+        "rms": 7.684622773895958e-09,
+        "different": 1860,
+        "bit_different": 1860,
+        "first_different": 0,
+        "reference_path": "actual GPU tensor, ordered private blit",
+        "candidate_path": "actual CPU-visible tensor"
+      },
+      {
+        "layer": 3,
+        "position": 32,
+        "row": 32,
+        "dimensions": [
+          2048
+        ],
+        "floats": 2048,
+        "exact": 0,
+        "max_abs": 5.960464477539063e-08,
+        "rms": 7.982208393976977e-09,
+        "different": 1865,
+        "bit_different": 1865,
+        "first_different": 0,
+        "reference_path": "actual GPU tensor, ordered private blit",
+        "candidate_path": "actual CPU-visible tensor"
+      },
+      {
+        "layer": 3,
+        "position": 63,
+        "row": 63,
+        "dimensions": [
+          2048
+        ],
+        "floats": 2048,
+        "exact": 0,
+        "max_abs": 5.960464477539063e-08,
+        "rms": 7.508781588858024e-09,
+        "different": 1876,
+        "bit_different": 1876,
+        "first_different": 0,
+        "reference_path": "actual GPU tensor, ordered private blit",
+        "candidate_path": "actual CPU-visible tensor"
+      },
+      {
+        "layer": 3,
+        "position": 7,
+        "row": 7,
+        "dimensions": [
+          2048
+        ],
+        "floats": 2048,
+        "exact": 0,
+        "max_abs": 5.960464477539063e-08,
+        "rms": 6.552217360782439e-09,
+        "different": 1836,
+        "bit_different": 1836,
+        "first_different": 0,
+        "reference_path": "actual GPU tensor, ordered private blit",
+        "candidate_path": "actual CPU-visible tensor"
+      }
+    ],
+    "oprojection": [
+      {
+        "layer": 3,
+        "position": 0,
+        "row": 0,
+        "dimensions": [
+          2048
+        ],
+        "floats": 2048,
+        "exact": 0,
+        "max_abs": 5.960464477539063e-08,
+        "rms": 2.678252967293967e-09,
+        "different": 1752,
+        "bit_different": 1752,
+        "first_different": 0,
+        "reference_path": "actual GPU tensor, ordered private blit",
+        "candidate_path": "actual GPU tensor, ordered private blit"
+      },
+      {
+        "layer": 3,
+        "position": 127,
+        "row": 127,
+        "dimensions": [
+          2048
+        ],
+        "floats": 2048,
+        "exact": 0,
+        "max_abs": 5.960464477539063e-08,
+        "rms": 5.695718103586528e-09,
+        "different": 1963,
+        "bit_different": 1963,
+        "first_different": 0,
+        "reference_path": "actual GPU tensor, ordered private blit",
+        "candidate_path": "actual GPU tensor, ordered private blit"
+      },
+      {
+        "layer": 3,
+        "position": 1,
+        "row": 1,
+        "dimensions": [
+          2048
+        ],
+        "floats": 2048,
+        "exact": 0,
+        "max_abs": 4.172325134277344e-07,
+        "rms": 1.735545861595462e-08,
+        "different": 1982,
+        "bit_different": 1982,
+        "first_different": 0,
+        "reference_path": "actual GPU tensor, ordered private blit",
+        "candidate_path": "actual GPU tensor, ordered private blit"
+      },
+      {
+        "layer": 3,
+        "position": 30,
+        "row": 30,
+        "dimensions": [
+          2048
+        ],
+        "floats": 2048,
+        "exact": 0,
+        "max_abs": 1.341104507446289e-07,
+        "rms": 8.251752980581421e-09,
+        "different": 1964,
+        "bit_different": 1964,
+        "first_different": 0,
+        "reference_path": "actual GPU tensor, ordered private blit",
+        "candidate_path": "actual GPU tensor, ordered private blit"
+      },
+      {
+        "layer": 3,
+        "position": 31,
+        "row": 31,
+        "dimensions": [
+          2048
+        ],
+        "floats": 2048,
+        "exact": 0,
+        "max_abs": 2.9802322387695312e-08,
+        "rms": 4.2547140068085796e-09,
+        "different": 1934,
+        "bit_different": 1934,
+        "first_different": 0,
+        "reference_path": "actual GPU tensor, ordered private blit",
+        "candidate_path": "actual GPU tensor, ordered private blit"
+      },
+      {
+        "layer": 3,
+        "position": 32,
+        "row": 32,
+        "dimensions": [
+          2048
+        ],
+        "floats": 2048,
+        "exact": 0,
+        "max_abs": 5.960464477539063e-08,
+        "rms": 7.0379363341874345e-09,
+        "different": 1972,
+        "bit_different": 1972,
+        "first_different": 0,
+        "reference_path": "actual GPU tensor, ordered private blit",
+        "candidate_path": "actual GPU tensor, ordered private blit"
+      },
+      {
+        "layer": 3,
+        "position": 63,
+        "row": 63,
+        "dimensions": [
+          2048
+        ],
+        "floats": 2048,
+        "exact": 0,
+        "max_abs": 7.450580596923828e-08,
+        "rms": 6.723622632705353e-09,
+        "different": 1940,
+        "bit_different": 1940,
+        "first_different": 0,
+        "reference_path": "actual GPU tensor, ordered private blit",
+        "candidate_path": "actual GPU tensor, ordered private blit"
+      },
+      {
+        "layer": 3,
+        "position": 7,
+        "row": 7,
+        "dimensions": [
+          2048
+        ],
+        "floats": 2048,
+        "exact": 0,
+        "max_abs": 5.960464477539063e-08,
+        "rms": 6.283146709985343e-09,
+        "different": 1950,
+        "bit_different": 1950,
+        "first_different": 0,
+        "reference_path": "actual GPU tensor, ordered private blit",
+        "candidate_path": "actual GPU tensor, ordered private blit"
+      }
+    ],
+    "q_norm": [
+      {
+        "layer": 3,
+        "position": 0,
+        "row": 0,
+        "dimensions": [
+          16,
+          256
+        ],
+        "floats": 4096,
+        "exact": 0,
+        "max_abs": 1.430511474609375e-06,
+        "rms": 1.5378295374427378e-07,
+        "different": 2937,
+        "bit_different": 2937,
+        "first_different": 0,
+        "reference_path": "actual CPU-visible tensor",
+        "candidate_path": "actual CPU-visible tensor"
+      },
+      {
+        "layer": 3,
+        "position": 1,
+        "row": 1,
+        "dimensions": [
+          16,
+          256
+        ],
+        "floats": 4096,
+        "exact": 0,
+        "max_abs": 1.9073486328125e-06,
+        "rms": 3.792974950256573e-07,
+        "different": 3757,
+        "bit_different": 3757,
+        "first_different": 0,
+        "reference_path": "actual CPU-visible tensor",
+        "candidate_path": "actual CPU-visible tensor"
+      },
+      {
+        "layer": 3,
+        "position": 30,
+        "row": 30,
+        "dimensions": [
+          16,
+          256
+        ],
+        "floats": 4096,
+        "exact": 0,
+        "max_abs": 1.5497207641601562e-06,
+        "rms": 2.834482136448713e-07,
+        "different": 3539,
+        "bit_different": 3539,
+        "first_different": 0,
+        "reference_path": "actual CPU-visible tensor",
+        "candidate_path": "actual CPU-visible tensor"
+      },
+      {
+        "layer": 3,
+        "position": 7,
+        "row": 7,
+        "dimensions": [
+          16,
+          256
+        ],
+        "floats": 4096,
+        "exact": 0,
+        "max_abs": 1.6689300537109375e-06,
+        "rms": 2.9939322319875403e-07,
+        "different": 3571,
+        "bit_different": 3571,
+        "first_different": 0,
+        "reference_path": "actual CPU-visible tensor",
+        "candidate_path": "actual CPU-visible tensor"
+      }
+    ],
+    "q_raw": [
+      {
+        "layer": 3,
+        "position": 0,
+        "row": 0,
+        "dimensions": [
+          16,
+          256
+        ],
+        "floats": 4096,
+        "exact": 0,
+        "max_abs": 9.5367431640625e-07,
+        "rms": 8.444969272000238e-08,
+        "different": 3040,
+        "bit_different": 3040,
+        "first_different": 0,
+        "reference_path": "actual CPU-visible tensor",
+        "candidate_path": "actual CPU-visible tensor"
+      },
+      {
+        "layer": 3,
+        "position": 127,
+        "row": 127,
+        "dimensions": [
+          16,
+          256
+        ],
+        "floats": 4096,
+        "exact": 0,
+        "max_abs": 1.430511474609375e-06,
+        "rms": 2.0387511391709525e-07,
+        "different": 3649,
+        "bit_different": 3649,
+        "first_different": 0,
+        "reference_path": "actual packed projection, exact split index map",
+        "candidate_path": "actual packed projection, exact split index map"
+      },
+      {
+        "layer": 3,
+        "position": 1,
+        "row": 1,
+        "dimensions": [
+          16,
+          256
+        ],
+        "floats": 4096,
+        "exact": 0,
+        "max_abs": 3.814697265625e-06,
+        "rms": 3.420998729841987e-07,
+        "different": 3740,
+        "bit_different": 3740,
+        "first_different": 0,
+        "reference_path": "actual CPU-visible tensor",
+        "candidate_path": "actual CPU-visible tensor"
+      },
+      {
+        "layer": 3,
+        "position": 30,
+        "row": 30,
+        "dimensions": [
+          16,
+          256
+        ],
+        "floats": 4096,
+        "exact": 0,
+        "max_abs": 1.9073486328125e-06,
+        "rms": 2.0521323632618027e-07,
+        "different": 3526,
+        "bit_different": 3526,
+        "first_different": 1,
+        "reference_path": "actual CPU-visible tensor",
+        "candidate_path": "actual CPU-visible tensor"
+      },
+      {
+        "layer": 3,
+        "position": 31,
+        "row": 31,
+        "dimensions": [
+          16,
+          256
+        ],
+        "floats": 4096,
+        "exact": 0,
+        "max_abs": 2.86102294921875e-06,
+        "rms": 2.4111519368869333e-07,
+        "different": 3616,
+        "bit_different": 3616,
+        "first_different": 0,
+        "reference_path": "actual packed projection, exact split index map",
+        "candidate_path": "actual packed projection, exact split index map"
+      },
+      {
+        "layer": 3,
+        "position": 32,
+        "row": 32,
+        "dimensions": [
+          16,
+          256
+        ],
+        "floats": 4096,
+        "exact": 0,
+        "max_abs": 1.9073486328125e-06,
+        "rms": 2.465604854971795e-07,
+        "different": 3703,
+        "bit_different": 3703,
+        "first_different": 0,
+        "reference_path": "actual packed projection, exact split index map",
+        "candidate_path": "actual packed projection, exact split index map"
+      },
+      {
+        "layer": 3,
+        "position": 63,
+        "row": 63,
+        "dimensions": [
+          16,
+          256
+        ],
+        "floats": 4096,
+        "exact": 0,
+        "max_abs": 1.430511474609375e-06,
+        "rms": 2.387977500462102e-07,
+        "different": 3660,
+        "bit_different": 3660,
+        "first_different": 0,
+        "reference_path": "actual packed projection, exact split index map",
+        "candidate_path": "actual packed projection, exact split index map"
+      },
+      {
+        "layer": 3,
+        "position": 7,
+        "row": 7,
+        "dimensions": [
+          16,
+          256
+        ],
+        "floats": 4096,
+        "exact": 0,
+        "max_abs": 1.9073486328125e-06,
+        "rms": 2.141746928445246e-07,
+        "different": 3602,
+        "bit_different": 3602,
+        "first_different": 0,
+        "reference_path": "actual CPU-visible tensor",
+        "candidate_path": "actual CPU-visible tensor"
+      }
+    ],
+    "q_rope": [
+      {
+        "layer": 3,
+        "position": 0,
+        "row": 0,
+        "dimensions": [
+          16,
+          256
+        ],
+        "floats": 4096,
+        "exact": 0,
+        "max_abs": 1.430511474609375e-06,
+        "rms": 1.5378295374427378e-07,
+        "different": 2937,
+        "bit_different": 2937,
+        "first_different": 0,
+        "reference_path": "actual CPU-visible tensor",
+        "candidate_path": "actual CPU-visible tensor"
+      },
+      {
+        "layer": 3,
+        "position": 127,
+        "row": 127,
+        "dimensions": [
+          16,
+          256
+        ],
+        "floats": 4096,
+        "exact": 0,
+        "max_abs": 1.9073486328125e-06,
+        "rms": 3.412023698830897e-07,
+        "different": 3622,
+        "bit_different": 3622,
+        "first_different": 0,
+        "reference_path": "actual GPU tensor, ordered private blit",
+        "candidate_path": "actual GPU tensor, ordered private blit"
+      },
+      {
+        "layer": 3,
+        "position": 1,
+        "row": 1,
+        "dimensions": [
+          16,
+          256
+        ],
+        "floats": 4096,
+        "exact": 0,
+        "max_abs": 1.9073486328125e-06,
+        "rms": 3.792958071435898e-07,
+        "different": 3761,
+        "bit_different": 3761,
+        "first_different": 0,
+        "reference_path": "actual CPU-visible tensor",
+        "candidate_path": "actual CPU-visible tensor"
+      },
+      {
+        "layer": 3,
+        "position": 30,
+        "row": 30,
+        "dimensions": [
+          16,
+          256
+        ],
+        "floats": 4096,
+        "exact": 0,
+        "max_abs": 1.5497207641601562e-06,
+        "rms": 2.835347317881659e-07,
+        "different": 3537,
+        "bit_different": 3537,
+        "first_different": 0,
+        "reference_path": "actual CPU-visible tensor",
+        "candidate_path": "actual CPU-visible tensor"
+      },
+      {
+        "layer": 3,
+        "position": 31,
+        "row": 31,
+        "dimensions": [
+          16,
+          256
+        ],
+        "floats": 4096,
+        "exact": 0,
+        "max_abs": 2.384185791015625e-06,
+        "rms": 3.1705176901877126e-07,
+        "different": 3580,
+        "bit_different": 3580,
+        "first_different": 0,
+        "reference_path": "actual GPU tensor, ordered private blit",
+        "candidate_path": "actual GPU tensor, ordered private blit"
+      },
+      {
+        "layer": 3,
+        "position": 32,
+        "row": 32,
+        "dimensions": [
+          16,
+          256
+        ],
+        "floats": 4096,
+        "exact": 0,
+        "max_abs": 2.384185791015625e-06,
+        "rms": 3.662238808908989e-07,
+        "different": 3716,
+        "bit_different": 3716,
+        "first_different": 0,
+        "reference_path": "actual GPU tensor, ordered private blit",
+        "candidate_path": "actual GPU tensor, ordered private blit"
+      },
+      {
+        "layer": 3,
+        "position": 63,
+        "row": 63,
+        "dimensions": [
+          16,
+          256
+        ],
+        "floats": 4096,
+        "exact": 0,
+        "max_abs": 1.6689300537109375e-06,
+        "rms": 3.322654231943894e-07,
+        "different": 3649,
+        "bit_different": 3649,
+        "first_different": 0,
+        "reference_path": "actual GPU tensor, ordered private blit",
+        "candidate_path": "actual GPU tensor, ordered private blit"
+      },
+      {
+        "layer": 3,
+        "position": 7,
+        "row": 7,
+        "dimensions": [
+          16,
+          256
+        ],
+        "floats": 4096,
+        "exact": 0,
+        "max_abs": 1.6689300537109375e-06,
+        "rms": 2.9985502147099127e-07,
+        "different": 3577,
+        "bit_different": 3577,
+        "first_different": 0,
+        "reference_path": "actual CPU-visible tensor",
+        "candidate_path": "actual CPU-visible tensor"
+      }
+    ],
+    "qproj": [
+      {
+        "layer": 3,
+        "position": 0,
+        "row": 0,
+        "dimensions": [
+          16,
+          2,
+          256
+        ],
+        "floats": 8192,
+        "exact": 0,
+        "max_abs": 9.5367431640625e-07,
+        "rms": 2.0423730858452477e-07,
+        "different": 4339,
+        "bit_different": 4339,
+        "first_different": 0,
+        "reference_path": "actual GPU tensor, ordered private blit",
+        "candidate_path": "actual CPU-visible tensor"
+      },
+      {
+        "layer": 3,
+        "position": 127,
+        "row": 127,
+        "dimensions": [
+          16,
+          2,
+          256
+        ],
+        "floats": 8192,
+        "exact": 0,
+        "max_abs": 1.430511474609375e-06,
+        "rms": 2.9903885690516804e-07,
+        "different": 6002,
+        "bit_different": 6002,
+        "first_different": 0,
+        "reference_path": "actual GPU tensor, ordered private blit",
+        "candidate_path": "actual CPU-visible tensor"
+      },
+      {
+        "layer": 3,
+        "position": 1,
+        "row": 1,
+        "dimensions": [
+          16,
+          2,
+          256
+        ],
+        "floats": 8192,
+        "exact": 0,
+        "max_abs": 3.814697265625e-06,
+        "rms": 9.494922331329933e-07,
+        "different": 7772,
+        "bit_different": 7772,
+        "first_different": 0,
+        "reference_path": "actual GPU tensor, ordered private blit",
+        "candidate_path": "actual CPU-visible tensor"
+      },
+      {
+        "layer": 3,
+        "position": 30,
+        "row": 30,
+        "dimensions": [
+          16,
+          2,
+          256
+        ],
+        "floats": 8192,
+        "exact": 0,
+        "max_abs": 1.9073486328125e-06,
+        "rms": 3.4245113840809936e-07,
+        "different": 6120,
+        "bit_different": 6120,
+        "first_different": 1,
+        "reference_path": "actual GPU tensor, ordered private blit",
+        "candidate_path": "actual CPU-visible tensor"
+      },
+      {
+        "layer": 3,
+        "position": 31,
+        "row": 31,
+        "dimensions": [
+          16,
+          2,
+          256
+        ],
+        "floats": 8192,
+        "exact": 0,
+        "max_abs": 2.86102294921875e-06,
+        "rms": 3.253155634251315e-07,
+        "different": 5749,
+        "bit_different": 5749,
+        "first_different": 0,
+        "reference_path": "actual GPU tensor, ordered private blit",
+        "candidate_path": "actual CPU-visible tensor"
+      },
+      {
+        "layer": 3,
+        "position": 32,
+        "row": 32,
+        "dimensions": [
+          16,
+          2,
+          256
+        ],
+        "floats": 8192,
+        "exact": 0,
+        "max_abs": 1.9073486328125e-06,
+        "rms": 3.4813078160958093e-07,
+        "different": 6214,
+        "bit_different": 6214,
+        "first_different": 0,
+        "reference_path": "actual GPU tensor, ordered private blit",
+        "candidate_path": "actual CPU-visible tensor"
+      },
+      {
+        "layer": 3,
+        "position": 63,
+        "row": 63,
+        "dimensions": [
+          16,
+          2,
+          256
+        ],
+        "floats": 8192,
+        "exact": 0,
+        "max_abs": 1.430511474609375e-06,
+        "rms": 3.2902100057444053e-07,
+        "different": 5974,
+        "bit_different": 5974,
+        "first_different": 0,
+        "reference_path": "actual GPU tensor, ordered private blit",
+        "candidate_path": "actual CPU-visible tensor"
+      },
+      {
+        "layer": 3,
+        "position": 7,
+        "row": 7,
+        "dimensions": [
+          16,
+          2,
+          256
+        ],
+        "floats": 8192,
+        "exact": 0,
+        "max_abs": 1.9073486328125e-06,
+        "rms": 3.0581837033145785e-07,
+        "different": 5713,
+        "bit_different": 5713,
+        "first_different": 0,
+        "reference_path": "actual GPU tensor, ordered private blit",
+        "candidate_path": "actual CPU-visible tensor"
+      }
+    ],
+    "residual": [
+      {
+        "layer": 3,
+        "position": 0,
+        "row": 0,
+        "dimensions": [
+          2048
+        ],
+        "floats": 2048,
+        "exact": 0,
+        "max_abs": 1.1920928955078125e-07,
+        "rms": 3.988923904284466e-09,
+        "different": 1375,
+        "bit_different": 1375,
+        "first_different": 2,
+        "reference_path": "actual CPU-visible tensor",
+        "candidate_path": "actual CPU-visible tensor"
+      },
+      {
+        "layer": 3,
+        "position": 127,
+        "row": 127,
+        "dimensions": [
+          2048
+        ],
+        "floats": 2048,
+        "exact": 0,
+        "max_abs": 5.960464477539063e-08,
+        "rms": 8.865658907265224e-09,
+        "different": 1878,
+        "bit_different": 1878,
+        "first_different": 0,
+        "reference_path": "actual CPU-visible tensor",
+        "candidate_path": "actual CPU-visible tensor"
+      },
+      {
+        "layer": 3,
+        "position": 1,
+        "row": 1,
+        "dimensions": [
+          2048
+        ],
+        "floats": 2048,
+        "exact": 0,
+        "max_abs": 3.5762786865234375e-07,
+        "rms": 2.093834795327989e-08,
+        "different": 1916,
+        "bit_different": 1916,
+        "first_different": 0,
+        "reference_path": "actual CPU-visible tensor",
+        "candidate_path": "actual CPU-visible tensor"
+      },
+      {
+        "layer": 3,
+        "position": 30,
+        "row": 30,
+        "dimensions": [
+          2048
+        ],
+        "floats": 2048,
+        "exact": 0,
+        "max_abs": 2.384185791015625e-07,
+        "rms": 1.1800657217943264e-08,
+        "different": 1882,
+        "bit_different": 1882,
+        "first_different": 0,
+        "reference_path": "actual CPU-visible tensor",
+        "candidate_path": "actual CPU-visible tensor"
+      },
+      {
+        "layer": 3,
+        "position": 31,
+        "row": 31,
+        "dimensions": [
+          2048
+        ],
+        "floats": 2048,
+        "exact": 0,
+        "max_abs": 8.940696716308594e-08,
+        "rms": 9.041322213725507e-09,
+        "different": 1871,
+        "bit_different": 1871,
+        "first_different": 0,
+        "reference_path": "actual CPU-visible tensor",
+        "candidate_path": "actual CPU-visible tensor"
+      },
+      {
+        "layer": 3,
+        "position": 32,
+        "row": 32,
+        "dimensions": [
+          2048
+        ],
+        "floats": 2048,
+        "exact": 0,
+        "max_abs": 1.1920928955078125e-07,
+        "rms": 1.0167371930311417e-08,
+        "different": 1871,
+        "bit_different": 1871,
+        "first_different": 0,
+        "reference_path": "actual CPU-visible tensor",
+        "candidate_path": "actual CPU-visible tensor"
+      },
+      {
+        "layer": 3,
+        "position": 63,
+        "row": 63,
+        "dimensions": [
+          2048
+        ],
+        "floats": 2048,
+        "exact": 0,
+        "max_abs": 1.341104507446289e-07,
+        "rms": 1.0328527289611852e-08,
+        "different": 1882,
+        "bit_different": 1882,
+        "first_different": 0,
+        "reference_path": "actual CPU-visible tensor",
+        "candidate_path": "actual CPU-visible tensor"
+      },
+      {
+        "layer": 3,
+        "position": 7,
+        "row": 7,
+        "dimensions": [
+          2048
+        ],
+        "floats": 2048,
+        "exact": 0,
+        "max_abs": 5.960464477539063e-08,
+        "rms": 8.831196457853766e-09,
+        "different": 1857,
+        "bit_different": 1857,
+        "first_different": 0,
+        "reference_path": "actual CPU-visible tensor",
+        "candidate_path": "actual CPU-visible tensor"
+      }
+    ],
+    "vproj": [
+      {
+        "layer": 3,
+        "position": 0,
+        "row": 0,
+        "dimensions": [
+          2,
+          256
+        ],
+        "floats": 512,
+        "exact": 0,
+        "max_abs": 4.76837158203125e-07,
+        "rms": 6.111593735986956e-08,
+        "different": 382,
+        "bit_different": 382,
+        "first_different": 0,
+        "reference_path": "actual GPU tensor, ordered private blit",
+        "candidate_path": "actual CPU-visible tensor"
+      },
+      {
+        "layer": 3,
+        "position": 127,
+        "row": 127,
+        "dimensions": [
+          2,
+          256
+        ],
+        "floats": 512,
+        "exact": 0,
+        "max_abs": 5.960464477539062e-07,
+        "rms": 1.6439360398824123e-07,
+        "different": 471,
+        "bit_different": 471,
+        "first_different": 0,
+        "reference_path": "actual GPU tensor, ordered private blit",
+        "candidate_path": "actual CPU-visible tensor"
+      },
+      {
+        "layer": 3,
+        "position": 1,
+        "row": 1,
+        "dimensions": [
+          2,
+          256
+        ],
+        "floats": 512,
+        "exact": 0,
+        "max_abs": 1.430511474609375e-06,
+        "rms": 2.2760008225742687e-07,
+        "different": 474,
+        "bit_different": 474,
+        "first_different": 0,
+        "reference_path": "actual GPU tensor, ordered private blit",
+        "candidate_path": "actual CPU-visible tensor"
+      },
+      {
+        "layer": 3,
+        "position": 30,
+        "row": 30,
+        "dimensions": [
+          2,
+          256
+        ],
+        "floats": 512,
+        "exact": 0,
+        "max_abs": 4.917383193969727e-07,
+        "rms": 1.7367464958740265e-07,
+        "different": 449,
+        "bit_different": 449,
+        "first_different": 0,
+        "reference_path": "actual GPU tensor, ordered private blit",
+        "candidate_path": "actual CPU-visible tensor"
+      },
+      {
+        "layer": 3,
+        "position": 31,
+        "row": 31,
+        "dimensions": [
+          2,
+          256
+        ],
+        "floats": 512,
+        "exact": 0,
+        "max_abs": 5.960464477539062e-07,
+        "rms": 1.7659678640972502e-07,
+        "different": 454,
+        "bit_different": 454,
+        "first_different": 0,
+        "reference_path": "actual GPU tensor, ordered private blit",
+        "candidate_path": "actual CPU-visible tensor"
+      },
+      {
+        "layer": 3,
+        "position": 32,
+        "row": 32,
+        "dimensions": [
+          2,
+          256
+        ],
+        "floats": 512,
+        "exact": 0,
+        "max_abs": 7.152557373046875e-07,
+        "rms": 2.0014248619374244e-07,
+        "different": 476,
+        "bit_different": 476,
+        "first_different": 0,
+        "reference_path": "actual GPU tensor, ordered private blit",
+        "candidate_path": "actual CPU-visible tensor"
+      },
+      {
+        "layer": 3,
+        "position": 63,
+        "row": 63,
+        "dimensions": [
+          2,
+          256
+        ],
+        "floats": 512,
+        "exact": 0,
+        "max_abs": 7.152557373046875e-07,
+        "rms": 2.0475651552093884e-07,
+        "different": 472,
+        "bit_different": 472,
+        "first_different": 1,
+        "reference_path": "actual GPU tensor, ordered private blit",
+        "candidate_path": "actual CPU-visible tensor"
+      },
+      {
+        "layer": 3,
+        "position": 7,
+        "row": 7,
+        "dimensions": [
+          2,
+          256
+        ],
+        "floats": 512,
+        "exact": 0,
+        "max_abs": 4.76837158203125e-07,
+        "rms": 1.6451795816627344e-07,
+        "different": 467,
+        "bit_different": 467,
+        "first_different": 1,
+        "reference_path": "actual GPU tensor, ordered private blit",
+        "candidate_path": "actual CPU-visible tensor"
+      }
+    ],
+    "attention_ungated": [
+      {
+        "layer": 3,
+        "position": 127,
+        "row": 127,
+        "dimensions": [
+          16,
+          256
+        ],
+        "floats": 4096,
+        "exact": 0,
+        "max_abs": 8.344650268554688e-07,
+        "rms": 1.0815780067983247e-07,
+        "different": 3748,
+        "bit_different": 3748,
+        "first_different": 0,
+        "reference_path": "actual GPU tensor, ordered private blit",
+        "candidate_path": "actual GPU tensor, ordered private blit"
+      },
+      {
+        "layer": 3,
+        "position": 31,
+        "row": 31,
+        "dimensions": [
+          16,
+          256
+        ],
+        "floats": 4096,
+        "exact": 0,
+        "max_abs": 1.1026859283447266e-06,
+        "rms": 1.4953658542622187e-07,
+        "different": 3797,
+        "bit_different": 3797,
+        "first_different": 0,
+        "reference_path": "actual GPU tensor, ordered private blit",
+        "candidate_path": "actual GPU tensor, ordered private blit"
+      },
+      {
+        "layer": 3,
+        "position": 32,
+        "row": 32,
+        "dimensions": [
+          16,
+          256
+        ],
+        "floats": 4096,
+        "exact": 0,
+        "max_abs": 2.0563602447509766e-06,
+        "rms": 1.9270549497676483e-07,
+        "different": 3838,
+        "bit_different": 3838,
+        "first_different": 0,
+        "reference_path": "actual GPU tensor, ordered private blit",
+        "candidate_path": "actual GPU tensor, ordered private blit"
+      },
+      {
+        "layer": 3,
+        "position": 63,
+        "row": 63,
+        "dimensions": [
+          16,
+          256
+        ],
+        "floats": 4096,
+        "exact": 0,
+        "max_abs": 1.6689300537109375e-06,
+        "rms": 1.6324472818194715e-07,
+        "different": 3797,
+        "bit_different": 3797,
+        "first_different": 0,
+        "reference_path": "actual GPU tensor, ordered private blit",
+        "candidate_path": "actual GPU tensor, ordered private blit"
+      }
+    ]
+  },
+  "first_observed_differences": {
+    "attention_gated": {
+      "layer": 3,
+      "position": 0,
+      "row": 0,
+      "dimensions": [
+        16,
+        256
+      ],
+      "floats": 4096,
+      "exact": 0,
+      "max_abs": 2.9802322387695312e-08,
+      "rms": 1.7435164639932975e-09,
+      "different": 3312,
+      "bit_different": 3312,
+      "first_different": 0,
+      "reference_path": "actual CPU-visible tensor",
+      "candidate_path": "actual CPU-visible tensor"
+    },
+    "input_norm": {
+      "layer": 3,
+      "position": 0,
+      "row": 0,
+      "dimensions": [
+        2048
+      ],
+      "floats": 2048,
+      "exact": 0,
+      "max_abs": 4.76837158203125e-07,
+      "rms": 2.945134240115379e-08,
+      "different": 681,
+      "bit_different": 681,
+      "first_different": 0,
+      "reference_path": "actual GPU tensor, ordered private blit",
+      "candidate_path": "actual CPU-visible tensor"
+    },
+    "k_norm": {
+      "layer": 3,
+      "position": 0,
+      "row": 0,
+      "dimensions": [
+        2,
+        256
+      ],
+      "floats": 512,
+      "exact": 0,
+      "max_abs": 7.152557373046875e-07,
+      "rms": 1.326597703026632e-07,
+      "different": 349,
+      "bit_different": 349,
+      "first_different": 0,
+      "reference_path": "actual CPU-visible tensor",
+      "candidate_path": "actual CPU-visible tensor"
+    },
+    "k_raw": {
+      "layer": 3,
+      "position": 0,
+      "row": 0,
+      "dimensions": [
+        2,
+        256
+      ],
+      "floats": 512,
+      "exact": 0,
+      "max_abs": 3.5762786865234375e-07,
+      "rms": 7.527310644187103e-08,
+      "different": 370,
+      "bit_different": 370,
+      "first_different": 0,
+      "reference_path": "actual CPU-visible tensor",
+      "candidate_path": "actual CPU-visible tensor"
+    },
+    "k_rope": {
+      "layer": 3,
+      "position": 0,
+      "row": 0,
+      "dimensions": [
+        2,
+        256
+      ],
+      "floats": 512,
+      "exact": 0,
+      "max_abs": 7.152557373046875e-07,
+      "rms": 1.326597703026632e-07,
+      "different": 349,
+      "bit_different": 349,
+      "first_different": 0,
+      "reference_path": "actual CPU-visible tensor",
+      "candidate_path": "actual CPU-visible tensor"
+    },
+    "kproj": {
+      "layer": 3,
+      "position": 0,
+      "row": 0,
+      "dimensions": [
+        2,
+        256
+      ],
+      "floats": 512,
+      "exact": 0,
+      "max_abs": 3.5762786865234375e-07,
+      "rms": 7.527310644187103e-08,
+      "different": 370,
+      "bit_different": 370,
+      "first_different": 0,
+      "reference_path": "actual GPU tensor, ordered private blit",
+      "candidate_path": "actual CPU-visible tensor"
+    },
+    "layer_input": {
+      "layer": 3,
+      "position": 0,
+      "row": 0,
+      "dimensions": [
+        2048
+      ],
+      "floats": 2048,
+      "exact": 0,
+      "max_abs": 1.4901161193847656e-08,
+      "rms": 1.1660868400994243e-09,
+      "different": 780,
+      "bit_different": 780,
+      "first_different": 0,
+      "reference_path": "actual GPU tensor, ordered private blit",
+      "candidate_path": "actual CPU-visible tensor"
+    },
+    "oprojection": {
+      "layer": 3,
+      "position": 0,
+      "row": 0,
+      "dimensions": [
+        2048
+      ],
+      "floats": 2048,
+      "exact": 0,
+      "max_abs": 5.960464477539063e-08,
+      "rms": 2.678252967293967e-09,
+      "different": 1752,
+      "bit_different": 1752,
+      "first_different": 0,
+      "reference_path": "actual GPU tensor, ordered private blit",
+      "candidate_path": "actual GPU tensor, ordered private blit"
+    },
+    "q_norm": {
+      "layer": 3,
+      "position": 0,
+      "row": 0,
+      "dimensions": [
+        16,
+        256
+      ],
+      "floats": 4096,
+      "exact": 0,
+      "max_abs": 1.430511474609375e-06,
+      "rms": 1.5378295374427378e-07,
+      "different": 2937,
+      "bit_different": 2937,
+      "first_different": 0,
+      "reference_path": "actual CPU-visible tensor",
+      "candidate_path": "actual CPU-visible tensor"
+    },
+    "q_raw": {
+      "layer": 3,
+      "position": 0,
+      "row": 0,
+      "dimensions": [
+        16,
+        256
+      ],
+      "floats": 4096,
+      "exact": 0,
+      "max_abs": 9.5367431640625e-07,
+      "rms": 8.444969272000238e-08,
+      "different": 3040,
+      "bit_different": 3040,
+      "first_different": 0,
+      "reference_path": "actual CPU-visible tensor",
+      "candidate_path": "actual CPU-visible tensor"
+    },
+    "q_rope": {
+      "layer": 3,
+      "position": 0,
+      "row": 0,
+      "dimensions": [
+        16,
+        256
+      ],
+      "floats": 4096,
+      "exact": 0,
+      "max_abs": 1.430511474609375e-06,
+      "rms": 1.5378295374427378e-07,
+      "different": 2937,
+      "bit_different": 2937,
+      "first_different": 0,
+      "reference_path": "actual CPU-visible tensor",
+      "candidate_path": "actual CPU-visible tensor"
+    },
+    "qproj": {
+      "layer": 3,
+      "position": 0,
+      "row": 0,
+      "dimensions": [
+        16,
+        2,
+        256
+      ],
+      "floats": 8192,
+      "exact": 0,
+      "max_abs": 9.5367431640625e-07,
+      "rms": 2.0423730858452477e-07,
+      "different": 4339,
+      "bit_different": 4339,
+      "first_different": 0,
+      "reference_path": "actual GPU tensor, ordered private blit",
+      "candidate_path": "actual CPU-visible tensor"
+    },
+    "residual": {
+      "layer": 3,
+      "position": 0,
+      "row": 0,
+      "dimensions": [
+        2048
+      ],
+      "floats": 2048,
+      "exact": 0,
+      "max_abs": 1.1920928955078125e-07,
+      "rms": 3.988923904284466e-09,
+      "different": 1375,
+      "bit_different": 1375,
+      "first_different": 2,
+      "reference_path": "actual CPU-visible tensor",
+      "candidate_path": "actual CPU-visible tensor"
+    },
+    "vproj": {
+      "layer": 3,
+      "position": 0,
+      "row": 0,
+      "dimensions": [
+        2,
+        256
+      ],
+      "floats": 512,
+      "exact": 0,
+      "max_abs": 4.76837158203125e-07,
+      "rms": 6.111593735986956e-08,
+      "different": 382,
+      "bit_different": 382,
+      "first_different": 0,
+      "reference_path": "actual GPU tensor, ordered private blit",
+      "candidate_path": "actual CPU-visible tensor"
+    },
+    "attention_ungated": {
+      "layer": 3,
+      "position": 31,
+      "row": 31,
+      "dimensions": [
+        16,
+        256
+      ],
+      "floats": 4096,
+      "exact": 0,
+      "max_abs": 1.1026859283447266e-06,
+      "rms": 1.4953658542622187e-07,
+      "different": 3797,
+      "bit_different": 3797,
+      "first_different": 0,
+      "reference_path": "actual GPU tensor, ordered private blit",
+      "candidate_path": "actual GPU tensor, ordered private blit"
+    }
+  },
+  "unobservable_comparisons": {
+    "attention_ungated": [
+      0,
+      1,
+      30,
+      7
+    ]
+  },
+  "identical_input_maxima": {
+    "gate_cpu_vs_gpu_identical_inputs": 5.960464477539063e-08,
+    "cpu_q_normalization_replay_vs_live": 0,
+    "reference_gate_replay_vs_live": 0,
+    "scalar_k_projection_replay_vs_live": 0,
+    "v_projection_scalar_vs_nrow": 0,
+    "q_preparation_cpu_vs_gpu": 1.9073486328125e-06,
+    "scalar_v_projection_replay_vs_live": 0,
+    "k_preparation_cpu_vs_gpu": 1.9073486328125e-06,
+    "attention_reference_vs_online_identical_inputs": 2.086162567138672e-07,
+    "oprojection_replay_vs_live": 0,
+    "reference_preparation_replay_vs_live": 0,
+    "scalar_q_projection_replay_vs_live": 0,
+    "cpu_k_normalization_replay_vs_live": 0,
+    "reference_attention_replay_vs_live": 0,
+    "q_projection_scalar_vs_nrow": 0,
+    "q_normalization_cpu_vs_gpu_nonrotary": 9.5367431640625e-07,
+    "residual_cpu_add_vs_live": 0,
+    "k_projection_scalar_vs_nrow": 0
+  },
+  "scope": "Only sampled actual layer tensors. Fused normalized intermediates are unobservable; nonrotary-slice RMS comparison is a separate identical-input probe. No intermediate full-model states inferred.",
+  "candidate_numerics_mask": 31,
+  "online_attention_comparison": "Original mask-15 online kernel replayed on identical scalar operands; actual captured candidate is corrected mask 31."
+}

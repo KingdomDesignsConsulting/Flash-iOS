@@ -1,0 +1,1485 @@
+{
+  "status": "REPAIR_QUALIFIED_BOUNDED_RELEASE_NO_GO",
+  "mask": 63,
+  "first_failed_position": 129,
+  "pre_fix": {
+    "binary_sha256": "1181b66b73b325d82ce5a93419a5e8ce521d86ad54c9f910ff733b5e99d9ba9a",
+    "state_max_abs": 18.87463927268982,
+    "all_state_finite": true,
+    "active_components": [
+      {
+        "component": "gpu_gdn",
+        "layer": 0,
+        "byte_exact": true,
+        "max_abs": 0,
+        "rms": 0.0,
+        "different_values": 0,
+        "floats": 524288
+      },
+      {
+        "component": "gpu_conv",
+        "layer": 0,
+        "byte_exact": true,
+        "max_abs": 0,
+        "rms": 0.0,
+        "different_values": 0,
+        "floats": 24576
+      },
+      {
+        "component": "gpu_gdn",
+        "layer": 1,
+        "byte_exact": false,
+        "max_abs": 0.5848973877727985,
+        "rms": 0.0018120994323060666,
+        "different_values": 498134,
+        "floats": 524288
+      },
+      {
+        "component": "gpu_conv",
+        "layer": 1,
+        "byte_exact": false,
+        "max_abs": 1.643465518951416,
+        "rms": 0.08243204112701166,
+        "different_values": 7988,
+        "floats": 24576
+      },
+      {
+        "component": "gpu_gdn",
+        "layer": 2,
+        "byte_exact": false,
+        "max_abs": 0.16845985234249383,
+        "rms": 0.0007959160128995664,
+        "different_values": 509901,
+        "floats": 524288
+      },
+      {
+        "component": "gpu_conv",
+        "layer": 2,
+        "byte_exact": false,
+        "max_abs": 0.4245615005493164,
+        "rms": 0.034749954908496056,
+        "different_values": 8080,
+        "floats": 24576
+      },
+      {
+        "component": "cpu_k",
+        "layer": 3,
+        "byte_exact": false,
+        "max_abs": 0.2100823586806655,
+        "rms": 0.0049661790648075025,
+        "different_values": 512,
+        "floats": 66048
+      },
+      {
+        "component": "cpu_v",
+        "layer": 3,
+        "byte_exact": false,
+        "max_abs": 0.09442320466041565,
+        "rms": 0.00216215944019335,
+        "different_values": 512,
+        "floats": 66048
+      },
+      {
+        "component": "gpu_k",
+        "layer": 3,
+        "byte_exact": false,
+        "max_abs": 0.2100823586806655,
+        "rms": 0.0049661790648075025,
+        "different_values": 512,
+        "floats": 66048
+      },
+      {
+        "component": "gpu_v",
+        "layer": 3,
+        "byte_exact": false,
+        "max_abs": 0.09442320466041565,
+        "rms": 0.00216215944019335,
+        "different_values": 512,
+        "floats": 66048
+      },
+      {
+        "component": "gpu_gdn",
+        "layer": 4,
+        "byte_exact": false,
+        "max_abs": 0.013197481632232666,
+        "rms": 6.778259186900831e-05,
+        "different_values": 524171,
+        "floats": 524288
+      },
+      {
+        "component": "gpu_conv",
+        "layer": 4,
+        "byte_exact": false,
+        "max_abs": 0.20856285095214844,
+        "rms": 0.019666208133808896,
+        "different_values": 8192,
+        "floats": 24576
+      },
+      {
+        "component": "gpu_gdn",
+        "layer": 5,
+        "byte_exact": false,
+        "max_abs": 0.04213210940361023,
+        "rms": 0.0002178198045862859,
+        "different_values": 524111,
+        "floats": 524288
+      },
+      {
+        "component": "gpu_conv",
+        "layer": 5,
+        "byte_exact": false,
+        "max_abs": 0.13689517974853516,
+        "rms": 0.016967724214112263,
+        "different_values": 8192,
+        "floats": 24576
+      },
+      {
+        "component": "gpu_gdn",
+        "layer": 6,
+        "byte_exact": false,
+        "max_abs": 0.024983733892440796,
+        "rms": 0.0001518302759894667,
+        "different_values": 524226,
+        "floats": 524288
+      },
+      {
+        "component": "gpu_conv",
+        "layer": 6,
+        "byte_exact": false,
+        "max_abs": 0.16048479080200195,
+        "rms": 0.017659614729977766,
+        "different_values": 8192,
+        "floats": 24576
+      },
+      {
+        "component": "cpu_k",
+        "layer": 7,
+        "byte_exact": false,
+        "max_abs": 0.20039933919906616,
+        "rms": 0.004913284255670773,
+        "different_values": 512,
+        "floats": 66048
+      },
+      {
+        "component": "cpu_v",
+        "layer": 7,
+        "byte_exact": false,
+        "max_abs": 0.057792842388153076,
+        "rms": 0.0017987792113299662,
+        "different_values": 512,
+        "floats": 66048
+      },
+      {
+        "component": "gpu_k",
+        "layer": 7,
+        "byte_exact": false,
+        "max_abs": 0.20039933919906616,
+        "rms": 0.004913284255670773,
+        "different_values": 512,
+        "floats": 66048
+      },
+      {
+        "component": "gpu_v",
+        "layer": 7,
+        "byte_exact": false,
+        "max_abs": 0.057792842388153076,
+        "rms": 0.0017987792113299662,
+        "different_values": 512,
+        "floats": 66048
+      },
+      {
+        "component": "gpu_gdn",
+        "layer": 8,
+        "byte_exact": false,
+        "max_abs": 0.06934493780136108,
+        "rms": 0.00020281386733240843,
+        "different_values": 523847,
+        "floats": 524288
+      },
+      {
+        "component": "gpu_conv",
+        "layer": 8,
+        "byte_exact": false,
+        "max_abs": 0.28662109375,
+        "rms": 0.02598497079778433,
+        "different_values": 8192,
+        "floats": 24576
+      },
+      {
+        "component": "gpu_gdn",
+        "layer": 9,
+        "byte_exact": false,
+        "max_abs": 0.08531945943832397,
+        "rms": 0.00035377605436823185,
+        "different_values": 523772,
+        "floats": 524288
+      },
+      {
+        "component": "gpu_conv",
+        "layer": 9,
+        "byte_exact": false,
+        "max_abs": 0.22659805417060852,
+        "rms": 0.026243595778015435,
+        "different_values": 8190,
+        "floats": 24576
+      },
+      {
+        "component": "gpu_gdn",
+        "layer": 10,
+        "byte_exact": false,
+        "max_abs": 0.0039858222007751465,
+        "rms": 5.8569787613851716e-05,
+        "different_values": 523713,
+        "floats": 524288
+      },
+      {
+        "component": "gpu_conv",
+        "layer": 10,
+        "byte_exact": false,
+        "max_abs": 0.29899632930755615,
+        "rms": 0.031922057922476196,
+        "different_values": 8188,
+        "floats": 24576
+      },
+      {
+        "component": "cpu_k",
+        "layer": 11,
+        "byte_exact": false,
+        "max_abs": 0.5998241901397705,
+        "rms": 0.008960356708027032,
+        "different_values": 512,
+        "floats": 66048
+      },
+      {
+        "component": "cpu_v",
+        "layer": 11,
+        "byte_exact": false,
+        "max_abs": 0.12789557874202728,
+        "rms": 0.0028651870504873456,
+        "different_values": 512,
+        "floats": 66048
+      },
+      {
+        "component": "gpu_k",
+        "layer": 11,
+        "byte_exact": false,
+        "max_abs": 0.5998241901397705,
+        "rms": 0.008960356708027032,
+        "different_values": 512,
+        "floats": 66048
+      },
+      {
+        "component": "gpu_v",
+        "layer": 11,
+        "byte_exact": false,
+        "max_abs": 0.12789557874202728,
+        "rms": 0.0028651870504873456,
+        "different_values": 512,
+        "floats": 66048
+      },
+      {
+        "component": "gpu_gdn",
+        "layer": 12,
+        "byte_exact": false,
+        "max_abs": 0.030367493629455566,
+        "rms": 8.37083420492993e-05,
+        "different_values": 524159,
+        "floats": 524288
+      },
+      {
+        "component": "gpu_conv",
+        "layer": 12,
+        "byte_exact": false,
+        "max_abs": 0.27606678009033203,
+        "rms": 0.027541056685576507,
+        "different_values": 8192,
+        "floats": 24576
+      },
+      {
+        "component": "gpu_gdn",
+        "layer": 13,
+        "byte_exact": false,
+        "max_abs": 0.012107793241739273,
+        "rms": 4.8406884064404945e-05,
+        "different_values": 523880,
+        "floats": 524288
+      },
+      {
+        "component": "gpu_conv",
+        "layer": 13,
+        "byte_exact": false,
+        "max_abs": 0.41066813468933105,
+        "rms": 0.02936846409249205,
+        "different_values": 8192,
+        "floats": 24576
+      },
+      {
+        "component": "gpu_gdn",
+        "layer": 14,
+        "byte_exact": false,
+        "max_abs": 0.016497492790222168,
+        "rms": 9.160891353464694e-05,
+        "different_values": 524123,
+        "floats": 524288
+      },
+      {
+        "component": "gpu_conv",
+        "layer": 14,
+        "byte_exact": false,
+        "max_abs": 0.2962772846221924,
+        "rms": 0.03012560396205995,
+        "different_values": 8192,
+        "floats": 24576
+      },
+      {
+        "component": "cpu_k",
+        "layer": 15,
+        "byte_exact": false,
+        "max_abs": 0.7200589179992676,
+        "rms": 0.01561834639862062,
+        "different_values": 512,
+        "floats": 66048
+      },
+      {
+        "component": "cpu_v",
+        "layer": 15,
+        "byte_exact": false,
+        "max_abs": 0.1514350026845932,
+        "rms": 0.004091422147865422,
+        "different_values": 512,
+        "floats": 66048
+      },
+      {
+        "component": "gpu_k",
+        "layer": 15,
+        "byte_exact": false,
+        "max_abs": 0.7200589179992676,
+        "rms": 0.01561834639862062,
+        "different_values": 512,
+        "floats": 66048
+      },
+      {
+        "component": "gpu_v",
+        "layer": 15,
+        "byte_exact": false,
+        "max_abs": 0.1514350026845932,
+        "rms": 0.004091422147865422,
+        "different_values": 512,
+        "floats": 66048
+      },
+      {
+        "component": "gpu_gdn",
+        "layer": 16,
+        "byte_exact": false,
+        "max_abs": 0.004653928801417351,
+        "rms": 4.858117285799664e-05,
+        "different_values": 523953,
+        "floats": 524288
+      },
+      {
+        "component": "gpu_conv",
+        "layer": 16,
+        "byte_exact": false,
+        "max_abs": 0.3512781262397766,
+        "rms": 0.039144095104329896,
+        "different_values": 8192,
+        "floats": 24576
+      },
+      {
+        "component": "gpu_gdn",
+        "layer": 17,
+        "byte_exact": false,
+        "max_abs": 0.06488767266273499,
+        "rms": 0.00026440005041993974,
+        "different_values": 524211,
+        "floats": 524288
+      },
+      {
+        "component": "gpu_conv",
+        "layer": 17,
+        "byte_exact": false,
+        "max_abs": 1.3670005798339844,
+        "rms": 0.05680099636454623,
+        "different_values": 8192,
+        "floats": 24576
+      },
+      {
+        "component": "gpu_gdn",
+        "layer": 18,
+        "byte_exact": false,
+        "max_abs": 0.024714641273021698,
+        "rms": 0.00014261149380630667,
+        "different_values": 524259,
+        "floats": 524288
+      },
+      {
+        "component": "gpu_conv",
+        "layer": 18,
+        "byte_exact": false,
+        "max_abs": 4.776698112487793,
+        "rms": 0.13743795892480395,
+        "different_values": 8192,
+        "floats": 24576
+      },
+      {
+        "component": "cpu_k",
+        "layer": 19,
+        "byte_exact": false,
+        "max_abs": 4.667531371116638,
+        "rms": 0.060436440025401064,
+        "different_values": 512,
+        "floats": 66048
+      },
+      {
+        "component": "cpu_v",
+        "layer": 19,
+        "byte_exact": false,
+        "max_abs": 3.1675676107406616,
+        "rms": 0.01881589938423884,
+        "different_values": 512,
+        "floats": 66048
+      },
+      {
+        "component": "gpu_k",
+        "layer": 19,
+        "byte_exact": false,
+        "max_abs": 4.667531371116638,
+        "rms": 0.060436440025401064,
+        "different_values": 512,
+        "floats": 66048
+      },
+      {
+        "component": "gpu_v",
+        "layer": 19,
+        "byte_exact": false,
+        "max_abs": 3.1675676107406616,
+        "rms": 0.01881589938423884,
+        "different_values": 512,
+        "floats": 66048
+      },
+      {
+        "component": "gpu_gdn",
+        "layer": 20,
+        "byte_exact": false,
+        "max_abs": 0.3609476387500763,
+        "rms": 0.001691967018240931,
+        "different_values": 524258,
+        "floats": 524288
+      },
+      {
+        "component": "gpu_conv",
+        "layer": 20,
+        "byte_exact": false,
+        "max_abs": 3.5671292543411255,
+        "rms": 0.18103005459550023,
+        "different_values": 8192,
+        "floats": 24576
+      },
+      {
+        "component": "gpu_gdn",
+        "layer": 21,
+        "byte_exact": false,
+        "max_abs": 0.9380216002464294,
+        "rms": 0.003332099980543198,
+        "different_values": 524030,
+        "floats": 524288
+      },
+      {
+        "component": "gpu_conv",
+        "layer": 21,
+        "byte_exact": false,
+        "max_abs": 4.928018569946289,
+        "rms": 0.216209170169343,
+        "different_values": 8190,
+        "floats": 24576
+      },
+      {
+        "component": "gpu_gdn",
+        "layer": 22,
+        "byte_exact": false,
+        "max_abs": 0.23043012619018555,
+        "rms": 0.0006708686290318561,
+        "different_values": 523771,
+        "floats": 524288
+      },
+      {
+        "component": "gpu_conv",
+        "layer": 22,
+        "byte_exact": false,
+        "max_abs": 4.576025724411011,
+        "rms": 0.29452194886338134,
+        "different_values": 8188,
+        "floats": 24576
+      },
+      {
+        "component": "cpu_k",
+        "layer": 23,
+        "byte_exact": false,
+        "max_abs": 18.87463927268982,
+        "rms": 0.14217449138079485,
+        "different_values": 512,
+        "floats": 66048
+      },
+      {
+        "component": "cpu_v",
+        "layer": 23,
+        "byte_exact": false,
+        "max_abs": 10.697616577148438,
+        "rms": 0.06988023647908309,
+        "different_values": 512,
+        "floats": 66048
+      },
+      {
+        "component": "gpu_k",
+        "layer": 23,
+        "byte_exact": false,
+        "max_abs": 18.87463927268982,
+        "rms": 0.14217449138079485,
+        "different_values": 512,
+        "floats": 66048
+      },
+      {
+        "component": "gpu_v",
+        "layer": 23,
+        "byte_exact": false,
+        "max_abs": 10.697616577148438,
+        "rms": 0.06988023647908309,
+        "different_values": 512,
+        "floats": 66048
+      },
+      {
+        "component": "gpu_gdn",
+        "layer": 24,
+        "byte_exact": false,
+        "max_abs": 2.012215851806104,
+        "rms": 0.0035940861663697147,
+        "different_values": 524287,
+        "floats": 524288
+      },
+      {
+        "component": "gpu_conv",
+        "layer": 24,
+        "byte_exact": false,
+        "max_abs": 10.30836272239685,
+        "rms": 0.5184538254152389,
+        "different_values": 8192,
+        "floats": 24576
+      },
+      {
+        "component": "gpu_gdn",
+        "layer": 25,
+        "byte_exact": false,
+        "max_abs": 0.8905151709914207,
+        "rms": 0.002323797541841661,
+        "different_values": 524281,
+        "floats": 524288
+      },
+      {
+        "component": "gpu_conv",
+        "layer": 25,
+        "byte_exact": false,
+        "max_abs": 8.191219806671143,
+        "rms": 0.5572798057902724,
+        "different_values": 8192,
+        "floats": 24576
+      },
+      {
+        "component": "gpu_gdn",
+        "layer": 26,
+        "byte_exact": false,
+        "max_abs": 0.7156804483383894,
+        "rms": 0.00253844595835222,
+        "different_values": 524283,
+        "floats": 524288
+      },
+      {
+        "component": "gpu_conv",
+        "layer": 26,
+        "byte_exact": false,
+        "max_abs": 15.381748676300049,
+        "rms": 0.5433508144034536,
+        "different_values": 8192,
+        "floats": 24576
+      },
+      {
+        "component": "cpu_k",
+        "layer": 27,
+        "byte_exact": false,
+        "max_abs": 13.943809747695923,
+        "rms": 0.13596485946445572,
+        "different_values": 512,
+        "floats": 66048
+      },
+      {
+        "component": "cpu_v",
+        "layer": 27,
+        "byte_exact": false,
+        "max_abs": 10.21591305732727,
+        "rms": 0.05939041147868416,
+        "different_values": 512,
+        "floats": 66048
+      },
+      {
+        "component": "gpu_k",
+        "layer": 27,
+        "byte_exact": false,
+        "max_abs": 13.943809747695923,
+        "rms": 0.13596485946445572,
+        "different_values": 512,
+        "floats": 66048
+      },
+      {
+        "component": "gpu_v",
+        "layer": 27,
+        "byte_exact": false,
+        "max_abs": 10.21591305732727,
+        "rms": 0.05939041147868416,
+        "different_values": 512,
+        "floats": 66048
+      },
+      {
+        "component": "gpu_gdn",
+        "layer": 28,
+        "byte_exact": false,
+        "max_abs": 0.06968886964023113,
+        "rms": 0.0005295544744593194,
+        "different_values": 524274,
+        "floats": 524288
+      },
+      {
+        "component": "gpu_conv",
+        "layer": 28,
+        "byte_exact": false,
+        "max_abs": 6.985523700714111,
+        "rms": 0.45231021939450455,
+        "different_values": 8192,
+        "floats": 24576
+      },
+      {
+        "component": "gpu_gdn",
+        "layer": 29,
+        "byte_exact": false,
+        "max_abs": 0.9779413938522339,
+        "rms": 0.0023941047233047193,
+        "different_values": 524281,
+        "floats": 524288
+      },
+      {
+        "component": "gpu_conv",
+        "layer": 29,
+        "byte_exact": false,
+        "max_abs": 9.122354745864868,
+        "rms": 0.4540150415758261,
+        "different_values": 8192,
+        "floats": 24576
+      },
+      {
+        "component": "gpu_gdn",
+        "layer": 30,
+        "byte_exact": false,
+        "max_abs": 0.35479581356048584,
+        "rms": 0.001295250498668099,
+        "different_values": 524267,
+        "floats": 524288
+      },
+      {
+        "component": "gpu_conv",
+        "layer": 30,
+        "byte_exact": false,
+        "max_abs": 7.435537338256836,
+        "rms": 0.4450981266066732,
+        "different_values": 8192,
+        "floats": 24576
+      },
+      {
+        "component": "cpu_k",
+        "layer": 31,
+        "byte_exact": false,
+        "max_abs": 9.051433086395264,
+        "rms": 0.1315237542702732,
+        "different_values": 512,
+        "floats": 66048
+      },
+      {
+        "component": "cpu_v",
+        "layer": 31,
+        "byte_exact": false,
+        "max_abs": 8.044847786426544,
+        "rms": 0.05634744291712033,
+        "different_values": 512,
+        "floats": 66048
+      },
+      {
+        "component": "gpu_k",
+        "layer": 31,
+        "byte_exact": false,
+        "max_abs": 9.051433086395264,
+        "rms": 0.1315237542702732,
+        "different_values": 512,
+        "floats": 66048
+      },
+      {
+        "component": "gpu_v",
+        "layer": 31,
+        "byte_exact": false,
+        "max_abs": 8.044847786426544,
+        "rms": 0.05634744291712033,
+        "different_values": 512,
+        "floats": 66048
+      },
+      {
+        "component": "gpu_gdn",
+        "layer": 32,
+        "byte_exact": false,
+        "max_abs": 0.39850831031799316,
+        "rms": 0.0013629187684359076,
+        "different_values": 524276,
+        "floats": 524288
+      },
+      {
+        "component": "gpu_conv",
+        "layer": 32,
+        "byte_exact": false,
+        "max_abs": 5.852119445800781,
+        "rms": 0.42405509695894006,
+        "different_values": 8192,
+        "floats": 24576
+      },
+      {
+        "component": "gpu_gdn",
+        "layer": 33,
+        "byte_exact": false,
+        "max_abs": 0.3705914467573166,
+        "rms": 0.0021511940615577107,
+        "different_values": 524282,
+        "floats": 524288
+      },
+      {
+        "component": "gpu_conv",
+        "layer": 33,
+        "byte_exact": false,
+        "max_abs": 3.8884652256965637,
+        "rms": 0.41587192487894464,
+        "different_values": 8192,
+        "floats": 24576
+      },
+      {
+        "component": "gpu_gdn",
+        "layer": 34,
+        "byte_exact": false,
+        "max_abs": 0.23588374629616737,
+        "rms": 0.0010261699382779373,
+        "different_values": 524283,
+        "floats": 524288
+      },
+      {
+        "component": "gpu_conv",
+        "layer": 34,
+        "byte_exact": false,
+        "max_abs": 5.514149904251099,
+        "rms": 0.417678029757043,
+        "different_values": 8192,
+        "floats": 24576
+      },
+      {
+        "component": "cpu_k",
+        "layer": 35,
+        "byte_exact": false,
+        "max_abs": 5.933886528015137,
+        "rms": 0.10595328048181837,
+        "different_values": 512,
+        "floats": 66048
+      },
+      {
+        "component": "cpu_v",
+        "layer": 35,
+        "byte_exact": false,
+        "max_abs": 3.034984588623047,
+        "rms": 0.03562461822105078,
+        "different_values": 512,
+        "floats": 66048
+      },
+      {
+        "component": "gpu_k",
+        "layer": 35,
+        "byte_exact": false,
+        "max_abs": 5.933886528015137,
+        "rms": 0.10595328048181837,
+        "different_values": 512,
+        "floats": 66048
+      },
+      {
+        "component": "gpu_v",
+        "layer": 35,
+        "byte_exact": false,
+        "max_abs": 3.034984588623047,
+        "rms": 0.03562461822105078,
+        "different_values": 512,
+        "floats": 66048
+      },
+      {
+        "component": "gpu_gdn",
+        "layer": 36,
+        "byte_exact": false,
+        "max_abs": 0.6089833974838257,
+        "rms": 0.00312599898587215,
+        "different_values": 524281,
+        "floats": 524288
+      },
+      {
+        "component": "gpu_conv",
+        "layer": 36,
+        "byte_exact": false,
+        "max_abs": 12.565755844116211,
+        "rms": 0.6235871605161993,
+        "different_values": 8192,
+        "floats": 24576
+      },
+      {
+        "component": "gpu_gdn",
+        "layer": 37,
+        "byte_exact": false,
+        "max_abs": 0.8818003237247467,
+        "rms": 0.003011676564650496,
+        "different_values": 524284,
+        "floats": 524288
+      },
+      {
+        "component": "gpu_conv",
+        "layer": 37,
+        "byte_exact": false,
+        "max_abs": 12.847246885299683,
+        "rms": 0.6344870985297276,
+        "different_values": 8192,
+        "floats": 24576
+      },
+      {
+        "component": "gpu_gdn",
+        "layer": 38,
+        "byte_exact": false,
+        "max_abs": 0.24871116876602173,
+        "rms": 0.0011840756280896844,
+        "different_values": 524275,
+        "floats": 524288
+      },
+      {
+        "component": "gpu_conv",
+        "layer": 38,
+        "byte_exact": false,
+        "max_abs": 12.594465255737305,
+        "rms": 0.5541212313021411,
+        "different_values": 8192,
+        "floats": 24576
+      },
+      {
+        "component": "cpu_k",
+        "layer": 39,
+        "byte_exact": false,
+        "max_abs": 2.388991951942444,
+        "rms": 0.054818327606135836,
+        "different_values": 512,
+        "floats": 66048
+      },
+      {
+        "component": "cpu_v",
+        "layer": 39,
+        "byte_exact": false,
+        "max_abs": 1.4843422770500183,
+        "rms": 0.027950901389384008,
+        "different_values": 512,
+        "floats": 66048
+      },
+      {
+        "component": "gpu_k",
+        "layer": 39,
+        "byte_exact": false,
+        "max_abs": 2.388991951942444,
+        "rms": 0.054818327606135836,
+        "different_values": 512,
+        "floats": 66048
+      },
+      {
+        "component": "gpu_v",
+        "layer": 39,
+        "byte_exact": false,
+        "max_abs": 1.4843422770500183,
+        "rms": 0.027950901389384008,
+        "different_values": 512,
+        "floats": 66048
+      }
+    ],
+    "layer0_combine": {
+      "expert_order_exact": true,
+      "parts": [
+        {
+          "name": "mid",
+          "byte_exact": true,
+          "max_abs": 0,
+          "rms": 0.0,
+          "different_values": 0,
+          "floats": 2048
+        },
+        {
+          "name": "shared",
+          "byte_exact": true,
+          "max_abs": 0,
+          "rms": 0.0,
+          "different_values": 0,
+          "floats": 2048
+        },
+        {
+          "name": "expert0",
+          "byte_exact": true,
+          "max_abs": 0,
+          "rms": 0.0,
+          "different_values": 0,
+          "floats": 2048
+        },
+        {
+          "name": "expert1",
+          "byte_exact": true,
+          "max_abs": 0,
+          "rms": 0.0,
+          "different_values": 0,
+          "floats": 2048
+        },
+        {
+          "name": "expert2",
+          "byte_exact": false,
+          "max_abs": 0.3544964352622628,
+          "rms": 0.07838178749283534,
+          "different_values": 2048,
+          "floats": 2048
+        },
+        {
+          "name": "expert3",
+          "byte_exact": false,
+          "max_abs": 0.31752911303192377,
+          "rms": 0.08587478937482364,
+          "different_values": 2048,
+          "floats": 2048
+        },
+        {
+          "name": "expert4",
+          "byte_exact": false,
+          "max_abs": 0.31174628902226686,
+          "rms": 0.0855610828653141,
+          "different_values": 2048,
+          "floats": 2048
+        },
+        {
+          "name": "expert5",
+          "byte_exact": false,
+          "max_abs": 0.31497206818312407,
+          "rms": 0.08841460791317463,
+          "different_values": 2048,
+          "floats": 2048
+        },
+        {
+          "name": "expert6",
+          "byte_exact": false,
+          "max_abs": 0.36902662040665746,
+          "rms": 0.09706576091391092,
+          "different_values": 2048,
+          "floats": 2048
+        },
+        {
+          "name": "expert7",
+          "byte_exact": false,
+          "max_abs": 2.112206880003214,
+          "rms": 0.2435514008107923,
+          "different_values": 2048,
+          "floats": 2048
+        },
+        {
+          "name": "combined",
+          "byte_exact": false,
+          "max_abs": 0.00884255487471819,
+          "rms": 0.002455958882625475,
+          "different_values": 2048,
+          "floats": 2048
+        },
+        {
+          "name": "params_used",
+          "byte_exact": false,
+          "max_abs": 0.1853717714548111,
+          "rms": 0.10812786912497553,
+          "different_values": 6,
+          "floats": 9
+        }
+      ]
+    },
+    "fresh_scalar_reference": {
+      "mask63": {
+        "exact": false,
+        "observed": 81,
+        "first_position": 129
+      },
+      "scalar_http": {
+        "exact": true,
+        "observed": 208
+      }
+    }
+  },
+  "prefetch_off_isolation": {
+    "status": "PASS",
+    "end_position": 207,
+    "observations": 81,
+    "all_observed_fingerprints_exact": true
+  },
+  "post_fix": {
+    "status": "AUTHENTICATED_EXACT_PASS",
+    "binary_sha256": "4b77108f5afd1b47e48346599e8690dac845e33e408f7e2fb622899ed2525225",
+    "state_max_abs": 0,
+    "state_byte_exact": true,
+    "all_state_finite": true,
+    "layer0_combine": {
+      "expert_order_exact": true,
+      "parts": [
+        {
+          "name": "mid",
+          "byte_exact": true,
+          "max_abs": 0,
+          "rms": 0.0,
+          "different_values": 0,
+          "floats": 2048
+        },
+        {
+          "name": "shared",
+          "byte_exact": true,
+          "max_abs": 0,
+          "rms": 0.0,
+          "different_values": 0,
+          "floats": 2048
+        },
+        {
+          "name": "expert0",
+          "byte_exact": true,
+          "max_abs": 0,
+          "rms": 0.0,
+          "different_values": 0,
+          "floats": 2048
+        },
+        {
+          "name": "expert1",
+          "byte_exact": true,
+          "max_abs": 0,
+          "rms": 0.0,
+          "different_values": 0,
+          "floats": 2048
+        },
+        {
+          "name": "expert2",
+          "byte_exact": true,
+          "max_abs": 0,
+          "rms": 0.0,
+          "different_values": 0,
+          "floats": 2048
+        },
+        {
+          "name": "expert3",
+          "byte_exact": true,
+          "max_abs": 0,
+          "rms": 0.0,
+          "different_values": 0,
+          "floats": 2048
+        },
+        {
+          "name": "expert4",
+          "byte_exact": true,
+          "max_abs": 0,
+          "rms": 0.0,
+          "different_values": 0,
+          "floats": 2048
+        },
+        {
+          "name": "expert5",
+          "byte_exact": true,
+          "max_abs": 0,
+          "rms": 0.0,
+          "different_values": 0,
+          "floats": 2048
+        },
+        {
+          "name": "expert6",
+          "byte_exact": true,
+          "max_abs": 0,
+          "rms": 0.0,
+          "different_values": 0,
+          "floats": 2048
+        },
+        {
+          "name": "expert7",
+          "byte_exact": true,
+          "max_abs": 0,
+          "rms": 0.0,
+          "different_values": 0,
+          "floats": 2048
+        },
+        {
+          "name": "combined",
+          "byte_exact": true,
+          "max_abs": 0,
+          "rms": 0.0,
+          "different_values": 0,
+          "floats": 2048
+        },
+        {
+          "name": "params_used",
+          "byte_exact": true,
+          "max_abs": 0,
+          "rms": 0.0,
+          "different_values": 0,
+          "floats": 9
+        }
+      ]
+    }
+  },
+  "regressions": {
+    "stateless": {
+      "status": "PASS",
+      "resident": false,
+      "turns": 3,
+      "prefetch_enabled": true,
+      "end_positions": [
+        174,
+        207,
+        240
+      ],
+      "candidate_observations": [
+        48,
+        81,
+        114
+      ],
+      "references": [
+        {
+          "index": 0,
+          "exit": 0,
+          "stop_reason": null,
+          "pre_gpu": [
+            47,
+            16,
+            0,
+            18
+          ],
+          "observed_rss_bytes": 1242447872,
+          "expected_positions": 48,
+          "input_tokens": 174,
+          "exact": true
+        },
+        {
+          "index": 1,
+          "exit": 0,
+          "stop_reason": null,
+          "pre_gpu": [
+            45,
+            17,
+            19,
+            17
+          ],
+          "observed_rss_bytes": 1244921856,
+          "expected_positions": 81,
+          "input_tokens": 207,
+          "exact": true
+        },
+        {
+          "index": 2,
+          "exit": 0,
+          "stop_reason": null,
+          "pre_gpu": [
+            49,
+            15,
+            17,
+            16
+          ],
+          "observed_rss_bytes": 1245020160,
+          "expected_positions": 114,
+          "input_tokens": 240,
+          "exact": true
+        }
+      ],
+      "server_budget": {
+        "exit": -15,
+        "observed_rss_bytes": 5709512704,
+        "stop_reason": null
+      },
+      "binary_sha256": "4b77108f5afd1b47e48346599e8690dac845e33e408f7e2fb622899ed2525225",
+      "model_followup_literal_honored": false
+    },
+    "resident": {
+      "status": "PASS",
+      "resident": true,
+      "turns": 3,
+      "prefetch_enabled": true,
+      "end_positions": [
+        174,
+        325,
+        476
+      ],
+      "candidate_observations": [
+        48,
+        25,
+        25
+      ],
+      "references": [
+        {
+          "index": 0,
+          "exit": 0,
+          "stop_reason": null,
+          "pre_gpu": [
+            48,
+            20,
+            20,
+            14
+          ],
+          "observed_rss_bytes": 1220165632,
+          "expected_positions": 96,
+          "input_tokens": 476,
+          "exact": true
+        }
+      ],
+      "server_budget": {
+        "exit": -15,
+        "observed_rss_bytes": 7589429248,
+        "stop_reason": null
+      },
+      "binary_sha256": "4b77108f5afd1b47e48346599e8690dac845e33e408f7e2fb622899ed2525225",
+      "model_followup_literal_honored": null
+    }
+  },
+  "cache_policy": {
+    "global_execution_version": 3,
+    "new_selective_marker": "nrow-prefetch-ownership-v2",
+    "affected": "Eligible tiered GPU N128, including prefetch-off because old identities aliased on/off",
+    "unaffected": "Scalar / CPU-linear identities",
+    "full_binary_hashing": false,
+    "format_changed": false
+  },
+  "production_modified": false,
+  "model_instruction_followup": "Original literal-change instruction yields the first literal in both scalar and candidate; preserved separately, not a transport or state PASS",
+  "post_repair": {
+    "old_cache_reject": {
+      "status": "PASS",
+      "expected_rejection_exit": 3,
+      "old_checkpoint_preserved": true,
+      "old_checkpoint_sha256": "11dce7464a4d288118b632ac2e7b20b57d27031adcdbb00babf833bc8433afe1",
+      "old_compatibility": "766e62cced08e488",
+      "new_compatibility": "fc26c9fefe2a47be",
+      "new_binary_sha256": "67591cf85ff9c2105a1ca88df98ba3b934a125d2d18db5ad56c60c1bbc1a3c83",
+      "format_changed": false,
+      "global_execution_version": 3,
+      "selective_marker": "nrow-prefetch-ownership-v2",
+      "pre_gpu": [
+        18,
+        28,
+        13
+      ]
+    },
+    "disk": {
+      "status": "EXACT_RESTART_PASS",
+      "prefix": 141,
+      "end_position": 470,
+      "positions_compared": 330,
+      "checkpoint_bytes": 67370561,
+      "save_ms": 405.06787109375,
+      "restore_ms": 369.328125,
+      "wrong_prefix_and_mode_rejected": true,
+      "different_numerics_rejected": true,
+      "rejected_mask": 31,
+      "rejection_exit": 3,
+      "pre_gpu": [
+        [
+          16,
+          19,
+          13
+        ],
+        [
+          45,
+          20,
+          19,
+          20
+        ]
+      ],
+      "binary_sha256": "4b77108f5afd1b47e48346599e8690dac845e33e408f7e2fb622899ed2525225",
+      "load_binary_sha256": "67591cf85ff9c2105a1ca88df98ba3b934a125d2d18db5ad56c60c1bbc1a3c83",
+      "source_head": "ac06b920dbb7e26b804480b36eea4dbe83b40d4e"
+    },
+    "stream_faults": {
+      "status": "PASS",
+      "cases": [
+        {
+          "case": "before_first_output",
+          "status": "PASS",
+          "http_status": 200,
+          "error": {
+            "error": {
+              "message": "prefill failed",
+              "type": "server_error"
+            },
+            "session_invalidated": true,
+            "resend_full_history": true
+          },
+          "visible_content_deltas": 0,
+          "injection_position": 20,
+          "end_position": 0,
+          "stale_status": 409,
+          "fresh_state_exact": true,
+          "done_count": 1
+        },
+        {
+          "case": "after_visible_deltas",
+          "status": "PASS",
+          "http_status": 200,
+          "error": {
+            "error": {
+              "message": "generation failed",
+              "type": "server_error"
+            },
+            "session_invalidated": true,
+            "resend_full_history": true
+          },
+          "visible_content_deltas": 6,
+          "injection_position": 51,
+          "end_position": 0,
+          "stale_status": 409,
+          "fresh_state_exact": true,
+          "done_count": 1
+        },
+        {
+          "case": "expert_io_failure",
+          "status": "PASS",
+          "http_status": 200,
+          "error": {
+            "error": {
+              "message": "prefill failed",
+              "type": "server_error"
+            },
+            "session_invalidated": true,
+            "resend_full_history": true
+          },
+          "visible_content_deltas": 0,
+          "injection_position": null,
+          "end_position": 0,
+          "stale_status": 409,
+          "fresh_state_exact": true,
+          "done_count": 1
+        }
+      ],
+      "baseline_matches_scalar_control": true
+    },
+    "named_profile": {
+      "status": "PASS",
+      "cases": [
+        {
+          "case": "compatible_restart_and_prefix_mismatch",
+          "status": "PASS",
+          "old_session_rejected": true,
+          "state_exact": true
+        },
+        {
+          "case": "version",
+          "status": "PASS",
+          "method": "Controlled header identity fault",
+          "fresh_state_exact": true
+        },
+        {
+          "case": "model_config_signature",
+          "status": "PASS",
+          "method": "Controlled header identity fault",
+          "fresh_state_exact": true
+        },
+        {
+          "case": "execution_mode",
+          "status": "PASS",
+          "method": "Real runtime-mode switch",
+          "fresh_state_exact": true
+        }
+      ],
+      "checkpoint_bytes": 67427311,
+      "profile_is_static_prefix_not_conversation": true,
+      "model_weights_unchanged": true
+    },
+    "cancellation": {
+      "status": "PASS",
+      "cases": [
+        {
+          "phase": "prefill",
+          "invalidated": true,
+          "stale_status": 409,
+          "health_ms": 0.38537499494850636,
+          "cancellation_ms": 193.51416593417525,
+          "recovery_end": 41
+        },
+        {
+          "phase": "decode",
+          "invalidated": true,
+          "stale_status": 409,
+          "health_ms": 0.38587499875575304,
+          "cancellation_ms": 61.41791702248156,
+          "recovery_end": 41
+        }
+      ],
+      "pre_gpu": [
+        26,
+        21,
+        19
+      ],
+      "binary_sha256": "67591cf85ff9c2105a1ca88df98ba3b934a125d2d18db5ad56c60c1bbc1a3c83",
+      "source_head": "ac06b920dbb7e26b804480b36eea4dbe83b40d4e",
+      "recovery_exact": true
+    },
+    "long_http": {
+      "status": "PASS",
+      "end_position": 16470,
+      "binary_sha256": "93eaab13c68b1aa081c33a554b4eff2f2570abe497f0e7b70deabd31bf9fa25f",
+      "reference_reused": true,
+      "reference_exit": 0,
+      "reference_state_sha256": "8e8127427454f05c6decbd04ee568acecdbd892337c888552a59b8beb181c4c4",
+      "validated_reference_result_sha256": "938b95e6a598ae1e6457588981e38c8753ed11f7c49a0a0d54c0226249b36af8",
+      "reference_binary_sha256": "c9e5deb7997c6a1bc76f56ca815d551b48272e15771b3cacf70b891838d5a119",
+      "resident_turns": 3,
+      "candidate_observation_points": 150,
+      "exact_shared_observations": true,
+      "server_budget": {
+        "exit": -15,
+        "observed_rss_bytes": 9531375616,
+        "stop_reason": null
+      }
+    },
+    "sdk_protocol": {
+      "status": "PASS",
+      "binary_sha256": "67591cf85ff9c2105a1ca88df98ba3b934a125d2d18db5ad56c60c1bbc1a3c83",
+      "qualification_scope": "Actual SDK/adapter protocol and native token/state preservation; model literal assertions reported separately",
+      "protocol_only": true,
+      "native_state_fingerprints_exact": true,
+      "state_reference_binary_sha256": "4b77108f5afd1b47e48346599e8690dac845e33e408f7e2fb622899ed2525225",
+      "adapter_exit": 0,
+      "scalar_reference": false,
+      "behavioral_assertion_passed": false,
+      "native_request_ids_exact": true,
+      "requests": 2,
+      "real_flash_inference": true,
+      "real_sdk_chat": true,
+      "mock_prediction_controller": true,
+      "GUI_tested": false,
+      "user_documents_accessed": false,
+      "external_tools_executed": false,
+      "stateless_full_history": true,
+      "native_prompts": [
+        {
+          "request": 0,
+          "native_prompt_tokens": 165,
+          "native_render_ids_exact": true,
+          "matched_thinking_mode": "False"
+        },
+        {
+          "request": 1,
+          "native_prompt_tokens": 198,
+          "native_render_ids_exact": true,
+          "matched_thinking_mode": "False"
+        }
+      ]
+    }
+  },
+  "performance_scope": "Three balanced trials/path, 1K and 4K plus HTTP; +8.13%/+14.75% vs ordinary; no 16K/32K matched performance"
+}

@@ -1,0 +1,772 @@
+{
+  "scope": "Bounded actual layer tensors plus completed-slab/scalar-tail full-model comparisons; no long HTTP qualification",
+  "criteria": {
+    "state_max_exclusive": 0.001,
+    "hidden_max_inclusive": 0.001,
+    "logits_max_inclusive": 0.01,
+    "greedy_identity": true,
+    "finite": true,
+    "exact_kv_lengths_and_mirrors": true
+  },
+  "runs": {
+    "actual-129": {
+      "status": "NUMERICAL_PASS",
+      "completed_position": 129,
+      "input_tokens": 129,
+      "batches": 1,
+      "bit_exact": 0,
+      "started": "2026-10-28T23:51:38.737754-07:00",
+      "ended": "2026-10-28T23:52:00.423584-07:00",
+      "exit": 0,
+      "binary_sha256": "9d3f71d68bd87fb8acfc1ac19f17936178a14de461c51c362a83cc210d181936",
+      "source_head": "5c26430f2790b84516b7384915eb0500abc5392f",
+      "pre_gpu": [
+        0,
+        12,
+        8
+      ],
+      "max_errors": {
+        "state": 5.125999450683594e-05,
+        "hidden": 2.86102294921875e-06,
+        "logits": 6.496906280517578e-06
+      },
+      "all_finite": true,
+      "all_greedy_equal": true,
+      "all_kv_lengths_and_mirrors": true
+    },
+    "reference-31-guarded-129": {
+      "status": "NUMERICAL_PASS",
+      "completed_position": 129,
+      "input_tokens": 129,
+      "batches": 1,
+      "bit_exact": 0,
+      "started": "2026-10-29T00:26:06.902382-07:00",
+      "ended": "2026-10-29T00:26:29.464104-07:00",
+      "exit": 0,
+      "binary_sha256": "93886f47f6a5d502866126a45515a0e96e9d297f726ba3a30119e2593017bc9b",
+      "source_head": "5c26430f2790b84516b7384915eb0500abc5392f",
+      "pre_gpu": [
+        24,
+        19,
+        23
+      ],
+      "max_errors": {
+        "state": 2.6226043701171875e-05,
+        "hidden": 6.67572021484375e-06,
+        "logits": 4.410743713378906e-06
+      },
+      "all_finite": true,
+      "all_greedy_equal": true,
+      "all_kv_lengths_and_mirrors": true
+    },
+    "reference-31-2057": {
+      "status": "NUMERICAL_PASS",
+      "completed_position": 2057,
+      "input_tokens": 2057,
+      "batches": 16,
+      "bit_exact": 0,
+      "started": "2026-10-29T00:26:29.550632-07:00",
+      "ended": "2026-10-29T00:30:19.004042-07:00",
+      "exit": 0,
+      "binary_sha256": "93886f47f6a5d502866126a45515a0e96e9d297f726ba3a30119e2593017bc9b",
+      "source_head": "5c26430f2790b84516b7384915eb0500abc5392f",
+      "pre_gpu": [
+        46,
+        0,
+        0,
+        16
+      ],
+      "max_errors": {
+        "state": 0.00013172626495361328,
+        "hidden": 1.621246337890625e-05,
+        "logits": 6.198883056640625e-05
+      },
+      "all_finite": true,
+      "all_greedy_equal": true,
+      "all_kv_lengths_and_mirrors": true
+    },
+    "reference-31-resident-304": {
+      "status": "NUMERICAL_PASS",
+      "completed_position": 304,
+      "input_tokens": 304,
+      "batches": 2,
+      "bit_exact": 0,
+      "started": "2026-10-29T00:31:09.373879-07:00",
+      "ended": "2026-10-29T00:31:53.238974-07:00",
+      "exit": 0,
+      "binary_sha256": "93886f47f6a5d502866126a45515a0e96e9d297f726ba3a30119e2593017bc9b",
+      "source_head": "5c26430f2790b84516b7384915eb0500abc5392f",
+      "pre_gpu": [
+        29,
+        29,
+        28
+      ],
+      "max_errors": {
+        "state": 0.0001971721649169922,
+        "hidden": 6.67572021484375e-06,
+        "logits": 3.11732292175293e-05
+      },
+      "all_finite": true,
+      "all_greedy_equal": true,
+      "all_kv_lengths_and_mirrors": true
+    },
+    "reference-31-2305": {
+      "status": "NUMERICAL_PASS",
+      "completed_position": 2305,
+      "input_tokens": 2305,
+      "batches": 18,
+      "bit_exact": 0,
+      "started": "2026-10-29T00:31:53.413647-07:00",
+      "ended": "2026-10-29T00:36:40.912414-07:00",
+      "exit": 0,
+      "binary_sha256": "93886f47f6a5d502866126a45515a0e96e9d297f726ba3a30119e2593017bc9b",
+      "source_head": "5c26430f2790b84516b7384915eb0500abc5392f",
+      "pre_gpu": [
+        51,
+        26,
+        27,
+        28
+      ],
+      "max_errors": {
+        "state": 0.0003581047058105469,
+        "hidden": 6.67572021484375e-06,
+        "logits": 1.621246337890625e-05
+      },
+      "all_finite": true,
+      "all_greedy_equal": true,
+      "all_kv_lengths_and_mirrors": true
+    },
+    "reference-31-4096": {
+      "status": "FAIL",
+      "completed_position": 3456,
+      "input_tokens": 4096,
+      "batches": 27,
+      "bit_exact": 0,
+      "started": "2026-10-29T00:44:26.247198-07:00",
+      "ended": "2026-10-29T00:53:16.477144-07:00",
+      "exit": 3,
+      "binary_sha256": "93886f47f6a5d502866126a45515a0e96e9d297f726ba3a30119e2593017bc9b",
+      "source_head": "5c26430f2790b84516b7384915eb0500abc5392f",
+      "pre_gpu": [
+        29,
+        28,
+        29
+      ],
+      "max_errors": {
+        "state": 0.001438140869140625,
+        "hidden": 8.58306884765625e-06,
+        "logits": 1.621246337890625e-05
+      },
+      "all_finite": true,
+      "all_greedy_equal": true,
+      "all_kv_lengths_and_mirrors": true,
+      "first_failure": {
+        "position": 3456,
+        "state_max_abs": 0.001438140869140625,
+        "hidden": {
+          "floats": 2048,
+          "layer": -1,
+          "component": "hidden",
+          "different": 1999,
+          "rms": 3.1556780771938614e-07,
+          "nonfinite": 0,
+          "max_abs": 2.1457672119140625e-06
+        },
+        "logits": {
+          "floats": 248320,
+          "layer": -1,
+          "component": "logits",
+          "different": 236265,
+          "rms": 2.264017306173249e-06,
+          "nonfinite": 0,
+          "max_abs": 1.1920928955078125e-05
+        },
+        "finite": true,
+        "kv_lengths_and_mirrors": true
+      },
+      "largest_components": [
+        {
+          "floats": 1769472,
+          "layer": 23,
+          "component": "kv_k",
+          "different": 1693540,
+          "rms": 3.6981515618565743e-06,
+          "nonfinite": 0,
+          "max_abs": 0.001438140869140625
+        },
+        {
+          "floats": 1769472,
+          "layer": 23,
+          "component": "kv_v",
+          "different": 1703477,
+          "rms": 1.647537646940443e-06,
+          "nonfinite": 0,
+          "max_abs": 0.0010395050048828125
+        },
+        {
+          "floats": 1769472,
+          "layer": 27,
+          "component": "kv_k",
+          "different": 1705744,
+          "rms": 3.487146411896171e-06,
+          "nonfinite": 0,
+          "max_abs": 0.0008678436279296875
+        },
+        {
+          "floats": 1769472,
+          "layer": 27,
+          "component": "kv_v",
+          "different": 1714456,
+          "rms": 1.3757839950701111e-06,
+          "nonfinite": 0,
+          "max_abs": 0.000797271728515625
+        },
+        {
+          "floats": 1769472,
+          "layer": 31,
+          "component": "kv_k",
+          "different": 1695230,
+          "rms": 3.7248269019170423e-06,
+          "nonfinite": 0,
+          "max_abs": 0.0006678104400634766
+        },
+        {
+          "floats": 1769472,
+          "layer": 31,
+          "component": "kv_v",
+          "different": 1702612,
+          "rms": 1.455260827864482e-06,
+          "nonfinite": 0,
+          "max_abs": 0.00047738850116729736
+        },
+        {
+          "floats": 1769472,
+          "layer": 35,
+          "component": "kv_k",
+          "different": 1685162,
+          "rms": 2.5058248974641633e-06,
+          "nonfinite": 0,
+          "max_abs": 0.00022354722023010254
+        },
+        {
+          "floats": 1769472,
+          "layer": 39,
+          "component": "kv_k",
+          "different": 1678711,
+          "rms": 1.8452035994980778e-06,
+          "nonfinite": 0,
+          "max_abs": 0.00018906593322753906
+        },
+        {
+          "floats": 1769472,
+          "layer": 19,
+          "component": "kv_k",
+          "different": 1698790,
+          "rms": 1.931463220163987e-06,
+          "nonfinite": 0,
+          "max_abs": 0.0001685023307800293
+        },
+        {
+          "floats": 1769472,
+          "layer": 35,
+          "component": "kv_v",
+          "different": 1681212,
+          "rms": 1.3531489751894625e-06,
+          "nonfinite": 0,
+          "max_abs": 0.0001499652862548828
+        }
+      ]
+    }
+  },
+  "performance": "NOT RUN: strict state failure at 3456",
+  "recommendation": "MORE INVESTIGATION REQUIRED",
+  "counterfactual": {
+    "hidden": {
+      "floats": 2048,
+      "layer": -1,
+      "component": "hidden",
+      "different": 1942,
+      "rms": 1.686894152420666e-07,
+      "nonfinite": 0,
+      "max_abs": 6.854534149169922e-07
+    },
+    "step_rows": 128,
+    "batch_rows": 128,
+    "state_max_abs": 9.918212890625e-05,
+    "end_position": 3456,
+    "logits": {
+      "floats": 248320,
+      "layer": -1,
+      "component": "logits",
+      "different": 226274,
+      "rms": 1.2552485904556547e-06,
+      "nonfinite": 0,
+      "max_abs": 5.9604644775390625e-06
+    },
+    "reference_anchor": 3328,
+    "greedy_equal": 1,
+    "qualification": "FAIL retained; diagnostic intervention only"
+  },
+  "routing_localization": {
+    "observations_per_bank": 5120,
+    "ordered_changes": 3,
+    "set_changes": 0,
+    "set_change_metrics": [],
+    "scope": "Actual route observations in the final slab; not intermediate whole-model states. Raw expert IDs/scores remain private.",
+    "order_only_changes": [
+      {
+        "layer": 15,
+        "position": 3361
+      },
+      {
+        "layer": 26,
+        "position": 3392
+      },
+      {
+        "layer": 28,
+        "position": 3367
+      }
+    ]
+  },
+  "safeguards": {
+    "known_long_failure_retained": true,
+    "final_replay": {
+      "position": 129,
+      "active_state_unchanged": true
+    },
+    "disabled_exact_old_baseline": true,
+    "identities32": "PASS",
+    "old_mask15_checkpoint": {
+      "status": "EXACT_OLD_CHECKPOINT_PASS",
+      "positions": 65,
+      "pre_gpu": [
+        19,
+        23,
+        27
+      ],
+      "checkpoint_preserved": true
+    },
+    "status": "PASS",
+    "disk31": {
+      "status": "EXACT_RESTART_PASS",
+      "prefix": 141,
+      "end_position": 205,
+      "positions_compared": 65,
+      "checkpoint_bytes": 67376487,
+      "save_ms": 427.761962890625,
+      "restore_ms": 493.025146484375,
+      "wrong_prefix_and_mode_rejected": true,
+      "pre_gpu": [
+        [
+          70,
+          21,
+          21,
+          22
+        ],
+        [
+          42,
+          0,
+          22,
+          0
+        ]
+      ],
+      "binary_sha256": "93886f47f6a5d502866126a45515a0e96e9d297f726ba3a30119e2593017bc9b",
+      "source_head": "f220bc6d519c0a9fe5012c9a4666d4aa5ad9b859",
+      "different_numerics_rejected": true,
+      "rejected_mask": 15,
+      "rejection_exit": 3,
+      "rejection_pre_gpu": [
+        30,
+        0,
+        0,
+        0
+      ]
+    }
+  },
+  "scalar_reference_preservation": {
+    "common_previous_endpoints_exact": [
+      2,
+      25,
+      18
+    ],
+    "localized_rerun_all_27_reference_and_candidate_endpoints_exact": true
+  },
+  "preceding_layer2": {
+    "operations": {
+      "shared_swiglu_same_inputs": {
+        "floats": 512,
+        "layer": 2,
+        "component": "CPU_vs_GPU_SwiGLU",
+        "different": 260,
+        "rms": 1.297985503065205e-08,
+        "nonfinite": 0,
+        "max_abs": 2.384185791015625e-07
+      },
+      "cpu_norm_vs_reference_post": {
+        "floats": 2048,
+        "layer": 2,
+        "component": "CPU_RMSNorm",
+        "different": 2048,
+        "rms": 1.2940459804873807e-07,
+        "nonfinite": 0,
+        "max_abs": 1.430511474609375e-06
+      },
+      "layer": 2,
+      "gpu_norm_vs_reference_post": {
+        "floats": 2048,
+        "layer": 2,
+        "component": "GPU_RMSNorm",
+        "different": 0,
+        "rms": 0,
+        "nonfinite": 0,
+        "max_abs": 0
+      },
+      "private_buffers_only": true,
+      "input_position": 0,
+      "combine_same_inputs": {
+        "floats": 2048,
+        "layer": 2,
+        "component": "CPU_vs_GPU_combine",
+        "different": 780,
+        "rms": 1.1660868400994243e-09,
+        "nonfinite": 0,
+        "max_abs": 1.4901161193847656e-08
+      }
+    },
+    "expert_comparison": {
+      "expert_outputs": [
+        {
+          "up": {
+            "floats": 512,
+            "layer": 2,
+            "component": "expert_up",
+            "different": 0,
+            "rms": 0,
+            "nonfinite": 0,
+            "max_abs": 0
+          },
+          "component": "expert_output",
+          "max_abs": 0,
+          "gate": {
+            "floats": 512,
+            "layer": 2,
+            "component": "expert_gate",
+            "different": 0,
+            "rms": 0,
+            "nonfinite": 0,
+            "max_abs": 0
+          },
+          "rms": 0,
+          "slot": 0,
+          "layer": 2,
+          "activation": {
+            "floats": 512,
+            "layer": 2,
+            "component": "expert_activation",
+            "different": 0,
+            "rms": 0,
+            "nonfinite": 0,
+            "max_abs": 0
+          },
+          "nonfinite": 0,
+          "different": 0,
+          "bits": 2,
+          "floats": 2048
+        },
+        {
+          "up": {
+            "floats": 512,
+            "layer": 2,
+            "component": "expert_up",
+            "different": 0,
+            "rms": 0,
+            "nonfinite": 0,
+            "max_abs": 0
+          },
+          "component": "expert_output",
+          "max_abs": 0,
+          "gate": {
+            "floats": 512,
+            "layer": 2,
+            "component": "expert_gate",
+            "different": 0,
+            "rms": 0,
+            "nonfinite": 0,
+            "max_abs": 0
+          },
+          "rms": 0,
+          "slot": 1,
+          "layer": 2,
+          "activation": {
+            "floats": 512,
+            "layer": 2,
+            "component": "expert_activation",
+            "different": 0,
+            "rms": 0,
+            "nonfinite": 0,
+            "max_abs": 0
+          },
+          "nonfinite": 0,
+          "different": 0,
+          "bits": 2,
+          "floats": 2048
+        },
+        {
+          "up": {
+            "floats": 512,
+            "layer": 2,
+            "component": "expert_up",
+            "different": 0,
+            "rms": 0,
+            "nonfinite": 0,
+            "max_abs": 0
+          },
+          "component": "expert_output",
+          "max_abs": 0,
+          "gate": {
+            "floats": 512,
+            "layer": 2,
+            "component": "expert_gate",
+            "different": 0,
+            "rms": 0,
+            "nonfinite": 0,
+            "max_abs": 0
+          },
+          "rms": 0,
+          "slot": 2,
+          "layer": 2,
+          "activation": {
+            "floats": 512,
+            "layer": 2,
+            "component": "expert_activation",
+            "different": 0,
+            "rms": 0,
+            "nonfinite": 0,
+            "max_abs": 0
+          },
+          "nonfinite": 0,
+          "different": 0,
+          "bits": 4,
+          "floats": 2048
+        },
+        {
+          "up": {
+            "floats": 512,
+            "layer": 2,
+            "component": "expert_up",
+            "different": 0,
+            "rms": 0,
+            "nonfinite": 0,
+            "max_abs": 0
+          },
+          "component": "expert_output",
+          "max_abs": 0,
+          "gate": {
+            "floats": 512,
+            "layer": 2,
+            "component": "expert_gate",
+            "different": 0,
+            "rms": 0,
+            "nonfinite": 0,
+            "max_abs": 0
+          },
+          "rms": 0,
+          "slot": 3,
+          "layer": 2,
+          "activation": {
+            "floats": 512,
+            "layer": 2,
+            "component": "expert_activation",
+            "different": 0,
+            "rms": 0,
+            "nonfinite": 0,
+            "max_abs": 0
+          },
+          "nonfinite": 0,
+          "different": 0,
+          "bits": 4,
+          "floats": 2048
+        },
+        {
+          "up": {
+            "floats": 512,
+            "layer": 2,
+            "component": "expert_up",
+            "different": 0,
+            "rms": 0,
+            "nonfinite": 0,
+            "max_abs": 0
+          },
+          "component": "expert_output",
+          "max_abs": 0,
+          "gate": {
+            "floats": 512,
+            "layer": 2,
+            "component": "expert_gate",
+            "different": 0,
+            "rms": 0,
+            "nonfinite": 0,
+            "max_abs": 0
+          },
+          "rms": 0,
+          "slot": 4,
+          "layer": 2,
+          "activation": {
+            "floats": 512,
+            "layer": 2,
+            "component": "expert_activation",
+            "different": 0,
+            "rms": 0,
+            "nonfinite": 0,
+            "max_abs": 0
+          },
+          "nonfinite": 0,
+          "different": 0,
+          "bits": 4,
+          "floats": 2048
+        },
+        {
+          "up": {
+            "floats": 512,
+            "layer": 2,
+            "component": "expert_up",
+            "different": 0,
+            "rms": 0,
+            "nonfinite": 0,
+            "max_abs": 0
+          },
+          "component": "expert_output",
+          "max_abs": 0,
+          "gate": {
+            "floats": 512,
+            "layer": 2,
+            "component": "expert_gate",
+            "different": 0,
+            "rms": 0,
+            "nonfinite": 0,
+            "max_abs": 0
+          },
+          "rms": 0,
+          "slot": 5,
+          "layer": 2,
+          "activation": {
+            "floats": 512,
+            "layer": 2,
+            "component": "expert_activation",
+            "different": 0,
+            "rms": 0,
+            "nonfinite": 0,
+            "max_abs": 0
+          },
+          "nonfinite": 0,
+          "different": 0,
+          "bits": 4,
+          "floats": 2048
+        },
+        {
+          "up": {
+            "floats": 512,
+            "layer": 2,
+            "component": "expert_up",
+            "different": 0,
+            "rms": 0,
+            "nonfinite": 0,
+            "max_abs": 0
+          },
+          "component": "expert_output",
+          "max_abs": 0,
+          "gate": {
+            "floats": 512,
+            "layer": 2,
+            "component": "expert_gate",
+            "different": 0,
+            "rms": 0,
+            "nonfinite": 0,
+            "max_abs": 0
+          },
+          "rms": 0,
+          "slot": 6,
+          "layer": 2,
+          "activation": {
+            "floats": 512,
+            "layer": 2,
+            "component": "expert_activation",
+            "different": 0,
+            "rms": 0,
+            "nonfinite": 0,
+            "max_abs": 0
+          },
+          "nonfinite": 0,
+          "different": 0,
+          "bits": 2,
+          "floats": 2048
+        },
+        {
+          "up": {
+            "floats": 512,
+            "layer": 2,
+            "component": "expert_up",
+            "different": 0,
+            "rms": 0,
+            "nonfinite": 0,
+            "max_abs": 0
+          },
+          "component": "expert_output",
+          "max_abs": 0,
+          "gate": {
+            "floats": 512,
+            "layer": 2,
+            "component": "expert_gate",
+            "different": 0,
+            "rms": 0,
+            "nonfinite": 0,
+            "max_abs": 0
+          },
+          "rms": 0,
+          "slot": 7,
+          "layer": 2,
+          "activation": {
+            "floats": 512,
+            "layer": 2,
+            "component": "expert_activation",
+            "different": 0,
+            "rms": 0,
+            "nonfinite": 0,
+            "max_abs": 0
+          },
+          "nonfinite": 0,
+          "different": 0,
+          "bits": 4,
+          "floats": 2048
+        }
+      ],
+      "position": 0,
+      "layer": 2,
+      "same_expert_order": true,
+      "shared_output": {
+        "floats": 2048,
+        "layer": 2,
+        "component": "shared_output",
+        "different": 0,
+        "rms": 0,
+        "nonfinite": 0,
+        "max_abs": 0
+      },
+      "layer_output": {
+        "floats": 2048,
+        "layer": 2,
+        "component": "layer_output",
+        "different": 780,
+        "rms": 1.1660868400994243e-09,
+        "nonfinite": 0,
+        "max_abs": 1.4901161193847656e-08
+      },
+      "same_post_input": true
+    },
+    "mid_input_exact": true,
+    "post_input_exact": true,
+    "endpoint_fingerprints_unchanged": true,
+    "scope": "Actual layer2 row0; shared gate score identity and exact CPU-replay-to-candidate vector not established. Additional extension was GPU-gated NOT RUN and reverted."
+  },
+  "final_additional_proof": "GPU_GATE_NOT_RUN; unexecuted diagnostic extension reverted"
+}

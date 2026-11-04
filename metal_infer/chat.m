@@ -22,6 +22,10 @@
 #include <getopt.h>
 #include <dirent.h>
 #include <errno.h>
+#include <signal.h>
+#include <poll.h>
+#include <fcntl.h>
+#include <sys/file.h>
 #include "linenoise.h"
 
 #define MAX_INPUT_LINE 4096
@@ -34,22 +38,6 @@ static double now_ms(void) {
     return tv.tv_sec * 1000.0 + tv.tv_usec / 1000.0;
 }
 
-static int json_escape(const char *src, char *buf, int bufsize) {
-    int j = 0;
-    for (int i = 0; src[i] && j < bufsize - 6; i++) {
-        switch (src[i]) {
-            case '"':  buf[j++]='\\'; buf[j++]='"'; break;
-            case '\\': buf[j++]='\\'; buf[j++]='\\'; break;
-            case '\n': buf[j++]='\\'; buf[j++]='n'; break;
-            case '\r': buf[j++]='\\'; buf[j++]='r'; break;
-            case '\t': buf[j++]='\\'; buf[j++]='t'; break;
-            default:   buf[j++]=src[i]; break;
-        }
-    }
-    buf[j] = 0;
-    return j;
-}
-
 // ============================================================================
 // Session persistence
 // ============================================================================
@@ -57,6 +45,13 @@ static int json_escape(const char *src, char *buf, int bufsize) {
 static char g_sessions_dir[1024];
 
 static void init_sessions_dir(void) {
+    const char *override=getenv("FLASH_CHAT_STATE_DIR");
+    if(override && *override) {
+        if(strlen(override)>=sizeof(g_sessions_dir)) {fprintf(stderr,"State directory too long.\n");exit(1);}
+        strcpy(g_sessions_dir,override);
+        if(![[NSFileManager defaultManager] createDirectoryAtPath:@(override) withIntermediateDirectories:YES attributes:nil error:NULL])exit(1);
+        return;
+    }
     const char *home = getenv("HOME");
     if (!home) home = "/tmp";
     snprintf(g_sessions_dir, sizeof(g_sessions_dir), "%s/%s", home, SESSIONS_DIR_BASE);
@@ -87,70 +82,53 @@ static int session_path(const char *session_id, char *path, size_t pathsize) {
     return n >= 0 && (size_t)n < pathsize;
 }
 
-// Append a turn to the session JSONL file
-static void session_save_turn(const char *session_id, const char *role, const char *content) {
-    char path[1024];
-    if (!session_path(session_id, path, sizeof(path))) return;
-    FILE *f = fopen(path, "a");
-    if (!f) return;
-    char escaped[MAX_RESPONSE * 2];
-    json_escape(content, escaped, sizeof(escaped));
-    fprintf(f, "{\"role\":\"%s\",\"content\":\"%s\"}\n", role, escaped);
-    fclose(f);
+// Commit a completed logical exchange with one atomic replacement. A failed
+// transport never reaches this function. No orphan user turn can be appended.
+static NSMutableArray *read_transcript(const char *session_id);
+static int session_commit_exchange_unlocked(const char *sid, NSArray *expected, NSDictionary *turn, const char *reply) {
+    NSMutableArray *history=read_transcript(sid);
+    if (!history || ![history isEqual:expected] || !reply || !*reply) return 0;
+    [history addObject:turn];
+    [history addObject:@{@"role":@"assistant",@"content":@(reply)}];
+    NSMutableData *data=[NSMutableData data];
+    for (NSDictionary *m in history) {
+        NSData *line=[NSJSONSerialization dataWithJSONObject:m options:0 error:NULL];
+        if (!line) return 0;
+        [data appendData:line]; [data appendBytes:"\n" length:1];
+    }
+    if(data.length>16*MAX_RESPONSE) return 0;
+    char path[1024],tmp[1100];
+    if(!session_path(sid,path,sizeof(path))) return 0;
+    snprintf(tmp,sizeof(tmp),"%s.tmp.XXXXXX",path);
+    int fd=mkstemp(tmp); if(fd<0)return 0;
+    const char *bytes=data.bytes;size_t done=0;
+    while(done<data.length) {ssize_t n=write(fd,bytes+done,data.length-done);if(n<0&&errno==EINTR)continue;if(n<=0)break;done+=(size_t)n;}
+    int ok=done==data.length && fsync(fd)==0;
+    if(close(fd)!=0)ok=0;
+    if(ok && rename(tmp,path)!=0)ok=0;
+    if(!ok)unlink(tmp);
+    return ok;
+}
+
+// Serialize concurrent writers and reject a stale generation's history anchor.
+static int session_commit_exchange(const char *sid, NSArray *expected, NSDictionary *turn, const char *reply) {
+    char path[1024],lock_path[1100];if(!session_path(sid,path,sizeof(path)))return 0;
+    snprintf(lock_path,sizeof(lock_path),"%s.lock",path);
+    int fd=open(lock_path,O_CREAT|O_RDWR,0600);if(fd<0)return 0;
+    int ok=0;if(flock(fd,LOCK_EX)==0) {
+        ok=session_commit_exchange_unlocked(sid,expected,turn,reply);
+        flock(fd,LOCK_UN);
+    }
+    close(fd);return ok;
 }
 
 // Load session history and replay to screen
 static int session_load(const char *session_id) {
-    char path[1024];
-    if (!session_path(session_id, path, sizeof(path))) return 0;
-    FILE *f = fopen(path, "r");
-    if (!f) return 0;
-
-    printf("[resuming session %s]\n\n", session_id);
-    int turns = 0;
-    char line[MAX_RESPONSE];
-    while (fgets(line, sizeof(line), f)) {
-        // Simple parsing: find role and content
-        char *role_start = strstr(line, "\"role\":\"");
-        char *content_start = strstr(line, "\"content\":\"");
-        if (!role_start || !content_start) continue;
-
-        role_start += 8;
-        char role[32]; int ri = 0;
-        while (*role_start && *role_start != '"' && ri < 31) role[ri++] = *role_start++;
-        role[ri] = 0;
-
-        content_start += 11;
-        // Decode the content (unescape)
-        char content[MAX_RESPONSE]; int ci = 0;
-        for (int i = 0; content_start[i] && ci < MAX_RESPONSE - 1; i++) {
-            // Stop at closing quote (not escaped)
-            if (content_start[i] == '"' && (i == 0 || content_start[i-1] != '\\')) break;
-            if (content_start[i] == '\\' && content_start[i+1]) {
-                i++;
-                switch (content_start[i]) {
-                    case 'n': content[ci++] = '\n'; break;
-                    case 't': content[ci++] = '\t'; break;
-                    case '"': content[ci++] = '"'; break;
-                    case '\\': content[ci++] = '\\'; break;
-                    default: content[ci++] = content_start[i]; break;
-                }
-            } else {
-                content[ci++] = content_start[i];
-            }
-        }
-        content[ci] = 0;
-
-        if (strcmp(role, "user") == 0) {
-            printf("\033[1m> %s\033[0m\n\n", content);
-        } else if (strcmp(role, "assistant") == 0) {
-            printf("%s\n\n", content);
-        }
-        turns++;
-    }
-    fclose(f);
-    if (turns > 0) printf("[%d turns loaded]\n\n", turns);
-    return turns;
+    NSMutableArray *turns=read_transcript(session_id);
+    if(!turns)return 0;
+    printf("[resuming session %s]\n",session_id);
+    for(NSDictionary *m in turns)printf("%s: %s\n",[m[@"role"] UTF8String],[m[@"content"] UTF8String]);
+    return (int)turns.count;
 }
 
 // List recent sessions
@@ -215,60 +193,74 @@ static int write_all(int fd, const void *buf, size_t len) {
     return 0;
 }
 
-static int send_chat_request(int port, const char *user_message, int max_tokens, const char *session_id) {
+
+static NSMutableArray *read_transcript(const char *session_id) {
+    char path[1024];
+    if (!session_path(session_id, path, sizeof(path))) return nil;
+    if (access(path, F_OK) != 0) return errno == ENOENT ? [NSMutableArray array] : nil;
+    NSDictionary *attrs=[[NSFileManager defaultManager] attributesOfItemAtPath:@(path) error:NULL];
+    if([attrs[NSFileSize] unsignedLongLongValue]>16*MAX_RESPONSE)return nil;
+    NSError *error = nil;
+    NSString *raw = [NSString stringWithContentsOfFile:@(path)
+                                             encoding:NSUTF8StringEncoding error:&error];
+    if (!raw) return nil;
+    NSMutableArray *turns = [NSMutableArray array];
+    for (NSString *line in [raw componentsSeparatedByString:@"\n"]) {
+        if (!line.length) continue;
+        id item = [NSJSONSerialization JSONObjectWithData:
+                  [line dataUsingEncoding:NSUTF8StringEncoding] options:0 error:&error];
+        if (![item isKindOfClass:[NSDictionary class]] || [item count]!=2 ||
+            ![@[@"user", @"assistant"] containsObject:item[@"role"]] ||
+            ![item[@"content"] isKindOfClass:[NSString class]]) {
+            fprintf(stderr, "[chat] Corrupt transcript; refusing partial replay.\n");
+            return nil;
+        }
+        [turns addObject:@{@"role":item[@"role"], @"content":item[@"content"]}];
+    }
+    if(turns.count%2) {fprintf(stderr,"[chat] Incomplete transcript exchange; refusing replay.\n");return nil;}
+    for(NSUInteger i=0;i<turns.count;i++)if(![turns[i][@"role"] isEqual:(i%2?@"assistant":@"user")])return nil;
+    return turns;
+}
+
+// When create=1 send full history. Otherwise send only the new turn.
+static int send_chat_request(int port, NSArray *messages, int max_tokens,
+                             const char *session_id, int create) {
+    if (!session_id_valid(session_id)) return -1;
+    NSDictionary *payload = @{@"model":@"qwen3.5", @"messages":messages,
+        @"max_tokens":@(max_tokens), @"stream":@YES,
+        @"session_id":@(session_id), @"flash_session_create":@(create != 0)};
+    NSData *data = [NSJSONSerialization dataWithJSONObject:payload options:0 error:NULL];
+    if (!data) return -1;
     int sock = socket(AF_INET, SOCK_STREAM, 0);
     if (sock < 0) { perror("socket"); return -1; }
-
     struct sockaddr_in addr = {0};
     addr.sin_family = AF_INET;
     addr.sin_port = htons(port);
     addr.sin_addr.s_addr = inet_addr("127.0.0.1");
-
-    if (connect(sock, (struct sockaddr *)&addr, sizeof(addr)) < 0) {
-        fprintf(stderr, "\n[error] Cannot connect to server on port %d.\n", port);
-        close(sock);
-        return -1;
+    int flags=fcntl(sock,F_GETFL,0);fcntl(sock,F_SETFL,flags|O_NONBLOCK);
+    int connected=connect(sock,(struct sockaddr *)&addr,sizeof(addr));
+    if(connected<0 && errno==EINPROGRESS) {struct pollfd p={sock,POLLOUT,0};if(poll(&p,1,5000)>0){int err=0;socklen_t size=sizeof(err);if(getsockopt(sock,SOL_SOCKET,SO_ERROR,&err,&size)==0 && err==0)connected=0;}}
+    fcntl(sock,F_SETFL,flags);
+    struct timeval timeout={120,0};
+    const char *timeout_env=getenv("FLASH_CHAT_TIMEOUT_MS");
+    if(timeout_env){long ms=strtol(timeout_env,NULL,10);if(ms>=50 && ms<=600000){timeout.tv_sec=ms/1000;timeout.tv_usec=(ms%1000)*1000;}}
+    setsockopt(sock,SOL_SOCKET,SO_RCVTIMEO,&timeout,sizeof(timeout));
+    setsockopt(sock,SOL_SOCKET,SO_SNDTIMEO,&timeout,sizeof(timeout));
+    int no_sigpipe=1;setsockopt(sock,SOL_SOCKET,SO_NOSIGPIPE,&no_sigpipe,sizeof(no_sigpipe));
+    if (connected < 0) {
+        fprintf(stderr, "[chat] Cannot connect on port %d.\n", port);
+        close(sock); return -1;
     }
-
-    char escaped[MAX_INPUT_LINE * 2];
-    json_escape(user_message, escaped, sizeof(escaped));
-
-    if (!session_id_valid(session_id)) {
-        fprintf(stderr, "\n[error] Invalid session ID.\n");
-        close(sock);
-        return -1;
-    }
-
-    char body[MAX_INPUT_LINE * 3];
-    int body_len = snprintf(body, sizeof(body),
-        "{\"messages\":[{\"role\":\"user\",\"content\":\"%s\"}],"
-        "\"max_tokens\":%d,\"stream\":true,\"session_id\":\"%s\"}",
-        escaped, max_tokens, session_id);
-    if (body_len < 0 || (size_t)body_len >= sizeof(body)) {
-        fprintf(stderr, "\n[error] Request body is too large.\n");
-        close(sock);
-        return -1;
-    }
-
-    char request[MAX_INPUT_LINE * 4];
-    int req_len = snprintf(request, sizeof(request),
+    char header[512];
+    int n = snprintf(header, sizeof(header),
         "POST /v1/chat/completions HTTP/1.1\r\n"
-        "Host: localhost:%d\r\n"
-        "Content-Type: application/json\r\n"
-        "Content-Length: %d\r\n"
-        "Connection: close\r\n"
-        "\r\n"
-        "%s",
-        port, body_len, body);
-    if (req_len < 0 || (size_t)req_len >= sizeof(request)) {
-        fprintf(stderr, "\n[error] HTTP request is too large.\n");
-        close(sock);
-        return -1;
-    }
-    if (write_all(sock, request, (size_t)req_len) != 0) {
-        perror("write");
-        close(sock);
-        return -1;
+        "Host: localhost:%d\r\nContent-Type: application/json\r\n"
+        "Content-Length: %lu\r\nConnection: close\r\n\r\n",
+        port, (unsigned long)data.length);
+    if (n <= 0 || n >= (int)sizeof(header) ||
+        write_all(sock, header, n) < 0 ||
+        write_all(sock, data.bytes, data.length) < 0) {
+        close(sock); return -1;
     }
     return sock;
 }
@@ -299,7 +291,7 @@ typedef struct {
     int pending_len;
 } MdState;
 
-static MdState g_md = {0, 0, 0, 0, 1, {0}, 0};
+static MdState g_md = {.line_start = 1};
 
 static void md_reset(void) {
     memset(&g_md, 0, sizeof(g_md));
@@ -463,82 +455,14 @@ static void md_print(const char *text) {
 }
 
 // Stream SSE response, accumulate text, return malloc'd response string
-static char *stream_response(int sock, int show_thinking) {
-    FILE *stream = fdopen(sock, "r");
-    if (!stream) { close(sock); return NULL; }
-
-    int header_done = 0, in_think = 0, tokens = 0;
-    double t_start = now_ms(), t_first = 0;
-    md_reset();  // fresh markdown state for each response
-
-    char *response = calloc(1, MAX_RESPONSE);
-    int resp_len = 0;
-
-    char line[65536];
-    while (fgets(line, sizeof(line), stream)) {
-        if (!header_done) {
-            if (strcmp(line, "\r\n") == 0 || strcmp(line, "\n") == 0) header_done = 1;
-            continue;
-        }
-        if (strncmp(line, "data: ", 6) != 0) continue;
-        if (strncmp(line + 6, "[DONE]", 6) == 0) break;
-
-        char *ck = strstr(line + 6, "\"content\":\"");
-        if (!ck) continue;
-        ck += 11;
-
-        char decoded[4096]; int di = 0;
-        for (int i = 0; ck[i] && ck[i] != '"' && di < 4095; i++) {
-            if (ck[i] == '\\' && ck[i+1]) {
-                i++;
-                switch (ck[i]) {
-                    case 'n': decoded[di++]='\n'; break;
-                    case 't': decoded[di++]='\t'; break;
-                    case '"': decoded[di++]='"'; break;
-                    case '\\': decoded[di++]='\\'; break;
-                    default: decoded[di++]=ck[i]; break;
-                }
-            } else decoded[di++] = ck[i];
-        }
-        decoded[di] = 0;
-        if (!di) continue;
-
-        if (strstr(decoded, "<think>")) in_think = 1;
-        if (strstr(decoded, "</think>")) { in_think = 0; tokens++; continue; }
-        tokens++;
-        if (!t_first) t_first = now_ms();
-
-        // Accumulate non-thinking response
-        if (!in_think && resp_len + di < MAX_RESPONSE - 1) {
-            memcpy(response + resp_len, decoded, di);
-            resp_len += di;
-            response[resp_len] = 0;
-        }
-
-        if (in_think && !show_thinking) continue;
-        if (in_think) printf(ANSI_DIM "%s" ANSI_RESET, decoded);
-        else md_print(decoded);
-        fflush(stdout);
-    }
-    fclose(stream);
-
-    printf(ANSI_RESET);  // ensure no style leaks
-    double gen_time = t_first > 0 ? now_ms() - t_first : 0;
-    int gen_tokens = tokens > 1 ? tokens - 1 : 0;
-    printf("\n\n");
-    if (gen_tokens > 0 && gen_time > 0)
-        printf("[%d tokens, %.1f tok/s, TTFT %.1fs]\n\n",
-               tokens, gen_tokens * 1000.0 / gen_time,
-               t_first > 0 ? (t_first - now_ms() + gen_time + (t_first - (now_ms() - gen_time))) / 1000.0 : 0);
-
-    return response;
-}
+#include "chat_transport.inc"
 
 // ============================================================================
 // Main
 // ============================================================================
 
 int main(int argc, char **argv) {
+    struct sigaction action={0};action.sa_handler=chat_cancel;sigaction(SIGINT,&action,NULL);
     int port = 8000;
     int max_tokens = 8192;
     int show_thinking = 0;
@@ -617,9 +541,8 @@ int main(int argc, char **argv) {
         if (turns == 0) {
             printf("No session found with ID: %s\n\n", session_id);
         }
-        // Note: server-side KV cache may not match if server restarted.
-        // The conversation will continue but model won't "remember" old context
-        // unless we re-prefill (TODO: detect server restart and replay).
+        char saved_path[1024];
+        if(!session_path(session_id,saved_path,sizeof(saved_path)) || access(saved_path,F_OK)!=0 || !read_transcript(session_id)) {fprintf(stderr,"Cannot faithfully resume transcript.\n");return 1;}
     }
 
     printf("Ready to chat.\n\n");
@@ -627,10 +550,13 @@ int main(int argc, char **argv) {
     // Set up linenoise: history, hints
     linenoiseSetMultiLine(1);  // allow multi-line input with arrow keys
     char history_path[1024];
-    snprintf(history_path, sizeof(history_path), "%s/.flash-moe/history", getenv("HOME") ?: "/tmp");
+    snprintf(history_path, sizeof(history_path), "%s/history", g_sessions_dir);
     linenoiseHistoryLoad(history_path);
     linenoiseHistorySetMaxLen(500);
 
+    char server_session_id[65];
+    generate_session_id(server_session_id, sizeof(server_session_id));
+    int server_session_live = 0;
     for (;;) {
         char *line = linenoise("> ");
         if (!line) {
@@ -645,6 +571,7 @@ int main(int argc, char **argv) {
         linenoiseHistoryAdd(line);
         linenoiseHistorySave(history_path);
 
+        if(len>=MAX_INPUT_LINE){fprintf(stderr,"Input too long; not truncated.\n");free(line);continue;}
         char input_line[MAX_INPUT_LINE];
         strncpy(input_line, line, MAX_INPUT_LINE - 1);
         input_line[MAX_INPUT_LINE - 1] = 0;
@@ -656,6 +583,8 @@ int main(int argc, char **argv) {
         }
         if (strcmp(input_line, "/clear") == 0) {
             generate_session_id(session_id, sizeof(session_id));
+            generate_session_id(server_session_id, sizeof(server_session_id));
+            server_session_live = 0;
             printf("[new session: %s]\n\n", session_id);
             continue;
         }
@@ -664,19 +593,33 @@ int main(int argc, char **argv) {
             continue;
         }
 
-        // Save user turn
-        session_save_turn(session_id, "user", input_line);
-
-        sock = send_chat_request(port, input_line, max_tokens, session_id);
-        if (sock < 0) continue;
-
-        printf("\n");
-        char *response = stream_response(sock, show_thinking);
-
-        // Save assistant turn
-        if (response && strlen(response) > 0) {
-            session_save_turn(session_id, "assistant", response);
+        NSMutableArray *history = read_transcript(session_id);
+        if (!history) { fprintf(stderr, "[chat] Failed to load transcript; request blocked.\n"); continue; }
+        char transcript_path[1024];session_path(session_id,transcript_path,sizeof(transcript_path));
+        NSString *pending_path=[@(transcript_path) stringByAppendingString:@".pending.json"];
+        NSDictionary *turn = @{@"role":@"user", @"content":@(input_line)};
+        if([[NSFileManager defaultManager] fileExistsAtPath:pending_path]) {
+            if(strcmp(input_line,"/retry-tool")) {fprintf(stderr,"[chat] Pending tool output: use /retry-tool or /clear; command will not run again.\n");continue;}
+            id pending=[NSJSONSerialization JSONObjectWithData:[NSData dataWithContentsOfFile:pending_path] options:0 error:NULL];
+            if(![pending isKindOfClass:[NSDictionary class]] || ![pending[@"role"] isEqual:@"user"] || ![pending[@"content"] isKindOfClass:[NSString class]]) {fprintf(stderr,"Invalid pending tool output.\n");continue;}
+            NSUInteger anchor=[pending[@"anchor_count"] unsignedIntegerValue];
+            NSDictionary *savedTurn=@{@"role":pending[@"role"],@"content":pending[@"content"]};
+            if(![pending[@"anchor_count"] isKindOfClass:[NSNumber class]]){fprintf(stderr,"Unanchored pending output; refusing guessed replay.\n");continue;}
+            if(history.count==anchor+2 && [history[anchor] isEqual:savedTurn]) {
+                [[NSFileManager defaultManager] removeItemAtPath:pending_path error:NULL];
+                fprintf(stderr,"[chat] Tool output already committed; no duplicate submission.\n");continue;
+            }
+            if(history.count!=anchor){fprintf(stderr,"Pending output/history mismatch; refusing replay.\n");continue;}
+            turn=savedTurn;
         }
+        [history addObject:turn];
+        char *response=perform_turn(port,history,turn,max_tokens,server_session_id,&server_session_live,show_thinking);
+        if(!response) {fprintf(stderr,"[chat] Request failed; no local turns saved.\n");continue;}
+        if(!session_commit_exchange(session_id,[history subarrayWithRange:NSMakeRange(0,history.count-1)],turn,response)) {
+            fprintf(stderr,"[chat] Transcript commit failed; stopping without claiming persistence.\n");free(response);return 1;
+        }
+
+        [[NSFileManager defaultManager] removeItemAtPath:pending_path error:NULL];
 
         // ---- Tool call handling ----
         // Detect <tool_call>{"name":"bash","arguments":{"command":"..."}}
@@ -761,7 +704,7 @@ int main(int argc, char **argv) {
             printf("\033[2m[execute? y/n] \033[0m");
             fflush(stdout);
             int ch = getchar();
-            while (getchar() != '\n');  // consume rest of line
+            int rest;while ((rest=getchar()) != '\n' && rest != EOF) {}
             if (ch != 'y' && ch != 'Y') {
                 printf("\033[2m[skipped]\033[0m\n");
                 free(response);
@@ -794,17 +737,31 @@ int main(int argc, char **argv) {
             char *tool_msg = malloc(out_len + 256);
             snprintf(tool_msg, out_len + 256, "<tool_response>\n%s</tool_response>", output);
 
-            free(response);
-            sock = send_chat_request(port, tool_msg, max_tokens, session_id);
-            free(tool_msg);
-            if (sock < 0) { response = NULL; break; }
-
-            printf("\n");
-            response = stream_response(sock, show_thinking);
-
-            if (response && strlen(response) > 0) {
-                session_save_turn(session_id, "assistant", response);
+            // Tool output becomes a user turn, and is replayed at most once
+            // after invalidation. Never re-execute a shell command on retry.
+            NSMutableArray *tool_history = read_transcript(session_id);
+            if (!tool_history) { free(tool_msg); free(response); response = NULL; break; }
+            NSDictionary *tool_turn = @{@"role":@"user", @"content":@(tool_msg)};
+            [tool_history addObject:tool_turn];
+            free(response); response = NULL;
+            // Persist before contacting the model: disconnect/replay must never
+            // require running the already-approved command a second time.
+            NSMutableDictionary *pendingRecord=[tool_turn mutableCopy];pendingRecord[@"anchor_count"]=@(tool_history.count-1);
+            NSData *savedOutput=[NSJSONSerialization dataWithJSONObject:pendingRecord options:0 error:NULL];
+            if(![savedOutput writeToFile:pending_path options:NSDataWritingAtomic error:NULL]) {
+                fprintf(stderr,"[chat] Could not preserve tool output; stopping.\n");free(tool_msg);return 1;
             }
+            response=perform_turn(port,tool_history,tool_turn,max_tokens,server_session_id,&server_session_live,show_thinking);
+            if(response) {
+                if(!session_commit_exchange(session_id,[tool_history subarrayWithRange:NSMakeRange(0,tool_history.count-1)],tool_turn,response)) {fprintf(stderr,"[chat] Tool transcript commit failed.\n");free(tool_msg);free(response);return 1;}
+                [[NSFileManager defaultManager] removeItemAtPath:pending_path error:NULL];
+            } else {
+                // Preserve already executed output even if follow-up failed. No
+                // automatic command execution/retry: save the exact replay input.
+                fprintf(stderr,"[chat] Tool follow-up failed; retry requires the saved pending output.\n");
+
+            }
+            free(tool_msg);
         }
 
         free(response);

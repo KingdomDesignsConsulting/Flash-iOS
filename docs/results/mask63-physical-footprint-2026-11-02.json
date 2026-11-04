@@ -1,0 +1,260 @@
+{
+  "scope": "Sampled charged process footprint; overlapping RSS is not total unified memory",
+  "coverage": "No 1K physical samples; 4K ordinary has two processes, other paths three. HTTP has three processes/path. Observer ended with completed suite.",
+  "label_correction": "HTTP labels use final CLI flag from sequential recorded launch times. Raw samples remain unchanged.",
+  "corrected_sample_count": 654,
+  "groups": [
+    {
+      "scope": "cli-4096",
+      "mode": "candidate",
+      "process_count": 3,
+      "samples": 531,
+      "metrics": {
+        "physical": {
+          "median": 1732832392,
+          "min": 1732815960,
+          "max": 1732881496
+        },
+        "peak": {
+          "median": 1732832392,
+          "min": 1732815960,
+          "max": 1732881496
+        },
+        "rss": {
+          "median": 9665626112,
+          "min": 9619210240,
+          "max": 9876471808
+        }
+      },
+      "instances": [
+        {
+          "samples": 183,
+          "physical": 1732881496,
+          "peak": 1732881496,
+          "rss": 9876471808
+        },
+        {
+          "samples": 176,
+          "physical": 1732832392,
+          "peak": 1732832392,
+          "rss": 9665626112
+        },
+        {
+          "samples": 172,
+          "physical": 1732815960,
+          "peak": 1732815960,
+          "rss": 9619210240
+        }
+      ]
+    },
+    {
+      "scope": "cli-4096",
+      "mode": "control",
+      "process_count": 2,
+      "samples": 308,
+      "metrics": {
+        "physical": {
+          "median": 1899179360.0,
+          "min": 1899097464,
+          "max": 1899261256
+        },
+        "peak": {
+          "median": 1899179360.0,
+          "min": 1899097464,
+          "max": 1899261256
+        },
+        "rss": {
+          "median": 9616777216.0,
+          "min": 9557573632,
+          "max": 9675980800
+        }
+      },
+      "instances": [
+        {
+          "samples": 154,
+          "physical": 1899097464,
+          "peak": 1899097464,
+          "rss": 9557573632
+        },
+        {
+          "samples": 154,
+          "physical": 1899261256,
+          "peak": 1899261256,
+          "rss": 9675980800
+        }
+      ]
+    },
+    {
+      "scope": "cli-4096",
+      "mode": "scalar",
+      "process_count": 3,
+      "samples": 755,
+      "metrics": {
+        "physical": {
+          "median": 1285656032,
+          "min": 1285361048,
+          "max": 1286197280
+        },
+        "peak": {
+          "median": 1285656032,
+          "min": 1285361048,
+          "max": 1286197280
+        },
+        "rss": {
+          "median": 1293631488,
+          "min": 1231372288,
+          "max": 1319616512
+        }
+      },
+      "instances": [
+        {
+          "samples": 255,
+          "physical": 1285656032,
+          "peak": 1285656032,
+          "rss": 1231372288
+        },
+        {
+          "samples": 249,
+          "physical": 1286197280,
+          "peak": 1286197280,
+          "rss": 1319616512
+        },
+        {
+          "samples": 251,
+          "physical": 1285361048,
+          "peak": 1285361048,
+          "rss": 1293631488
+        }
+      ]
+    },
+    {
+      "scope": "http",
+      "mode": "candidate",
+      "process_count": 3,
+      "samples": 727,
+      "metrics": {
+        "physical": {
+          "median": 2056138104,
+          "min": 2056039800,
+          "max": 2056220000
+        },
+        "peak": {
+          "median": 2056138104,
+          "min": 2056039800,
+          "max": 2056220000
+        },
+        "rss": {
+          "median": 9908699136,
+          "min": 9665232896,
+          "max": 9925394432
+        }
+      },
+      "instances": [
+        {
+          "samples": 251,
+          "physical": 2056039800,
+          "peak": 2056039800,
+          "rss": 9665232896
+        },
+        {
+          "samples": 239,
+          "physical": 2056220000,
+          "peak": 2056220000,
+          "rss": 9908699136
+        },
+        {
+          "samples": 237,
+          "physical": 2056138104,
+          "peak": 2056138104,
+          "rss": 9925394432
+        }
+      ]
+    },
+    {
+      "scope": "http",
+      "mode": "control",
+      "process_count": 3,
+      "samples": 654,
+      "metrics": {
+        "physical": {
+          "median": 2222042800,
+          "min": 2221993624,
+          "max": 2222255792
+        },
+        "peak": {
+          "median": 2222042800,
+          "min": 2221993624,
+          "max": 2222255792
+        },
+        "rss": {
+          "median": 9915793408,
+          "min": 9653796864,
+          "max": 9930883072
+        }
+      },
+      "instances": [
+        {
+          "samples": 223,
+          "physical": 2222255792,
+          "peak": 2222255792,
+          "rss": 9653796864
+        },
+        {
+          "samples": 215,
+          "physical": 2222042800,
+          "peak": 2222042800,
+          "rss": 9930883072
+        },
+        {
+          "samples": 216,
+          "physical": 2221993624,
+          "peak": 2221993624,
+          "rss": 9915793408
+        }
+      ]
+    },
+    {
+      "scope": "http",
+      "mode": "scalar",
+      "process_count": 3,
+      "samples": 1255,
+      "metrics": {
+        "physical": {
+          "median": 1645234984,
+          "min": 1645071168,
+          "max": 1648413456
+        },
+        "peak": {
+          "median": 1645234984,
+          "min": 1645071168,
+          "max": 1648413456
+        },
+        "rss": {
+          "median": 1431617536,
+          "min": 1425915904,
+          "max": 1433337856
+        }
+      },
+      "instances": [
+        {
+          "samples": 512,
+          "physical": 1648413456,
+          "peak": 1648413456,
+          "rss": 1433337856
+        },
+        {
+          "samples": 387,
+          "physical": 1645234984,
+          "peak": 1645234984,
+          "rss": 1425915904
+        },
+        {
+          "samples": 356,
+          "physical": 1645071168,
+          "peak": 1645071168,
+          "rss": 1431617536
+        }
+      ]
+    }
+  ]
+}
