@@ -2,6 +2,7 @@ import type { Chat, GeneratorController } from '@lmstudio/sdk';
 import {configSchematics,globalConfigSchematics} from './config';
 import {completionEvents} from './transport';
 import {ResidentProtocol} from './resident';
+import {Validator} from 'jsonschema';
 const protocol=new ResidentProtocol();
 export async function generate(ctl:GeneratorController, chat:Chat) {
  const settings=ctl.getPluginConfig(configSchematics),global=ctl.getGlobalPluginConfig(globalConfigSchematics);
@@ -18,6 +19,8 @@ export async function generate(ctl:GeneratorController, chat:Chat) {
  }
  const maxOutputTokens=settings.get('maxOutputTokens');
  const tools=ctl.getToolDefinitions().map(t=>({type:'function',function:{name:t.function.name,description:t.function.description,parameters:t.function.parameters||{}}}));
+ const definitions=new Map<string,any>();
+ for(const t of tools){if(definitions.has(t.function.name))throw new Error('Duplicate advertised tool name');definitions.set(t.function.name,t.function.parameters);}
  const inputBytes=Buffer.byteLength(JSON.stringify({messages,tools}),'utf8'),limit=32768-maxOutputTokens-2048;
  if(inputBytes>limit)throw new Error(`Context safety cap exceeded (${inputBytes} serialized bytes; limit ${limit}). No document truncated.`);
  const abort=new AbortController();ctl.onAborted(()=>abort.abort());
@@ -36,6 +39,10 @@ export async function generate(ctl:GeneratorController, chat:Chat) {
     for(const call of delta.tool_calls||[]) {
      if(!Number.isInteger(call.index)||call.index<0||call.index>63)throw new Error('Invalid tool-call index');
      let active=calls.get(call.index);if(!active){active={id:'',name:'',args:''};calls.set(call.index,active);}
+     if(call.type!=null && call.type!=='function')throw new Error('Invalid tool-call type');
+     if(call.id!=null && (typeof call.id!=='string'||!call.id))throw new Error('Invalid tool-call ID');
+     if(call.function!=null && (typeof call.function!=='object'||Array.isArray(call.function)))throw new Error('Invalid tool-call function');
+     for(const field of ['name','arguments'])if(call.function?.[field]!=null && typeof call.function[field]!=='string')throw new Error('Invalid tool-call fragment');
      if(call.id){if(active.id&&active.id!==call.id)throw new Error('Tool call ID changed');active.id=call.id;}
      active.name+=call.function?.name||'';active.args+=call.function?.arguments||'';
      if(active.args.length>1024*1024)throw new Error('Tool argument size limit');
@@ -46,9 +53,14 @@ export async function generate(ctl:GeneratorController, chat:Chat) {
    if(!calls.size && !content.length)throw new Error('No visible assistant completion');
    // No partial tool request is made executable until transport completion AND
    // all tool arguments have validated. Parallel calls keep their stream index.
+   const ids=new Set<string>();
    const complete=[...calls.entries()].sort(([a],[b])=>a-b).map(([,c])=>{
     if(!c.id||!c.name)throw new Error('Incomplete tool call');
-    const args=JSON.parse(c.args||'{}');if(!args||Array.isArray(args)||typeof args!=='object')throw new Error('Invalid tool argument object');
+    if(ids.has(c.id))throw new Error('Duplicate tool-call ID');ids.add(c.id);
+    if(!definitions.has(c.name))throw new Error('Unknown tool name');
+    const args=JSON.parse(c.args);if(!args||Array.isArray(args)||typeof args!=='object')throw new Error('Invalid tool argument object');
+    const result=new Validator().validate(args,definitions.get(c.name));
+    if(!result.valid)throw new Error('Tool arguments violate advertised schema');
     return {...c,arguments:args};
    });
    for(const c of complete){ctl.toolCallGenerationStarted({toolCallId:c.id});ctl.toolCallGenerationNameReceived(c.name);ctl.toolCallGenerationArgumentFragmentGenerated(c.args);ctl.toolCallGenerationEnded({id:c.id,name:c.name,type:'function',arguments:c.arguments});}

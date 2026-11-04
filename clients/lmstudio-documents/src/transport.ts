@@ -42,8 +42,17 @@ export async function* completionEvents(base:string,key:string,body:any,signal:A
      let event:any;try{event=JSON.parse(raw);}catch{throw new UpstreamError('Malformed SSE JSON');}
      if(invalidated(event))throw new UpstreamError('Resident session invalidated',true);
      if(event?.error)throw new UpstreamError('Upstream SSE error');
+     if(event.usage!=null){
+      const u=event.usage;
+      if(!['prompt_tokens','completion_tokens','total_tokens'].every(k=>Number.isSafeInteger(u[k])&&u[k]>=0) || u.total_tokens!==u.prompt_tokens+u.completion_tokens)throw new UpstreamError('Invalid token usage');
+      const cached=u.prompt_tokens_details?.cached_tokens;
+      if(cached!=null && (!Number.isSafeInteger(cached)||cached<0||cached>u.prompt_tokens))throw new UpstreamError('Invalid cached token usage');
+     }
      if(!Array.isArray(event?.choices))throw new UpstreamError('Invalid completion choices');
+     if(event.choices.length>1)throw new UpstreamError('Multiple completion choices unsupported');
      for(const c of event.choices) {
+      if(c==null || typeof c!=='object' || (c.index!=null && c.index!==0))throw new UpstreamError('Invalid completion choice');
+      if(finished)throw new UpstreamError('Completion event after finish');
       if(c.finish_reason!=null){if(!['stop','length','tool_calls'].includes(c.finish_reason))throw new UpstreamError('Unsuccessful finish reason');finished=true;}
      }
      if(event.choices.some((c:any)=>c.delta?.content || c.delta?.reasoning_content || c.delta?.tool_calls?.length))emitted=true;
