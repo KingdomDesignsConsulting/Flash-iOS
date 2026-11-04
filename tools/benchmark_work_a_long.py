@@ -12,7 +12,7 @@ def main():
  global ACTIVE_OUT
  p=argparse.ArgumentParser(description=__doc__)
  for key in ['control','candidate','manifest','variants','native_gate','render_input','render_output','probe','out']:p.add_argument('--'+key.replace('_','-'),required=True,type=P)
- p.add_argument('--count',type=int,choices=[16384,32768],required=True);p.add_argument('--repeats',type=int,choices=[1,2,3],default=3);p.add_argument('--start-round',type=int,default=0);a=p.parse_args();a.out.mkdir(parents=True,exist_ok=False);ACTIVE_OUT=a.out
+ p.add_argument('--max-seconds',type=int,default=21600);p.add_argument('--count',type=int,choices=[16384,32768],required=True);p.add_argument('--repeats',type=int,choices=[1,2,3],default=3);p.add_argument('--start-round',type=int,default=0);a=p.parse_args();a.out.mkdir(parents=True,exist_ok=False);ACTIVE_OUT=a.out;assert 300<=a.max_seconds<=43200;deadline=time.monotonic()+a.max_seconds
  verify_bound_build(a.manifest,a.control,a.native_gate);verify_bound_build(a.manifest,a.candidate,a.native_gate);manifest=load(a.manifest);variants=load(a.variants);assert variants['release_manifest_sha256']==sha(a.manifest)
  for name,digest in manifest['source_sha256'].items():assert sha(REPO/name)==digest,'Frozen source changed'
  for b in [a.control,a.candidate]:assert sha(b)==variants['variants'][b.name]['sha256']
@@ -20,11 +20,11 @@ def main():
  modes=[('ordinary',a.control,0,True),('mask63',a.candidate,63,True),('scalar',a.control,0,False)];rows=[];report=dict(status='RUNNING',started=stamp(),release_manifest_sha256=sha(a.manifest),runner_sha256=sha(P(__file__)),source_head=subprocess.check_output(['git','rev-parse','HEAD'],cwd=REPO,text=True).strip(),input_sha256=sha(a.render_input),rendered_ids_sha256=sha(a.render_output),count=a.count,repeats=a.repeats,rows=rows,cache_scope='Fresh process first-request then same-process repeat; same IDs/cache settings, no OS-page-cache purge; system startup may warm experts; no full-binary cache invalidation',attention_latency_scope='Existing host wall-phase aggregates, not GPU timestamp counters');write(a.out/'result.json',report)
  for trial in range(a.start_round,a.start_round+a.repeats):
   for name,binary,mask,nrow in modes[trial%3:]+modes[:trial%3]:
-   free=host_free_percent();assert free is not None and free>=35,'HOST_MEMORY_LAUNCH_BLOCKED'
+   assert time.monotonic()+300<deadline,'PHASE_BUDGET_NO_NEW_MODEL';free=host_free_percent();assert free is not None and free>=35,'HOST_MEMORY_LAUNCH_BLOCKED'
    output=a.out/f'{trial}-{name}';budget=[];samples=[];observer_errors=[];stop=threading.Event();threads=[]
    with server(output,binary=binary.resolve(),args=['--prefill-nrow' if nrow else '--no-prefill-nrow'],env_extra={'FLASH_FE027_NUMERICS':str(mask),'FLASH_HTTP_QUALIFICATION':'1','FLASH_TRACE_GPU_KV_BOUNDARY':'1'},diagnostic_trace=False) as s:
     def watch_budget():
-     code,peak,reason=wait_bounded_process(s['process'],10800 if a.count==32768 else 7200,16*1024**3,host_free_floor=15);budget.append(dict(exit=code,peak_rss_bytes=peak,stop_reason=reason))
+     code,peak,reason=wait_bounded_process(s['process'],min(10800 if a.count==32768 else 7200,max(1,int(deadline-time.monotonic()))),16*1024**3,host_free_floor=15);budget.append(dict(exit=code,peak_rss_bytes=peak,stop_reason=reason))
     def observe():
      with (output/'memory-samples.jsonl').open('x') as log:
       while not stop.is_set():

@@ -60,3 +60,9 @@ python3 tools/qualify_work_a_native.py --manifest "$OUT/release-manifest.json" \
 ```
 
 Later harnesses have `--native-gate` and `--manifest` requirements. They reject unverified binaries/model metadata, incomplete endpoints or missing actual GPU routing. Their prepared status is not execution evidence. Final results and the promotion/rollback review will be appended after execution.
+
+## Bounded execution queue
+
+`tools/run_work_a_closure.py` waits for the running native gate, then validates all 256 endpoints and actual GPU markers before sequential literal diagnosis, paired sustained output, uninstrumented sustained timing, named-profile restart, real RST cancellation, and matched 16K/32K cold/warm performance. Defaults request three balanced process trials/path at each length. Each performance phase has a six-hour bound; the queue checks its 14-hour budget before each new stage. Incomplete cohorts remain explicit partial/NOT RUN; no automatic retry. Later native processes retain individual time/RSS/host-memory guards. Small controller logs relay actual server start/stop timestamps. Legacy profile/cancellation drivers now use the same bounded watchdogs; two cleanup/fail-closed wrapper tests and six watchdog tests PASS.
+
+The original literal baseline retains the exact SDK request fields, including its 256-token limit, and checks the 198 native prompt IDs against the saved SDK trace before attributing any behavior. Variations remain separate. The direct native CLI bypasses both SDK and HTTP. Failure to reproduce is reported as unresolved, never as proof of an intrinsic model limitation.
