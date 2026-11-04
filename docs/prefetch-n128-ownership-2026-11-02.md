@@ -1,6 +1,6 @@
 # N128 prefetch ownership repair — 2026-11-02
 
-Short repair qualification PASS; overall release qualification remains open. Production/defaults remain unchanged and PR #2 remains draft. Starting published progress HEAD: `24d6cc4cef2c8b852b63f4d3af3dcf55b30090c6`.
+Repair and affected post-repair lifecycle qualification PASS; overall production promotion remains blocked by separately documented release gaps. Production/defaults remain unchanged and PR #2 remains draft. Starting published progress HEAD: `24d6cc4cef2c8b852b63f4d3af3dcf55b30090c6`.
 
 The live SDK smoke exposed a second-stateless-request defect missed by the independent fresh-process histories. The first request matches scalar exactly. In the second, the completed N128 slab at 128 matches, then active state diverges at 129. Fresh scalar replay reproduces all 208 scalar HTTP observations; the candidate first differs at 129. The earlier 16K/32K single-history results remain valid for their measured paths and do not establish multi-request safety.
 
@@ -25,7 +25,9 @@ The diagnostic extension is opt-in: `FLASH_SESSION_STATE_DUMP_COMPONENT=active`,
 | Three stateless turns | PASS against separate fresh scalar histories |
 | Three resident turns with N128 deltas | PASS through 174, 325, 476 against independent scalar replay |
 | Cache synthetic tests | PASS, including selective-marker/unaffected-identity property |
-| Post-repair live checkpoint/long HTTP/performance | Pending; not inferred from the short repair |
+| Post-repair live checkpoint / faults / cancellation / profile | PASS, suite 13:55:53–14:23:04 PST; old epoch rejected and preserved, new cross-build restore exact |
+| Repaired long HTTP | PASS: three resident turns through 16470, 150 exact fingerprints against authenticated independent scalar replay |
+| Performance | Three trials/path at 1K/4K and HTTP completed; +8.13%/+14.75% prefill cost vs ordinary, exploratory. Matched 16K/32K performance NOT RUN |
 
 The original SDK wording asks for a new literal on turn two but both scalar and candidate return the original literal. Native request IDs and full history are correctly forwarded. That negative model-behavior observation is preserved separately; matching text did not override the numerical failure. Installed GUI behavior is not claimed qualified.
 
@@ -43,3 +45,5 @@ python3 tools/qualify_prefetch_phase.py --binary "$PWD/metal_infer/infer-release
 ```
 
 Raw requests, tokens, tensor captures and reference binaries are private under `/Users/knagel/My Drive/Flash-iOS/Testing/HTTP-Prefix-Reuse/2026-11-02-mask63-release/final-safety/`. Logs are in the project-root `benchmark-logs/mask63-release-adapter-*.log` and `mask63-release-prefetch-*.log`. Sanitized measurements: `docs/results/prefetch-n128-ownership-2026-11-02.json`.
+
+Final measured scope and remaining gates: [release report](mask63-production-readiness-2026-11-02.md). The repaired source is ac06b920; native single-history 32K evidence uses an archived earlier build. No claim of a new full 32K repaired-binary run.

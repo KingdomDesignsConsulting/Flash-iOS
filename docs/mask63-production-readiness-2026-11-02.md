@@ -1,12 +1,12 @@
 # Mask-63 production-readiness qualification — 2026-11-02
 
-WORKING REPORT — post-repair serving and performance qualification remains incomplete. This file is not a promotion decision. Production defaults, branch, binary, model, user profiles and port 11241 remain unchanged. PR #2 stays draft.
+FINAL HANDOFF — evidence reviewed 2026-11-03. Production promotion is blocked by missing long-context performance evidence and unresolved client behavioral coverage. Production defaults, branch, binary, model, user profiles and port 11241 remain unchanged. PR #2 stays draft.
 
 ## Baseline and scope
 
 Accepted engineering baseline: `eda0e73fd2eca1c8d48caebf9d4d124232eb0d0f`; adopted documentation-only HEAD: `64a5d51bb76c928e8d6ff0ee8535cee64286e597`. Work occurs only in the isolated experimental checkout for `experiment/http-resident-prefix-reuse-20261023`.
 
-Inference arithmetic is unchanged from the accepted mask-63 implementation. Changes add diagnostic-only native rendering, snapshot/mirror extent checks, allocation inventories, controlled expert-worker failure and candidate routing observations, plus bounded test drivers. No template, routing, tie policy, cache format, execution version or full-binary identity changes. Full executable hashing remains disabled.
+Inference arithmetic is unchanged from the accepted mask-63 implementation. Changes add diagnostic-only native rendering, snapshot/mirror extent checks, allocation inventories, controlled expert-worker failure and candidate routing observations, plus bounded test drivers. No template, routing, tie policy, cache format or full-binary identity changes. The confirmed ownership repair adds a narrowly scoped GPU-N128 execution marker; global execution version remains 3. Full executable hashing remains disabled.
 
 The ordinary-N128 failures in earlier reports remain valid historical controls. Exact persistent fingerprints do not imply universally bitwise-identical hidden vectors or logits. Candidate state evolves independently; it is never periodically rebased from scalar.
 
@@ -14,20 +14,24 @@ The ordinary-N128 failures in earlier reports remain valid historical controls. 
 
 The live SDK smoke exposed a second-stateless-prefill failure at 129 after exact state through 128. Authenticated captures show six omitted experts and maximum active-state error 18.87463927268982. Decode-prefetch phase leaked into N128 capture, leaving an unrelated short async read whose validity flags could suppress six routed experts. Disabling prefetch isolates the cause. The narrow ownership repair passes exact all-active/combine captures and three-turn stateless/resident tests through 476. [Detailed evidence and focused regression](prefetch-n128-ownership-2026-11-02.md).
 
-This introduces a selective `nrow-prefetch-ownership-v2` identity only for eligible GPU N128; old prefetch on/off identities aliased, so both affected variants invalidate once. Scalar/CPU identities, global execution version 3, checkpoint format and disabled executable hashing remain unchanged. Full post-repair lifecycle/long-serving/performance qualification is still pending; do not promote based on the earlier single-history passes.
+This introduces a selective `nrow-prefetch-ownership-v2` identity only for eligible GPU N128; old prefetch on/off identities aliased, so both affected variants invalidate once. Scalar/CPU identities, global execution version 3, checkpoint format and disabled executable hashing remain unchanged. Post-repair cache/restart/fault/cancellation and three-turn HTTP state through 16470 now PASS. Balanced 1K/4K CLI and HTTP measurements completed. These do not establish matched 16K/32K performance or a new post-repair native 32K run.
 
-## Current release-gate matrix
+## Final release-gate matrix
 
-| Gate | Current result | Scope and outstanding evidence |
+| Gate | Result | Exact scope / remaining requirement |
 | --- | --- | --- |
-| 1. Independent histories | PASS | Six complete native-rendered histories, 455 observed completed endpoints/tail positions; exact fingerprints, finite values, greedy identity, all ten KV/mirror checks |
-| 2. Long context | 16K PASS; 32K PASS | All 128 slabs at 16K have exact fingerprints, zero state error, hidden max 9.53674316e-7 and logits max 3.81469727e-6. Independent 32K completed 06:47:26 PST: 256 exact endpoints, zero state error, hidden max 4.76837158e-7, logits max 5.72204590e-6; all ten layers on GPU through 32768. Runtime-capacity rejection and recovery PASS |
-| 3. Lifecycle | PASS for short executed cases | Three resident turns; profile capture/restart; prefix/version/model-signature/mode mismatch; completed-prefix publication inside a slab; reset during N128 prefill/decode. Long serving remains pending |
-| 4. Controlled failures | PARTIAL | Before output, after six visible deltas, and expert-worker EIO PASS with explicit SSE errors, zero reusable state, stale 409 and exact scalar recovery. Actual incomplete tool-envelope interruption, partial snapshot-allocation failure and checkpoint-write EIO now PASS; failed sessions reject and recovery remains exact |
-| 5. 24GB memory | PARTIAL | Measured categories and conservative preflight available; watchdog/resource tests PASS. 32K observed native RSS 10,177,478,656 bytes; charged-footprint peak 9,376,072,264 bytes. Partial allocation cleanup PASS; final serving-capacity analysis pending |
-| 6. Modes | PASS within short scope | Default GPU; CPU-linear + no linear chain; both chains off; legacy KV; disabled arithmetic. Two illegal combinations rejected before model loading. Not cross-mode or long other-mode qualification |
-| 7. Protocol | PASS within executed scope | Five buffered/SSE pairs, thinking off/on, structured tools, actual content+tool, exact native IDs/state, logical usage and usage-before-DONE. LM Studio build + 19 mock tests PASS; installed GUI/live adapter not claimed |
-| 8. Performance | NOT RUN in this assignment | Mandatory gates must finish first. Previous accepted 1K exploratory results remain historical evidence, not a new long-context measurement |
+| 1. Independent histories | PASS | Six complete histories / 455 exact observed endpoints; no intermediate whole-batch equivalence claim. Executed pre-ownership repair; unchanged single-history math path. |
+| 2. Long numerical context | PASS | Complete native 16K/128 and 32K/256 slabs, all ten GPU layers through 32768, exact state fingerprints. Archived B3 build; no new full 32K run on repaired B8 binary. Repaired HTTP state passes through 16470. |
+| 3. Hybrid lifecycle | PASS | Repaired default-prefetch stateless and resident three-turn tests, named-profile restart/new session, cross-build compressed restore, prefix/mode rejection, disconnect/invalidation/recovery and completed-boundary publication. |
+| 4. Controlled failures | PASS | Pre-output, visible-output, expert-worker, interrupted tool, partial allocation and checkpoint-write injection; fail-closed session, stale 409, exact fresh recovery. Actual hardware reset/OOM/disk exhaustion NOT RUN. |
+| 5. Resource safety | PASS | Bounded sequential tests on 24GiB M4, per-category allocations, charged footprint and RSS, guarded 32K/16K HTTP, controlled allocation/write failures. Not whole-system physical attribution or multi-client capacity certification. |
+| 6. Modes / identity | PASS | Short within-mode CPU-linear/chains-off/legacy-KV/mask-zero checks and illegal-mode rejection; selective ownership marker invalidation and cross-build reuse. Long alternative-mode cross-products NOT RUN and excluded. |
+| 7a. API / actual SDK transport | PASS | Five buffered/SSE pairs; thinking/tools/content+tool; exact IDs/state, logical usage before DONE; actual SDK Chat/generator/transport with mock UI controller, independent scalar-validated state. |
+| 7b. SDK literal-change behavior | FAIL | Both scalar and mask63 repeat the old literal instead of the requested new one; correct request IDs/history and exact states. Not an N128 regression and not hidden by protocol-only PASS. Installed GUI NOT RUN. |
+| 8a. Bounded performance | PASS | Three balanced trials/path at 1K/4K and HTTP first/warm/resident; medians/ranges below, exploratory conditions. HTTP outputs only two tokens, so no sustained decode claim. |
+| 8b. Intended-capacity performance | NOT RUN | No matched scalar/ordinary/mask63 16K or 32K performance cohort; no sustained long-output HTTP benchmark. Mandatory production performance evidence remains incomplete. |
+
+The disposition is NO-GO because the intended-capacity performance gate lacks evidence and the client behavioral failure remains unresolved. Numerical success is not withdrawn; neither is it a blanket release certification.
 
 ## Independent histories
 
@@ -62,7 +66,7 @@ The original partial-tool follow-up used an invalid mixed tool/user resident del
 
 Live diagnostic partial snapshot-allocation failure and a 4096-byte checkpoint-write EIO both passed recovery/restart checks, finishing 11:49:57 PST. These simulate controlled failures, not real system OOM or disk exhaustion. Exact capacity-plus-one admission (`65537` required tokens) rejected fresh and resident requests before mutation, preserving all existing KV/state and allowing an exact valid follow-up.
 
-Native compressed state save and reload across different diagnostic executables passed **11:50:00–11:51:59 PST** with the same selective compatibility identity; wrong numerical mode was rejected without changing the checkpoint. The long HTTP server ran 11:52:01–12:12:52 PST. All three turns completed, ending at position 16470; both follow-ups retained the identifier, with valid recorded KV/finite-state checks. Independent scalar replay ran 12:12:54–12:49:10 PST and PASSed all 150 observed fingerprints through 16470, before the subsequent ownership repair. The actual LM Studio SDK/adapter harness is prepared; installed GUI remains untested.
+Native compressed state save and reload across different diagnostic executables passed **11:50:00–11:51:59 PST** with the same selective compatibility identity; wrong numerical mode was rejected without changing the checkpoint. The long HTTP server ran 11:52:01–12:12:52 PST. All three turns completed, ending at position 16470; both follow-ups retained the identifier, with valid recorded KV/finite-state checks. Independent scalar replay ran 12:12:54–12:49:10 PST and PASSed all 150 observed fingerprints through 16470, before the subsequent ownership repair. The actual SDK/adapter subsequently ran against the repaired server; protocol/native state PASS and literal-change behavior FAIL are recorded separately below. Installed GUI remains untested.
 
 The optional global host-memory guard stops only its owned process group after three low readings. Missing memory or RSS monitors fail closed. A denied `ps` call originally escaped as an exception in a model-free test; the runner now handles it as `RSS_MONITOR_ERROR`, terminates the child and returns 125. Six focused watchdog tests pass, including this regression. No inference code was changed by this repair.
 
@@ -97,7 +101,7 @@ The initial alias counter reported the full CPU reservation upon matching base p
 
 Long-test preflight takes the maximum of process peak, resident memory, and Metal allocation plus host snapshots/GDN/conv, then adds growth for one active KV plus two oracle banks and a 2GiB unattributed margin. Initial conservative bounds: 12,984,852,480 bytes at 16K; 14,998,118,400 at 32K, below an 18GiB estimated ceiling with 6GiB reserved for the system. Every native run additionally has a 16GiB RSS watchdog, a timeout and GPU launch gating. The 32K bound is recomputed from actual 16K measurements before escalation.
 
-Serving retains five prefix slots, an 8K prefix-token cap, a 768MiB dynamic snapshot budget and the existing excluded pinned slot. Oracle banks are diagnostic allocations, not a new serving pool. Final admission analysis must compare these bounded serving allocations with measured long-context peaks.
+Serving retains five prefix slots, an 8K prefix-token cap, a 768MiB dynamic snapshot budget and the existing excluded pinned slot. Oracle banks are diagnostic allocations, not a new serving pool. At 32K the measured diagnostic charged peak is 8.73GiB and observed RSS 9.48GiB, with two oracle banks totaling 2.87GiB. Serving uses a different bounded snapshot policy, so subtracting diagnostic banks from RSS is not a valid serving footprint calculation. The 768MiB dynamic budget, excluded pinned entry and one active conversation remain unchanged; no extra KV pool is introduced. The conservative 13.97GiB preflight bound plus 6GiB system reserve stayed below 24GiB. This establishes safe execution for the sequential tested workloads, not worst-case admission under arbitrary concurrent applications.
 
 ## Research applicability
 
@@ -121,6 +125,108 @@ python3 tools/qualify_session_accumulation.py --binary "$PWD/metal_infer/infer-r
 python3 tools/qualify_release_long.py --binary "$PWD/metal_infer/infer-release-qualification" --corpus "$PRIVATE_OUT/corpus/corpus.json" --preflight "$PRIVATE_OUT/preflight257/memory-observations.json" --timeout 10800 --out "$PRIVATE_OUT/long"
 ```
 
-The opt-in extended HTTP diagnostic raises its history bound to 32768 and records actual slab endpoints, selected scalar-prefill positions, final prefill, every decode/EOS and request boundaries. Sparse scalar replay requires a final expected digest and checks exactly the observed positions. Default diagnostics retain 512 tokens/every scalar step. Native model-free checks of these guards pass; the live long HTTP experiment remains pending.
+The opt-in extended HTTP diagnostic raises its history bound to 32768 and records actual slab endpoints, selected scalar-prefill positions, final prefill, every decode/EOS and request boundaries. Sparse scalar replay requires a final expected digest and checks exactly the observed positions. Default diagnostics retain 512 tokens/every scalar step. Native model-free checks of these guards pass; the repaired live long HTTP experiment completed as recorded below.
 
-Final disposition and remaining commands will be completed after the running gates finish. No production promotion is authorized by this working report.
+No production promotion is authorized. See the final handoff below.
+
+
+## Post-repair completion and provenance
+
+Repair commit: `ac06b920dbb7e26b804480b36eea4dbe83b40d4e`; prior evidence commits `bcf431b5d8c2555dc55b462101b80f44fbe024ea` and `24d6cc4cef2c8b852b63f4d3af3dcf55b30090c6`. Starting engineering/documentation SHAs appear above. Final reporting commit is the commit containing this report; runtime source remains exactly the repair revision.
+
+The repaired suite ran **2026-11-02 13:55:53–14:23:04 PST**, exit 0. It rejected the actual old GPU-N128 checkpoint while preserving its bytes, saved and restored a 67,370,561-byte checkpoint between different repaired executables, rejected prefix/mode/mask mismatch, and repeated streaming failure, named-profile restart and actual connection-reset checks. Save/restore were **405.068 / 369.328ms**, single diagnostic sample, not a latency distribution. Profiles identify static prefixes, not conversations.
+
+Repaired long HTTP ran **14:02:09–14:23:03 PST**. Three resident turns end at **16406 / 16438 / 16470**. All **150 observed fingerprints** match the independently completed scalar replay, with exact full effective-token-history and observation-coverage checks before reference reuse. Reuse reads only evidence; candidate state is never restored/rebased from reference. Scalar reference ran 12:12:54–12:49:10 using unchanged scalar math. This is not a second post-repair native 32K run. Repaired server RSS high water: **9,531,375,616 bytes**; no guard fired.
+
+Actual SDK Chat → generator → completionEvents → Flash tests pass full-history request IDs and state fingerprints against separate validated scalar controls. The UI prediction controller is mocked; documents, external tools, GUI attachment/cancellation presentation were not exercised. `--protocol-only` is explicit and requires validated state evidence; default literal assertions remain strict. Both paths' incorrect repeated literal remains FAIL.
+
+### Exact tested builds
+
+Private `build-provenance/phase-b8-final-repair/` contains source manifests and exact commands for 45 runtime inputs. All builds use the actual Makefile dependencies/optimization flags and separate names; production `infer` is untouched.
+
+| Build | SHA256 | Scope |
+| --- | --- | --- |
+| B3 archived native long oracle | `18ca5bf2c1a19590c8ca95a23e00adf875d9831378527896ed14328bc050274e` | Complete native 16K/32K |
+| B7 repaired short | `4b77108f5afd1b47e48346599e8690dac845e33e408f7e2fb622899ed2525225` | Capture/three-turn and save |
+| B8 repaired short alternate | `67591cf85ff9c2105a1ca88df98ba3b934a125d2d18db5ad56c60c1bbc1a3c83` | Restart/SDK/faults |
+| B8 repaired long HTTP | `93eaab13c68b1aa081c33a554b4eff2f2570abe497f0e7b70deabd31bf9fa25f` | 16470 resident state |
+| Repaired ordinary/scalar performance | `02f12ff6477fedf2a748136c51458ac6e960b2bd1ba53336da87c0f0355db7b4` | No state trace; scalar uses --no-prefill-nrow |
+| Repaired mask63 performance | `9a0cbf721ea27401f22b3d06c1766033318e51466c866ec61c996b5e79bc66fb` | No state trace; mask63 |
+
+## Measured performance
+
+Performance ran **14:23:04–15:47:53 PST**; final owned server stopped **15:47:50 PST**. Three balanced independent process trials per path, identical fixture/seed 73941/temperature 0, K=8 and expert-cache settings. Every launch required three GPU readings below 30%; pre/post readings and cache counters are private and sanitized in JSON. OS page cache was not purged. Low launch utilization does not prove globally uncontended execution; especially scalar HTTP 4K varied widely. These are exploratory wall-time measurements, not a causal kernel attribution or statistically powered speed claim.
+
+Both performance binaries include the same ownership repair. Using an unrepaired warmed control could omit six experts and create an invalid speed advantage. Ordinary arithmetic remains the performance reference, not a correctness-qualified replacement.
+
+### CLI prefill seconds: median [min–max], n=3/path
+
+| Processed tokens / input | Ordinary N128 | Mask63 | Scalar | Mask63 cost vs ordinary |
+| --- | ---: | ---: | ---: | ---: |
+| 1024 / 1025 | 32.073 [31.960–34.947] | 34.679 [34.447–34.943] | 51.532 [51.476–51.547] | +8.13% |
+| 4095 / 4096 | 157.471 [156.451–162.121] | 180.699 [175.376–187.625] | 257.957 [255.499–261.248] | +14.75% |
+
+Mask63 prefill throughput is approximately **1.486× scalar at 1K** and **1.428× at 4K**. Input reserves its last prompt token for scalar advancement; 4K is 31 slabs plus 127-token tail. No acceptance threshold was changed to recover speed.
+
+CLI median TTFT seconds (ordinary/mask63/scalar): **32.312/34.899/51.669** at 1K and **157.620/180.846/258.128** at 4K. CLI reported steady-after-first decode tok/s medians: **16.28/15.90/16.59** and **12.60/12.59/12.38**, respectively. These short 32-requested-token samples have 31 reported IDs, all matched across paths; they are not a new complete-token correctness oracle. Exact per-trial ranges, cache counters and hashes are in sanitized JSON.
+
+### HTTP wall seconds: median [min–max], n=3/path
+
+| Request | Ordinary N128 | Mask63 | Scalar |
+| --- | ---: | ---: | ---: |
+| First 1064-token prompt | 39.561 [39.200–39.903] | 42.454 [40.310–43.066] | 58.921 [56.874–63.539] |
+| Same-process warm 1064-token prompt | 37.599 [37.117–39.319] | 40.470 [39.824–41.460] | 61.630 [59.906–79.665] |
+| Same-process warm 4008-token prompt | 143.739 [142.500–148.243] | 161.406 [161.276–173.237] | 278.649 [247.298–386.339] |
+| Resident follow-up, 4010 cached +17 new | 1.598 [1.510–1.606] | 1.600 [1.595–1.613] | 1.802 [1.744–1.862] |
+
+Median wire TTFT (ordinary/mask63/scalar): **39.333/42.188/58.698**, **37.392/40.246/61.415**, **143.546/161.196/278.364**, **1.448/1.450/1.625** seconds in table order. All actual outputs were two completion tokens: visible `1` on fresh prompts and `READY` on follow-up, then EOS. The configured 64-token maximum was not reached; HTTP decode TPS is not sustained throughput evidence. Fresh requests used zero cached prefix tokens; warm means process/expert cache warmth, not prompt-prefix reuse. Resident follow-up reports actual reuse.
+
+### Physical sampling during performance
+
+A read-only libproc probe sampled charged footprint, lifetime peak and RSS once per second, using process birth time to avoid PID reuse. It allocated no model/Metal state. There are 4230 raw samples. Observer began during the 4K cohort: ordinary has two sampled processes, other paths three; no 1K physical samples. All nine HTTP processes were sampled.
+
+| Scope / path | n | Median observed peak charged bytes | Range | Median sampled max RSS bytes |
+| --- | ---: | ---: | ---: | ---: |
+| CLI 4K ordinary | 2 | 1,899,179,360 | 1,899,097,464–1,899,261,256 | 9,616,777,216 |
+| CLI 4K mask63 | 3 | 1,732,832,392 | 1,732,815,960–1,732,881,496 | 9,665,626,112 |
+| CLI 4K scalar | 3 | 1,285,656,032 | 1,285,361,048–1,286,197,280 | 1,293,631,488 |
+| HTTP ordinary | 3 | 2,222,042,800 | 2,221,993,624–2,222,255,792 | 9,915,793,408 |
+| HTTP mask63 | 3 | 2,056,138,104 | 2,056,039,800–2,056,220,000 | 9,908,699,136 |
+| HTTP scalar | 3 | 1,645,234,984 | 1,645,071,168–1,648,413,456 | 1,431,617,536 |
+
+These are charged process ownership and overlapping RSS, not additive physical/unified usage or proof of a mask63 memory reduction. Mapped/shared pages and file-backed expert residency differ. The original observer classified ordinary HTTP by the presence of an earlier overridden `--no-prefill-nrow`; 654 labels were corrected in the derived summary using sequential launch times and the actual final flag. Raw evidence is preserved. `summarize_benchmark_memory.py` reproduces this correction; future observer uses last-flag precedence.
+
+## Files, checks and remaining release work
+
+Runtime repair in ac06b920 changes `metal_infer/infer.m`, `metal_infer/warm_state_cache.inc` and bounded diagnostics in `metal_infer/session_state_diag.inc`; focused tests/reporting retain their separate source commits. This final handoff changes only harness/reporting files: `tools/benchmark_fe027.py`, `benchmark_release_http.py`, `http_memory_probe.c`, `observe_benchmark_memory.py`, `summarize_benchmark_memory.py`, `test_benchmark_memory_labels.py`, `qualify_prefetch_cache_epoch.py`, `qualify_release_adapter.py`, `qualify_release_long_http.py`, `summarize_release_qualification.py`, the live SDK test, ledger and three sanitized result files/two reports. No additional runtime edit is made.
+
+Final model-free checks: seven fail-closed release-summary tests, six watchdog/resource tests and three memory-label tests PASS; changed Python files compile, live SDK JavaScript syntax and `git diff --check` PASS. Earlier TypeScript build and 19 mock transport/generator tests remain PASS; they were not rerun after test-only output flags. The actual modified live harness was executed successfully against repaired native inference as described above.
+
+### Recommended configuration and rollback
+
+- Matched 16K/32K scalar/ordinary/mask63 prefill/TTFT/continuation performance is NOT RUN. Current 1K/4K penalty is real observed cost, not a reason to relax arithmetic. Architect must decide whether it is acceptable.
+- Sustained long-output HTTP decode and broader independent long documents are NOT RUN. Actual SDK literal-change behavior is FAIL on both scalar/candidate; isolate model behavior separately from transport/state. GUI installation/presentation remains NOT RUN.
+- Repaired B8 native full 32K repeat is NOT RUN; archived single-history B3 32K and repaired B8 16K resident evidence remain separately scoped. Long alternative modes, concurrent sessions, real Metal reset/OOM/disk exhaustion, 64K GPU and iOS are not qualified here.
+- Research artifact recovery/persistence remains unavailable; no canonical Drive replacement was made.
+- Recommendation: retain explicit experimental opt-in only: M4 24GiB, tiered K8, default GPU linear/attention, lazy32K path, N128, mask63, repaired prefetch. No default/production promotion. Long alternative modes excluded.
+- Production never changed, so rollback now requires no action. If a later approved deployment uses this repair, rollback must restore its previously archived binary plus matching state-identity policy; reject/rebuild incompatible state rather than renaming a checkpoint into compatibility. Do not alter a running production service from these test commands.
+
+### Focused exact reproduction (not executed again for this final report)
+
+```bash
+cd '/Users/knagel/.codex/worktrees/http-session-validation/Flash-iOS'
+PRIVATE_OUT="/Users/knagel/My Drive/Flash-iOS/Testing/HTTP-Prefix-Reuse/mask63-rerun-$(date +%Y%m%d-%H%M%S)"
+mkdir -p "$PRIVATE_OUT"
+make -C metal_infer release-qualification RELEASE_QUAL_BINARY=infer-release-prefetch-fixed-alt RELEASE_QUAL_EXTRA_CFLAGS='-DSESSION_DIAG_LIMIT=512 -DSESSION_PREFILL_OBSERVE_STRIDE=1'
+python3 tools/qualify_prefetch_phase.py --binary "$PWD/metal_infer/infer-release-prefetch-fixed-alt" --turns 3 --out "$PRIVATE_OUT/stateless"
+python3 tools/qualify_prefetch_phase.py --binary "$PWD/metal_infer/infer-release-prefetch-fixed-alt" --resident --turns 3 --out "$PRIVATE_OUT/resident"
+make -C metal_infer release-qualification RELEASE_QUAL_BINARY=infer-release-prefetch-control RELEASE_QUAL_EXTRA_CFLAGS='-UFLASH_SESSION_STATE_DIAGNOSTICS -UFLASH_FE027_NUMERICS'
+make -C metal_infer release-qualification RELEASE_QUAL_BINARY=infer-release-prefetch-performance RELEASE_QUAL_EXTRA_CFLAGS='-UFLASH_SESSION_STATE_DIAGNOSTICS'
+FIXTURE='/Users/Shared/Main Hard Drive/AI Storage/Apps/Flash-iOS/Testing/Temporary Testing Files/Resources/prefill-4k-4096-from-1k.bin'
+python3 tools/benchmark_fe027.py --control "$PWD/metal_infer/infer-release-prefetch-control" --candidate "$PWD/metal_infer/infer-release-prefetch-performance" --scalar-reference "$PWD/metal_infer/infer-release-prefetch-control" --fixture "$FIXTURE" --count 4096 --decode-tokens 32 --repeats 3 --candidate-numerics 63 --timeout 1200 --max-rss-gib 16 --out "$PRIVATE_OUT/performance4096"
+python3 tools/benchmark_release_http.py --control "$PWD/metal_infer/infer-release-prefetch-control" --candidate "$PWD/metal_infer/infer-release-prefetch-performance" --out "$PRIVATE_OUT/http-performance"
+```
+
+All model drivers enforce the launch GPU gate and owned time/memory guards. Redirect any new logs to the project-root `benchmark-logs/`. The private archived controller scripts preserve exact executed commands for the completed 16K/32K and repaired suite; public drivers provide reproducible new-output invocations. Sanitized results contain source/binary/fixture/checkpoint hashes. Private `build-provenance`, `controllers`, `postfix`, `performance` and `performance-http` retain original artifacts. No private token arrays, tensors or checkpoints are committed.
+
+**NO-GO — BLOCKERS REMAIN**

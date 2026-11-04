@@ -16,7 +16,7 @@ def main():
  assert a.count>128 and 2<=a.repeats<=5 and 1<=a.decode_tokens<=256 and 1<=a.timeout<=7200 and a.max_rss_gib>0;a.out.mkdir(parents=True,exist_ok=False)
  values=struct.unpack('<'+'I'*(a.fixture.stat().st_size//4),a.fixture.read_bytes());assert values[0]==len(values)-1 and a.count<=values[0]
  inp=a.out/'prompt.bin';inp.write_bytes(struct.pack('<I',a.count)+struct.pack('<'+'I'*a.count,*values[1:1+a.count]))
- rows=[];report=dict(started=stamp(),scope=__doc__,fixture_sha256=sha(a.fixture),input_tokens=a.count,candidate_numerics=a.candidate_numerics,rows=rows)
+ rows=[];report=dict(started=stamp(),scope=__doc__,runner_sha256=sha(P(__file__)),source_head=subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),fixture_sha256=sha(a.fixture),input_tokens=a.count,candidate_numerics=a.candidate_numerics,rows=rows)
  report['cache_scope']='Fresh-process expert caches and matched token IDs; OS page cache is not purged. Decode follows prefill. First N128 workspace/setup is included, not separately claimed as steady state.'
  modes=[('control',a.control,0),('candidate',a.candidate,a.candidate_numerics)]
  if a.scalar_reference:modes.append(('scalar',a.scalar_reference,0))
@@ -28,7 +28,8 @@ def main():
     g=gpu();readings.append(g);stable=stable+1 if g is not None and g<30 else 0
     if stable==3:break
     time.sleep(1)
-   if stable<3:raise RuntimeError('GPU gate: no model launched')
+   if stable<3:
+    report.update(status='GPU_GATE_NOT_RUN',stopped_trial=trial,stopped_mode=label,pre_gpu=readings);(a.out/'result.json').write_text(json.dumps(report,indent=2)+'\n');raise RuntimeError('GPU gate: no model launched')
    for port in [11241,11243]:assert not subprocess.run(['lsof','-t','-nP',f'-iTCP:{port}','-sTCP:LISTEN'],capture_output=True).stdout
    binary=binary.resolve();cmd=[str(binary),'--model',MODEL,'--tiered','--no-prefill-nrow' if label=='scalar' else '--prefill-nrow','--prompt-tokens',str(inp),'--tokens',str(a.decode_tokens),'--temperature','0','--seed','73941']
    env=dict(os.environ,FLASH_FE027_NUMERICS=str(mask));env.pop('FLASH_SESSION_TOKEN_TRACE_DIR',None)
@@ -36,7 +37,9 @@ def main():
    with log.open('w') as f:
     proc=subprocess.Popen(cmd,cwd=binary.parent,env=env,stdin=subprocess.DEVNULL,stdout=f,stderr=subprocess.STDOUT,start_new_session=True)
     code,observed_rss,stop_reason=wait_bounded_process(proc,a.timeout,int(a.max_rss_gib*1024**3),host_free_floor=15)
-   end=stamp();elapsed_wall_ms=(time.perf_counter()-wall_start)*1000;print('BENCH_STOP',end,label,trial,'exit',code,flush=True);assert code==0
+   end=stamp();elapsed_wall_ms=(time.perf_counter()-wall_start)*1000;print('BENCH_STOP',end,label,trial,'exit',code,flush=True)
+   if code!=0:
+    report.update(status='EXECUTION_ERROR',failed_attempt=dict(trial=trial,mode=label,exit=code,stop_reason=stop_reason,observed_native_rss_bytes=observed_rss,started=start,ended=end,binary_sha256=sha(binary)));(a.out/'result.json').write_text(json.dumps(report,indent=2)+'\n');raise RuntimeError('Bounded benchmark process failed: '+str(code))
    text=log.read_text();m=re.search(r'\[prefill\] (\d+)/(\d+) tokens: ([\d.]+) ms',text);assert m,'Missing prefill timing'
    row=dict(trial=trial,mode=label,started=start,ended=end,command=cmd,binary_sha256=sha(binary),pre_gpu=readings,prefill_tokens=int(m[1]),prompt_tokens=int(m[2]),prefill_ms=float(m[3]),reported_generated_ids=[int(x) for x in re.findall(r'\[gen \d+/\d+\] token_id=(\d+)',text)])
    row.update(process_wall_ms=elapsed_wall_ms,observed_native_rss_bytes=observed_rss,rss_limit_gib=a.max_rss_gib,stop_reason=stop_reason,requested_decode_tokens=a.decode_tokens)
@@ -53,6 +56,9 @@ def main():
    ttft=re.search(r'TTFT:\s+([\d.]+) ms',text);generation=re.search(r'Generation:\s+([\d.]+) s \(([\d.]+) tok/s\)',text)
    if ttft:row['ttft_ms']=float(ttft[1])
    if generation:row.update(warm_decode_ms_rounded=float(generation[1])*1000,warm_decode_tokens_per_second=float(generation[2]))
+   cache=re.search(r'Expert cache:\s+(?:malloc )?(\d+) hits, (\d+) misses .*?(\d+)/(\d+) entries used',text)
+   row['expert_cache_stats']=dict(hits=int(cache[1]),misses=int(cache[2]),entries=int(cache[3]),capacity=int(cache[4])) if cache else None
+   row['expert_cache_stats_available']=cache is not None
    row['prefill_tokens_per_second']=row['prefill_tokens']*1000/row['prefill_ms'];rows.append(row)
    (a.out/'result.json').write_text(json.dumps(report,indent=2)+'\n')
  med={}

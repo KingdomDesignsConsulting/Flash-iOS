@@ -14,7 +14,7 @@ def request(b):
  except urllib.error.HTTPError as e:return e.code,json.load(e)
 def main():
  global ACTIVE_OUT
- p=argparse.ArgumentParser(description=__doc__);p.add_argument('--binary',required=True,type=P);p.add_argument('--corpus',required=True,type=P);p.add_argument('--out',required=True,type=P);p.add_argument('--reference-only',type=P);a=p.parse_args();a.out.mkdir(parents=True,exist_ok=False);ACTIVE_OUT=a.out;write(a.out/'result.json',dict(status='RUNNING'));b=a.binary.resolve();records=[];responses=[];budget=[]
+ p=argparse.ArgumentParser(description=__doc__);p.add_argument('--binary',required=True,type=P);p.add_argument('--corpus',required=True,type=P);p.add_argument('--out',required=True,type=P);p.add_argument('--reference-only',type=P);p.add_argument('--reference-state',type=P);p.add_argument('--validated-reference-result',type=P);a=p.parse_args();a.out.mkdir(parents=True,exist_ok=False);ACTIVE_OUT=a.out;write(a.out/'result.json',dict(status='RUNNING'));b=a.binary.resolve();records=[];responses=[];budget=[]
  if a.reference_only:
   previous=load(a.reference_only);assert previous['binary_sha256']==sha(b);records=previous['traces'];responses=previous['responses']
  else:
@@ -57,6 +57,18 @@ def main():
    key=str(point['position']);assert key not in expected or expected[key]==point['digest'],'Resident boundary divergence'
    expected[key]=point['digest'];expected_parts[key]=point
  ids=records[-1]['state']['effective_token_ids'];assert 16384<len(ids)<32768 and str(len(ids)) in expected
+ if a.reference_state:
+  assert a.validated_reference_result,'Reusing a reference requires its completed qualification result'
+  meta=load(a.validated_reference_result);ref=load(a.reference_state)
+  assert meta['status']=='PASS' and meta['reference_exit']==0 and meta['exact_shared_observations']
+  assert ref['accepted'] and not ref['failed'] and ref['history_complete'] and ref['end_position']==len(ids)
+  assert ref['effective_token_ids']==ids,'Reference reuse requires the exact full effective-token history'
+  points={str(point['position']):point for point in ref['steps']};assert all(key in points for key in expected),'Reference lacks a newly observed position'
+  assert all(point['kv_lengths_match'] and not any(part['nonfinite'] for part in point['components']) for point in points.values())
+  bad=[int(key) for key,digest in expected.items() if points[key]['digest']!=digest]
+  result=dict(status='FAIL' if bad else 'PASS',reference_reused=True,reference_exit=0,reference_state_sha256=sha(a.reference_state),validated_reference_result_sha256=sha(a.validated_reference_result),reference_binary_sha256=meta['binary_sha256'],binary_sha256=sha(b),end_position=len(ids),resident_turns=len(records),candidate_observation_points=len(expected),exact_shared_observations=not bad,server_budget=budget[0] if budget else {},comparison='Current independently evolving HTTP state vs previously completed independent scalar reference; exact full token-history and observed-position coverage required; no state restore or rebase')
+  if bad:result['first_failed_observed_position']=min(bad)
+  write(a.out/'result.json',result);print('LONG_HTTP_REFERENCE_REUSE',stamp(),result['status'],'points',len(expected),flush=True);return 0 if not bad else 3
  f=a.out/'replay.json';write(f,dict(token_ids=ids,expected_digests=expected));control=a.out/'control';control.mkdir();gate()
  env=dict(os.environ,FLASH_FE027_NUMERICS='63',FLASH_SESSION_TOKEN_TRACE_DIR=str(control),FLASH_SESSION_REPLAY_INPUT=str(f));cmd=[str(b),'--model',MODEL,'--tiered','--no-prefill-nrow'];print('LONG_HTTP_CONTROL_START',stamp(),'tokens',len(ids),'COMMAND',json.dumps(cmd),flush=True)
  with (control/'engine.log').open('w') as log:

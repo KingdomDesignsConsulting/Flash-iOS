@@ -1,5 +1,5 @@
 {
-  "status": "SHORT_REPAIR_QUALIFIED_LONG_RELEASE_PENDING",
+  "status": "REPAIR_QUALIFIED_BOUNDED_RELEASE_NO_GO",
   "mask": 63,
   "first_failed_position": 129,
   "pre_fix": {
@@ -1256,5 +1256,230 @@
     "format_changed": false
   },
   "production_modified": false,
-  "model_instruction_followup": "Original literal-change instruction yields the first literal in both scalar and candidate; preserved separately, not a transport or state PASS"
+  "model_instruction_followup": "Original literal-change instruction yields the first literal in both scalar and candidate; preserved separately, not a transport or state PASS",
+  "post_repair": {
+    "old_cache_reject": {
+      "status": "PASS",
+      "expected_rejection_exit": 3,
+      "old_checkpoint_preserved": true,
+      "old_checkpoint_sha256": "11dce7464a4d288118b632ac2e7b20b57d27031adcdbb00babf833bc8433afe1",
+      "old_compatibility": "766e62cced08e488",
+      "new_compatibility": "fc26c9fefe2a47be",
+      "new_binary_sha256": "67591cf85ff9c2105a1ca88df98ba3b934a125d2d18db5ad56c60c1bbc1a3c83",
+      "format_changed": false,
+      "global_execution_version": 3,
+      "selective_marker": "nrow-prefetch-ownership-v2",
+      "pre_gpu": [
+        18,
+        28,
+        13
+      ]
+    },
+    "disk": {
+      "status": "EXACT_RESTART_PASS",
+      "prefix": 141,
+      "end_position": 470,
+      "positions_compared": 330,
+      "checkpoint_bytes": 67370561,
+      "save_ms": 405.06787109375,
+      "restore_ms": 369.328125,
+      "wrong_prefix_and_mode_rejected": true,
+      "different_numerics_rejected": true,
+      "rejected_mask": 31,
+      "rejection_exit": 3,
+      "pre_gpu": [
+        [
+          16,
+          19,
+          13
+        ],
+        [
+          45,
+          20,
+          19,
+          20
+        ]
+      ],
+      "binary_sha256": "4b77108f5afd1b47e48346599e8690dac845e33e408f7e2fb622899ed2525225",
+      "load_binary_sha256": "67591cf85ff9c2105a1ca88df98ba3b934a125d2d18db5ad56c60c1bbc1a3c83",
+      "source_head": "ac06b920dbb7e26b804480b36eea4dbe83b40d4e"
+    },
+    "stream_faults": {
+      "status": "PASS",
+      "cases": [
+        {
+          "case": "before_first_output",
+          "status": "PASS",
+          "http_status": 200,
+          "error": {
+            "error": {
+              "message": "prefill failed",
+              "type": "server_error"
+            },
+            "session_invalidated": true,
+            "resend_full_history": true
+          },
+          "visible_content_deltas": 0,
+          "injection_position": 20,
+          "end_position": 0,
+          "stale_status": 409,
+          "fresh_state_exact": true,
+          "done_count": 1
+        },
+        {
+          "case": "after_visible_deltas",
+          "status": "PASS",
+          "http_status": 200,
+          "error": {
+            "error": {
+              "message": "generation failed",
+              "type": "server_error"
+            },
+            "session_invalidated": true,
+            "resend_full_history": true
+          },
+          "visible_content_deltas": 6,
+          "injection_position": 51,
+          "end_position": 0,
+          "stale_status": 409,
+          "fresh_state_exact": true,
+          "done_count": 1
+        },
+        {
+          "case": "expert_io_failure",
+          "status": "PASS",
+          "http_status": 200,
+          "error": {
+            "error": {
+              "message": "prefill failed",
+              "type": "server_error"
+            },
+            "session_invalidated": true,
+            "resend_full_history": true
+          },
+          "visible_content_deltas": 0,
+          "injection_position": null,
+          "end_position": 0,
+          "stale_status": 409,
+          "fresh_state_exact": true,
+          "done_count": 1
+        }
+      ],
+      "baseline_matches_scalar_control": true
+    },
+    "named_profile": {
+      "status": "PASS",
+      "cases": [
+        {
+          "case": "compatible_restart_and_prefix_mismatch",
+          "status": "PASS",
+          "old_session_rejected": true,
+          "state_exact": true
+        },
+        {
+          "case": "version",
+          "status": "PASS",
+          "method": "Controlled header identity fault",
+          "fresh_state_exact": true
+        },
+        {
+          "case": "model_config_signature",
+          "status": "PASS",
+          "method": "Controlled header identity fault",
+          "fresh_state_exact": true
+        },
+        {
+          "case": "execution_mode",
+          "status": "PASS",
+          "method": "Real runtime-mode switch",
+          "fresh_state_exact": true
+        }
+      ],
+      "checkpoint_bytes": 67427311,
+      "profile_is_static_prefix_not_conversation": true,
+      "model_weights_unchanged": true
+    },
+    "cancellation": {
+      "status": "PASS",
+      "cases": [
+        {
+          "phase": "prefill",
+          "invalidated": true,
+          "stale_status": 409,
+          "health_ms": 0.38537499494850636,
+          "cancellation_ms": 193.51416593417525,
+          "recovery_end": 41
+        },
+        {
+          "phase": "decode",
+          "invalidated": true,
+          "stale_status": 409,
+          "health_ms": 0.38587499875575304,
+          "cancellation_ms": 61.41791702248156,
+          "recovery_end": 41
+        }
+      ],
+      "pre_gpu": [
+        26,
+        21,
+        19
+      ],
+      "binary_sha256": "67591cf85ff9c2105a1ca88df98ba3b934a125d2d18db5ad56c60c1bbc1a3c83",
+      "source_head": "ac06b920dbb7e26b804480b36eea4dbe83b40d4e",
+      "recovery_exact": true
+    },
+    "long_http": {
+      "status": "PASS",
+      "end_position": 16470,
+      "binary_sha256": "93eaab13c68b1aa081c33a554b4eff2f2570abe497f0e7b70deabd31bf9fa25f",
+      "reference_reused": true,
+      "reference_exit": 0,
+      "reference_state_sha256": "8e8127427454f05c6decbd04ee568acecdbd892337c888552a59b8beb181c4c4",
+      "validated_reference_result_sha256": "938b95e6a598ae1e6457588981e38c8753ed11f7c49a0a0d54c0226249b36af8",
+      "reference_binary_sha256": "c9e5deb7997c6a1bc76f56ca815d551b48272e15771b3cacf70b891838d5a119",
+      "resident_turns": 3,
+      "candidate_observation_points": 150,
+      "exact_shared_observations": true,
+      "server_budget": {
+        "exit": -15,
+        "observed_rss_bytes": 9531375616,
+        "stop_reason": null
+      }
+    },
+    "sdk_protocol": {
+      "status": "PASS",
+      "binary_sha256": "67591cf85ff9c2105a1ca88df98ba3b934a125d2d18db5ad56c60c1bbc1a3c83",
+      "qualification_scope": "Actual SDK/adapter protocol and native token/state preservation; model literal assertions reported separately",
+      "protocol_only": true,
+      "native_state_fingerprints_exact": true,
+      "state_reference_binary_sha256": "4b77108f5afd1b47e48346599e8690dac845e33e408f7e2fb622899ed2525225",
+      "adapter_exit": 0,
+      "scalar_reference": false,
+      "behavioral_assertion_passed": false,
+      "native_request_ids_exact": true,
+      "requests": 2,
+      "real_flash_inference": true,
+      "real_sdk_chat": true,
+      "mock_prediction_controller": true,
+      "GUI_tested": false,
+      "user_documents_accessed": false,
+      "external_tools_executed": false,
+      "stateless_full_history": true,
+      "native_prompts": [
+        {
+          "request": 0,
+          "native_prompt_tokens": 165,
+          "native_render_ids_exact": true,
+          "matched_thinking_mode": "False"
+        },
+        {
+          "request": 1,
+          "native_prompt_tokens": 198,
+          "native_render_ids_exact": true,
+          "matched_thinking_mode": "False"
+        }
+      ]
+    }
+  },
+  "performance_scope": "Three balanced trials/path, 1K and 4K plus HTTP; +8.13%/+14.75% vs ordinary; no 16K/32K matched performance"
 }

@@ -55,6 +55,12 @@ def main():
   file=root/'final-safety'/path/'result.json'
   if file.exists():
    raw=read(file);out.setdefault('prefetch_ownership',{})[label]={k:raw[k] for k in ['status','binary_sha256','first_position','state_max_abs','state_byte_exact','all_state_finite','layer0_combine'] if k in raw}
+ out['post_repair']={}
+ for name,path in [('old_cache_reject','postfix/old-cache-reject'),('disk','postfix/disk'),('stream_faults','postfix/stream-faults'),('named_profile','postfix/profile'),('cancellation','postfix/cancellation'),('long_http','postfix/long-http'),('sdk_protocol','final-safety/postfix-sdk-protocol')]:
+  file=root/path/'result.json'
+  if not file.exists():out['post_repair'][name]={'status':'NOT_RUN'};continue
+  raw=read(file);fields=['status','cases','expected_rejection_exit','old_checkpoint_preserved','old_checkpoint_sha256','old_compatibility','new_compatibility','new_binary_sha256','format_changed','global_execution_version','selective_marker','prefix','end_position','positions_compared','checkpoint_bytes','save_ms','restore_ms','wrong_prefix_and_mode_rejected','different_numerics_rejected','rejected_mask','rejection_exit','pre_gpu','binary_sha256','load_binary_sha256','source_head','baseline_matches_scalar_control','profile_is_static_prefix_not_conversation','model_weights_unchanged','recovery_exact','reference_reused','reference_exit','reference_state_sha256','validated_reference_result_sha256','reference_binary_sha256','resident_turns','candidate_observation_points','exact_shared_observations','first_failed_observed_position','server_budget','qualification_scope','protocol_only','native_state_fingerprints_exact','state_reference_binary_sha256','adapter_exit','scalar_reference','behavioral_assertion_passed','native_request_ids_exact','requests','real_flash_inference','real_sdk_chat','mock_prediction_controller','GUI_tested','user_documents_accessed','external_tools_executed','stateless_full_history','native_prompts']
+  out['post_repair'][name]={k:raw[k] for k in fields if k in raw}
  performance_root=root/'performance'
  if (performance_root/'suite.json').exists():
   suite=read(performance_root/'suite.json');perf=dict(status=suite.get('status','INCOMPLETE'),scope='Balanced fresh-process setup-inclusive prefill/TTFT/decode; not steady-state resident performance',cases={})
@@ -70,7 +76,7 @@ def main():
   raw=read(http_perf);out['performance_http']={k:raw[k] for k in ['status','started','ended','scope','source_head','runner_sha256','summary','rows','error_type','error'] if k in raw}
  # Paths are not needed in public results; commands and raw payloads stay private.
  def sanitize(x):
-  if isinstance(x,dict):return {k:sanitize(v) for k,v in x.items() if k not in ['command','profile','model','source','fixture','checkpoint','out','abort','observed']}
+  if isinstance(x,dict):return {k:sanitize(v) for k,v in x.items() if k not in ['command','profile','model','source','fixture','checkpoint','out','abort','observed','token_ids','effective_token_ids','sampled_token_ids','generated_token_ids','forwarded_token_ids','completed_token_ids','messages','events','traces','tensor_values','raw_sse','request_payload','response_payload']}
   if isinstance(x,list):return [sanitize(v) for v in x]
   return x
  out=sanitize(out);a.out.parent.mkdir(parents=True,exist_ok=True);a.out.write_text(json.dumps(out,indent=2,allow_nan=False)+'\n');print('SANITIZED_RESULTS',a.out)
