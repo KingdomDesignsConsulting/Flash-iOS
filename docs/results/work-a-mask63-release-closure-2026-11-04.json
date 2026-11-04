@@ -1,0 +1,152 @@
+{
+  "status": "IN_PROGRESS",
+  "reviewed": "2026-11-04T14:57:36.599764-08:00",
+  "starting_head": "66adf92e2ea950528917000d1b59b788e1687371",
+  "source_tree": "22260f90486cec991414db362b89d295865c9ca6",
+  "runtime_repair_commit": "ac06b920dbb7e26b804480b36eea4dbe83b40d4e",
+  "release_manifest_sha256": "86f5ffa6bd6ce42dcc81a934fdc82040a8f1059cf14ec53ec23e575957f56fce",
+  "model_contract": {
+    "model": "Qwen3.5-35B-A3B",
+    "quantization": "tiered Q2/Q4",
+    "layers": 40,
+    "experts": 256,
+    "top_k": 8
+  },
+  "execution": {
+    "mask": 63,
+    "nrow": 128,
+    "gpu_kv_tokens": 32768,
+    "backing": "lazy shared KV",
+    "prefetch_enabled": true,
+    "ownership_revision": "nrow-prefetch-ownership-v2",
+    "global_execution_version": 3,
+    "layout_version": 2,
+    "raw_format": 1,
+    "zstd_storage_format": 2,
+    "full_executable_in_cache_identity": false
+  },
+  "candidate_binary_sha256": "5960178f4dbc677a4b7fa660b8a9fb46773ea3dadc495f5604b400cc7f194602",
+  "runtime_source_sha256": {
+    "metal_infer/Makefile": "d0f5c623b165099552ca744605fdf4dacf9ae0d3a86985923ce2ba3e7d373f87",
+    "metal_infer/chat.m": "db2a052fb1cdfa17ad0a7c7fb571c864ee5dd0a99053d37bc8f38218fcd7acf8",
+    "metal_infer/chat_transport.inc": "1d50dbaee02d89bca53d077ad0950afc70818edf69e95b541c8f4745f161d648",
+    "metal_infer/fe027_alignment.inc": "16e4a39e194cefe59453382ad6faf0cf3cd7f71bde60e4535be30304ea989bcd",
+    "metal_infer/fe027_attention_reference.inc": "1d62d52257cfee8e424f4450916f090b8c1b183c947c0748c53bdcb59c97ca59",
+    "metal_infer/fe027_combine_diag.inc": "918b20d2527de6fbe6f28c3f0655d0866f770a9d8466f8416e48b38bac688fcc",
+    "metal_infer/fe027_combine_reference.inc": "e245865c9d82043866243e5bb212d565592806948649063884118ea1062e5cdb",
+    "metal_infer/fe027_combine_trace.metal": "d1db56472e0a6b5ba17384e7d4a2f57da2bfc7838ffe7fb8e6b660279c6cde26",
+    "metal_infer/fe027_full_attention_diag.inc": "6d5b2b615573598f7355f07d1bd1f193413b82205da55a925b8aa27a88772d0a",
+    "metal_infer/fe027_q4.inc": "6149eb0d5e4e2fa838614e88ed06c376956ba48906fdb72f92fcfceda30f7ad3",
+    "metal_infer/gguf_iq_shared.h": "ae46879550de5e3833a2269f65fcc6797603651fe91f75aa42acf56789112f17",
+    "metal_infer/gpu_kv_perf_timing.inc": "eee7b1e6a0f146da18e4ce20d2d8e41a6cb374895dff61235ef6d97bc913b7e9",
+    "metal_infer/gpu_kv_performance.inc": "ca14e0af31d202b2481c200d332484024484530d71df0d25344bfed35249fcba",
+    "metal_infer/gpu_kv_qualification.inc": "0db42f271ac3ec545da6cda2abbf0f579080c9cf40e385c1baa51c98d31aec68",
+    "metal_infer/infer.m": "e3c896eb9a40d119af8e937dbfe88b100a728687d96231035de6be6ce401910a",
+    "metal_infer/linenoise.h": "cf3edd3e751e18dfbab32b01523b2bf75e82a0b1b45011e4231d944b6adead39",
+    "metal_infer/main.m": "bf745feb3c95b93fbbd595cc9280359cd0e50e9c464316de88f3c553f4b484d2",
+    "metal_infer/nax_gemm.metal": "6cd4eaf7468e188a2fb489c064aa05cfc7822e624161c6917d5c71fbd9756c72",
+    "metal_infer/prefill_nrow_control.inc": "02f7aebf27ac54f07f7beb2898acfea8ba25316771ead56059bba142ffb0e62e",
+    "metal_infer/prefill_nrow_grouped.inc": "f04ab6a28ea3f844970b5448df06d6a05c464df55203144d82797381ccebf9bd",
+    "metal_infer/prefill_nrow_grouped_async.inc": "983f87a3193ff7e92ddaf04b93f1fffe0e8895630af985ccfed69377d89be8a8",
+    "metal_infer/prefill_probe/chunk_kernels.metal": "f9011a53393a5146e3a239eaad612b8404fe9ba11afeb48c50523eab5c2a4687",
+    "metal_infer/prefill_probe/prefill_probe.m": "60eac608038767d29d0699ad758965e755b4086bc754e9decdce25056df1eaf6",
+    "metal_infer/prefill_probe/target_verify_affine_exactness_probe.metal": "fb99264898ace92b2374bf3f2dd1163cecb499b7bf807cb5c6baf5bc27bb3fd0",
+    "metal_infer/prefill_probe/target_verify_affine_m2.metal": "844981620fa584c4918bdc612eefea8d9acd51d5a3a2f668b596aca0dbf4f645",
+    "metal_infer/prefill_probe/target_verify_affine_m4.metal": "0cf54291c36a01d62a071cb4ddfc7ba95cb6f932cbb584d6ef9b9f37d88363ef",
+    "metal_infer/prefill_probe/target_verify_affine_m8_mma.metal": "1b1d124909a5175d1620257b1175ba371b1a33884009e3be4c5a1cbb78e1f0fb",
+    "metal_infer/prefill_probe/target_verify_affine_m8_partials.metal": "d78fc6db94e413372283fe6240ec57f4db6d2906dbc62948399a9abe343f5fb3",
+    "metal_infer/prefill_probe/target_verify_affine_m8_scale_inside.metal": "688ff97c5519664f2fe79febeb75df257b3cc5f6b366e7737bfbd8c60112698f",
+    "metal_infer/release_memory_diag.inc": "43c30f350d07e717ab11f8afb90c76f3a9522435d82b968bd78c2a50889109da",
+    "metal_infer/release_render_diag.inc": "e5721bafe077b435bb9b1367300b55cc6e83bf461fa7cd78ecb885fe55050657",
+    "metal_infer/session_disk_oracle.inc": "c34b6618882ce826d73b6bbd90a4b4ac03b09614bc77c08bcc446fc35e667300",
+    "metal_infer/session_nrow_oracle.inc": "e63803bf1c5e587914a536f000cd3ebcc21b68fbecb2010b429e2364bc0c09fe",
+    "metal_infer/session_state_diag.inc": "66cb61dc797394fa70b4eac9adf4630a21e06148aadae87d9f16aebd93e30868",
+    "metal_infer/shaders.metal": "7067f44056fa947f54ab7095d7461f10c30d507f11c90ca484c09ad5e15aac6b",
+    "metal_infer/target_verify_affine_exactness_probe.inc": "4bef77e04ac3f72d1b09e1a00d3b665dea8fb405ac30b42405927907236e6002",
+    "metal_infer/target_verify_affine_mma_tree_probe.inc": "5c448e9326161dc30520f6187a834d90ceb9177bf795f879c43ab0b1e2d15151",
+    "metal_infer/target_verify_batch.inc": "752177956dda9ea226bd98ef5ec230d565c9f00b7ad6f47105ad9d3b9e6ce59e",
+    "metal_infer/target_verify_bench.inc": "e78efa8e6d76dc3a1729e37247120eb66babb347ce3178a87576666a3a07fded",
+    "metal_infer/target_verify_exact_m2_integration.inc": "835902448d206937e5d11860d9afe8e85454821b56d1a74d74829e6e5205e306",
+    "metal_infer/target_verify_grouped.inc": "717b3a5fdee5d0a6520695ce68fc86869fb07603082425ae43e72e0f6a5c94dc",
+    "metal_infer/target_verify_lmhead.metal": "43118da50d37a29082143c09d36ad417588ba3bd36a80291dc8f6c5d2ebdc270",
+    "metal_infer/tensor_layout_validation.inc": "2933eadd9a43c73f608e30ddf00f6f5dd458d66f16ca5217e9e068c5077eb870",
+    "metal_infer/tokenizer.h": "24014f63a31df1c31d68d7d4bf88ef8d950ea28e7082e1dff61ec0118be2b67f",
+    "metal_infer/warm_state_cache.inc": "97fbb28f09ec6056c0853ca344204378699d03af560eaaf6d97e2ba44294b4d8"
+  },
+  "fixtures": {
+    "16384": {
+      "sha256": "1982f2c0b2d5dd1bd60c92441368f0bc6fc69b36933f6bd437bd15aeb0637fde",
+      "bytes": 65540
+    },
+    "32768": {
+      "sha256": "59471a6b8a9215ebc7c0358c36b6d841b8c8efc98aee2d47c0f8e2cd91717f89",
+      "bytes": 131076
+    }
+  },
+  "variants": {
+    "infer-work-a-control": {
+      "sha256": "175bd2b7672cde0dd71ff0db6ccb4cbf365e70db76713e242312691a6839530e",
+      "extra_cflags": "-UFLASH_SESSION_STATE_DIAGNOSTICS -UFLASH_FE027_NUMERICS",
+      "bytes": 901240
+    },
+    "infer-work-a-performance": {
+      "sha256": "734e00a3374ddaf5c84746ded6cc8a27f57d0b33865ba7d173fdb58d2183052a",
+      "extra_cflags": "-UFLASH_SESSION_STATE_DIAGNOSTICS",
+      "bytes": 918232
+    },
+    "infer-work-a-http": {
+      "sha256": "02d498cdf08c431de56960580a1c06c3782629e41e1c29180cbbbc372e4e13a8",
+      "extra_cflags": "-DSESSION_DIAG_LIMIT=4096 -DSESSION_PREFILL_OBSERVE_STRIDE=1",
+      "bytes": 1022640
+    }
+  },
+  "identity_self_test": "PASS",
+  "preflight": {
+    "status": "PASS",
+    "started": "2026-11-04T14:35:06.128809-08:00",
+    "ended": "2026-11-04T14:35:58.845141-08:00",
+    "binary_sha256": "5960178f4dbc677a4b7fa660b8a9fb46773ea3dadc495f5604b400cc7f194602",
+    "input_tokens": 257,
+    "completed_position": 257,
+    "pre_gpu": [
+      22,
+      25,
+      21
+    ],
+    "max_errors": {
+      "state": 0,
+      "hidden": 1.1920928955078125e-07,
+      "logits": 1.9073486328125e-06
+    },
+    "observed_native_rss_bytes": 7404044288,
+    "stop_reason": null
+  },
+  "preflight_memory_peak": {
+    "physical_footprint_peak_bytes": 2231463384,
+    "resident_bytes": 7487602688,
+    "metal_current_allocated_bytes": 5357207552,
+    "two_oracle_snapshots_malloc_bytes": 413859840
+  },
+  "build_reproducibility": {
+    "whole_file_exact": false,
+    "all_sections_exact": true,
+    "normalized_payload_exact": true,
+    "original_sha256": "5960178f4dbc677a4b7fa660b8a9fb46773ea3dadc495f5604b400cc7f194602",
+    "rebuild_sha256": "5ca29c6b6911856cbd8d6b0ce0d503f53820e094e661c4bab247538c5cfb9198",
+    "normalized_sha256": "d9f44e6e8db04973efe4d03190759241cc98552e664f288f5f2391e41d485e69",
+    "exclusions": "Only LC_UUID 16-byte value and embedded code-signature payload; does not modify either file or cache identity"
+  },
+  "native_32768": {
+    "status": "RUNNING"
+  },
+  "performance": {
+    "status": "NOT_RUN"
+  },
+  "sustained_http": {
+    "status": "NOT_RUN"
+  },
+  "literal_diagnosis": {
+    "status": "NOT_RUN"
+  },
+  "production_modified": false
+}
