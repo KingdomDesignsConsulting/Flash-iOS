@@ -13,6 +13,13 @@ def parse_cli_samples(text):
  first=re.search(r'\[debug\] Top 5 logits \(next_token=(\d+)\)',text);assert first,'First native CLI sample missing'
  return [int(first[1])]+[int(x) for x in re.findall(r'\[gen \d+/\d+\] token_id=(\d+)',text)]
 
+def parse_cli_visible(text):
+ assert '\n--- Output ---\n' in text and '\n\n--- Statistics ---' in text
+ body=text.split('\n--- Output ---\n',1)[1].split('\n\n--- Statistics ---',1)[0].strip()
+ for marker in ['<|im_end|>','<|endoftext|>']:
+  if body.endswith(marker):body=body[:-len(marker)]
+ return body.strip()
+
 def make_cases(messages):
  return [dict(name='original',messages=messages,options={},target='ADAPTER_FOLLOWUP_73941'),
   dict(name='latest-only',messages=[messages[0],messages[-1]],options={},target='ADAPTER_FOLLOWUP_73941'),
@@ -55,11 +62,12 @@ def main():
   report['cases'].append(dict(name=left['name'],inputs_exact=same_inputs,deterministic=deterministic,state_exact=exact,sampled_ids_exact=same_samples,scalar_literal_honored=left['literal_honored'],candidate_literal_honored=right['literal_honored'],scalar_completion_tokens=left['response']['timings']['generated_tokens'],candidate_completion_tokens=right['response']['timings']['generated_tokens']))
  original=records['scalar'][0];ids=original['prompt']['token_ids'];fixture=a.out/'original-rendered.bin';fixture.write_bytes(struct.pack('<I',len(ids))+struct.pack('<'+'I'*len(ids),*ids));pre=gate()
  cmd=[str(b),'--model',MODEL,'--tiered','--no-prefill-nrow','--prompt-tokens',str(fixture),'--temperature','0','--seed','73941','--tokens',str(base_request.get('max_tokens',256))];print('LITERAL_CLI_START',stamp(),json.dumps(cmd),flush=True)
- with (a.out/'native-cli.log').open('w') as log:
-  proc=subprocess.Popen(cmd,cwd=b.parent,env=dict(os.environ,FLASH_FE027_NUMERICS='63'),stdin=subprocess.DEVNULL,stdout=log,stderr=subprocess.STDOUT,start_new_session=True);code,peak,reason=wait_bounded_process(proc,300,16*1024**3,host_free_floor=15)
+ with (a.out/'native-cli.stdout.txt').open('w') as output,(a.out/'native-cli.stderr.log').open('w') as log:
+  proc=subprocess.Popen(cmd,cwd=b.parent,env=dict(os.environ,FLASH_FE027_NUMERICS='63'),stdin=subprocess.DEVNULL,stdout=output,stderr=log,start_new_session=True);code,peak,reason=wait_bounded_process(proc,300,16*1024**3,host_free_floor=15)
  print('LITERAL_CLI_STOP',stamp(),code,flush=True);assert code==0 and reason is None
- parsed=parse_cli_samples((a.out/'native-cli.log').read_text());sampled=original['generated']['sampled_token_ids'];assert parsed==sampled,'Native CLI and HTTP raw samples differ'
- report.update(status='DIAGNOSIS_COMPLETE',budgets=budgets,native_cli=dict(exit=code,pre_gpu=pre,reported_sample_prefix_exact=True,reported_tokens=len(parsed),http_sampled_tokens=len(sampled),peak_rss_bytes=peak),classification=('Incorrect original literal reproduced with identical native-rendered input in fresh scalar CLI, bypassing HTTP/SDK/session reuse; model/native-response behavior, not proven universal intrinsic model limitation' if not original['literal_honored'] else 'Original SDK failure not reproduced in this direct native pair; no intrinsic-model attribution; integration remains unresolved'),original_request_parameters_exact=True,original_native_prompt_ids_exact=True,original_sdk_record_sha256=sha(a.sdk_record),original_literal_failure_preserved=not original['literal_honored'],template_changed=False);write(a.out/'result.json',report);return 0
+ parsed=parse_cli_samples((a.out/'native-cli.stderr.log').read_text());sampled=original['generated']['sampled_token_ids'];assert parsed==sampled,'Native CLI and HTTP raw samples differ'
+ native_visible=parse_cli_visible((a.out/'native-cli.stdout.txt').read_text());assert native_visible==original['response']['visible'].strip(),'Native decoded output and HTTP visible text differ'
+ report.update(status='DIAGNOSIS_COMPLETE',budgets=budgets,native_cli=dict(exit=code,pre_gpu=pre,reported_sample_prefix_exact=True,all_sampled_tokens_exact=True,decoded_visible_exact=True,reported_tokens=len(parsed),http_sampled_tokens=len(sampled),peak_rss_bytes=peak),classification=('Incorrect original literal reproduced with identical native-rendered input in fresh scalar CLI, bypassing HTTP/SDK/session reuse; model/native-response behavior, not proven universal intrinsic model limitation' if not original['literal_honored'] else 'Original SDK failure not reproduced in this direct native pair; no intrinsic-model attribution; integration remains unresolved'),original_request_parameters_exact=True,original_native_prompt_ids_exact=True,original_sdk_record_sha256=sha(a.sdk_record),original_literal_failure_preserved=not original['literal_honored'],template_changed=False);write(a.out/'result.json',report);return 0
 if __name__=='__main__':
  try:raise SystemExit(main())
  except Exception as error:

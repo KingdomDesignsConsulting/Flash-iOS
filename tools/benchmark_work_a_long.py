@@ -43,10 +43,15 @@ def main():
     try:
      for label in ['cold','warm']:
       sid='long-perf-'+uuid.uuid4().hex;request=dict(model='qwen3.5',messages=source['messages'],session_id=sid,flash_session_create=True,temperature=0,seed=73941,reasoning_effort='off',max_tokens=32,stream=True,stream_options=dict(include_usage=True))
-      started=stamp();result=stream_request(request,timeout=7000);assert result['timings']['context_tokens']==a.count
+      log_start=(output/'server.log').stat().st_size;started=stamp();result=stream_request(request,timeout=7000);assert result['timings']['context_tokens']==a.count
       # Explicit observer returns allocation/length metadata without advancing state.
       code,memory=call(dict(model='qwen3.5',messages=[dict(role='user',content='Reply exactly READY.')],session_id=sid,max_tokens=1,reasoning_effort='off',flash_qual_count_only=True));assert code==200 and memory['session_reused'];assert len(memory['kv_lengths'])==10 and all(x==memory['resident_pos'] for x in memory['kv_lengths'].values())
-      cases.append(dict(label=label,started=started,ended=stamp(),result=result,allocation=memory));write(output/'http-records.json',dict(cases=cases));print('LONG_PERF_CASE',stamp(),trial,name,label,'prefill_ms',round(result['timings']['prefill_ms'],1),'generated',result['timings']['generated_tokens'],flush=True)
+      phase_text=(output/'server.log').read_bytes()[log_start:].decode('utf-8',errors='replace');phase_totals={};phase_count=0
+      for line in phase_text.splitlines():
+       if line.startswith('[prefill-nrow-profile'):
+        phase_count+=1
+        for key,value in re.findall(r'(\w+)=([\d.]+)',line):phase_totals[key]=phase_totals.get(key,0)+float(value)
+      cases.append(dict(label=label,started=started,ended=stamp(),result=result,allocation=memory,nrow_host_phases=dict(records=phase_count,totals=phase_totals,scope='Existing host wall-time phase counters; count fields retain original names, not hardware GPU timestamps')));write(output/'http-records.json',dict(cases=cases));print('LONG_PERF_CASE',stamp(),trial,name,label,'prefill_ms',round(result['timings']['prefill_ms'],1),'generated',result['timings']['generated_tokens'],flush=True)
     finally:stop.set()
    for thread in threads:thread.join(20)
    assert budget and budget[0]['stop_reason'] is None and not observer_errors and samples,(budget,observer_errors)
@@ -55,7 +60,7 @@ def main():
     if line.startswith('[prefill-nrow-profile'):
      phases.append({k:float(v) for k,v in re.findall(r'(\w+)=([\d.]+)',line)})
    routes=[dict(length=int(n),layer=int(l),cap=int(c),backend=b,route=r) for n,l,c,b,r in re.findall(r'\[gpu-kv-boundary\] seq=(\d+) layer=(\d+) cap=(\d+) backend=(\w+) route=(\S+)',text)]
-   post=gate();row=dict(trial=trial,mode=name,binary_sha256=sha(binary),post_gpu=post,host_free_before=free,budget=budget[0],memory=dict(samples=len(samples),observed_peak_physical_bytes=max(x['physical_bytes'] for x in samples),lifetime_peak_physical_bytes=max(x['peak_physical_bytes'] for x in samples),sampled_peak_rss_bytes=max(x['rss_bytes'] for x in samples)),cases=[dict(label=x['label'],started=x['started'],ended=x['ended'],wall_ms=x['result']['wall_ms'],wire_ttft_ms=x['result']['wire_ttft_ms'],timings=x['result']['timings'],usage=x['result']['usage'],allocation=x['allocation']) for x in cases],nrow_host_phase_records=phases,boundary_routes=routes,expert_cache_hit_counters_available=False);rows.append(row);write(a.out/'result.json',report)
+   post=gate();row=dict(trial=trial,mode=name,binary_sha256=sha(binary),post_gpu=post,host_free_before=free,budget=budget[0],memory=dict(samples=len(samples),observed_peak_physical_bytes=max(x['physical_bytes'] for x in samples),lifetime_peak_physical_bytes=max(x['peak_physical_bytes'] for x in samples),sampled_peak_rss_bytes=max(x['rss_bytes'] for x in samples)),cases=[dict(label=x['label'],started=x['started'],ended=x['ended'],wall_ms=x['result']['wall_ms'],wire_ttft_ms=x['result']['wire_ttft_ms'],timings=x['result']['timings'],usage=x['result']['usage'],allocation=x['allocation'],nrow_host_phases=x['nrow_host_phases']) for x in cases],nrow_host_phase_records=phases,boundary_routes=routes,expert_cache_hit_counters_available=False);rows.append(row);write(a.out/'result.json',report)
  summaries={}
  for mode,_,_,_ in modes:
   summaries[mode]={}
