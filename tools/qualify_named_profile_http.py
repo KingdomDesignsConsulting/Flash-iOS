@@ -1,7 +1,21 @@
 #!/usr/bin/env python3
 """Actual named-profile capture/restart/reject/fallback; isolated caches only."""
-import argparse,hashlib,pathlib,struct,uuid
+import argparse,hashlib,pathlib,struct,uuid,contextlib,threading
 from session_gate_support import *
+from qualify_session_accumulation import wait_bounded_process
+_raw_server=server
+RESOURCE_OBSERVATIONS=[]
+@contextlib.contextmanager
+def server(*args,**kwargs):
+ budget=[];watcher=None
+ try:
+  with _raw_server(*args,**kwargs) as value:
+   def monitor():
+    code,peak,reason=wait_bounded_process(value['process'],900,16*1024**3,host_free_floor=15);budget.append(dict(exit=code,peak_rss_bytes=peak,stop_reason=reason))
+   watcher=threading.Thread(target=monitor,daemon=True);watcher.start();yield value
+ finally:
+  if watcher:
+   watcher.join(20);RESOURCE_OBSERVATIONS.append(dict(server=value['out'].name,**budget[0]) if budget else dict(server=value['out'].name,stop_reason='MONITOR_MISSING'));assert budget and budget[0]['stop_reason'] is None,budget
 TURN_COUNT=2
 def digest(p):return hashlib.sha256(p.read_bytes()).hexdigest()
 def conversation(s,profile):
@@ -44,6 +58,6 @@ def main():
    for x,y in zip(baseline,recovered):equal(x,y)
    log=(s['out']/'server.log').read_text();assert 'cache invalid:' in log and 'valid snapshot:' not in log
   cases.append(dict(case=name,status='PASS',method='Controlled header identity fault' if offset is not None else 'Real runtime-mode switch',fresh_state_exact=True))
- write(a.out/'result.json',dict(status='PASS',profile=profile,checkpoint_bytes=len(saved),cases=cases,profile_is_static_prefix_not_conversation=True,model_weights_unchanged=True))
+ write(a.out/'result.json',dict(status='PASS',profile=profile,checkpoint_bytes=len(saved),cases=cases,profile_is_static_prefix_not_conversation=True,model_weights_unchanged=True,resource_observations=RESOURCE_OBSERVATIONS))
  print('NAMED_PROFILE_HTTP_PASS',flush=True);return 0
 if __name__=='__main__':raise SystemExit(main())

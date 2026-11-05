@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """Real TCP-reset cancellation at observed engine phases, then exact recovery."""
-import argparse,json,os,pathlib,socket,struct,subprocess,time,urllib.request,urllib.error,uuid
+import argparse,json,os,pathlib,socket,struct,subprocess,time,urllib.request,urllib.error,uuid,threading
 from run_session_state_mission import gpu,stamp,MODEL,sha
+from qualify_session_accumulation import wait_bounded_process
 P=pathlib.Path
 
 def read(p):return json.loads(p.read_text())
@@ -31,7 +32,10 @@ def main():
  assert not subprocess.run(['lsof','-t','-nP','-iTCP:11243','-sTCP:LISTEN'],capture_output=True).stdout
  env=dict(os.environ,FLASH_SESSION_TOKEN_TRACE_DIR=str(trace),FLASH_SESSION_STATE_PROGRESS='1')
  command=[str(binary),'--model',MODEL,'--tiered','--prefill-nrow','--serve','11243'];log=(a.out/'server.log').open('w');print('SERVER_START',stamp(),flush=True)
- proc=subprocess.Popen(command,cwd=binary.parent,env=env,stdin=subprocess.DEVNULL,stdout=log,stderr=subprocess.STDOUT);cases=[];recoveries=[]
+ proc=subprocess.Popen(command,cwd=binary.parent,env=env,stdin=subprocess.DEVNULL,stdout=log,stderr=subprocess.STDOUT,start_new_session=True);cases=[];recoveries=[];budget=[]
+ def monitor():
+  code,peak,reason=wait_bounded_process(proc,600,16*1024**3,host_free_floor=15);budget.append(dict(exit=code,peak_rss_bytes=peak,stop_reason=reason))
+ watcher=threading.Thread(target=monitor,daemon=True);watcher.start()
  try:
   end=time.monotonic()+120
   while time.monotonic()<end:
@@ -65,12 +69,14 @@ def main():
   assert recoveries[0]['effective_token_ids']==recoveries[1]['effective_token_ids']
   assert [x['digest'] for x in recoveries[0]['steps']]==[x['digest'] for x in recoveries[1]['steps']]
  finally:
-  proc.terminate();proc.wait(timeout=15);log.close();print('SERVER_STOP',stamp(),'exit',proc.returncode,flush=True)
+  proc.terminate();proc.wait(timeout=15);log.close();watcher.join(20);print('SERVER_STOP',stamp(),'exit',proc.returncode,flush=True);assert budget and budget[0]['stop_reason'] is None,budget
  control=a.out/'control';control.mkdir();inputfile=a.out/'replay.json';write(inputfile,dict(token_ids=recoveries[-1]['effective_token_ids'],expected_digests={str(x['position']):x['digest'] for x in recoveries[-1]['steps']}))
  env=dict(os.environ,FLASH_SESSION_TOKEN_TRACE_DIR=str(control),FLASH_SESSION_REPLAY_INPUT=str(inputfile));from session_gate_support import gate
  gate();print('RECOVERY_CONTROL_START',stamp(),flush=True)
- with (a.out/'control.log').open('w') as f:r=subprocess.run([str(binary),'--model',MODEL,'--tiered','--no-prefill-nrow'],cwd=binary.parent,env=env,stdin=subprocess.DEVNULL,stdout=f,stderr=subprocess.STDOUT,timeout=180)
- print('RECOVERY_CONTROL_STOP',stamp(),'exit',r.returncode,flush=True)
- write(a.out/'result.json',dict(status='PASS' if r.returncode==0 else 'FAIL',cases=cases,recovery_exact=r.returncode==0,pre_gpu=loads,binary_sha256=sha(binary),source_head=subprocess.check_output(['git','rev-parse','HEAD'],cwd=repo,text=True).strip()))
- return r.returncode
+ with (a.out/'control.log').open('w') as f:
+  control_proc=subprocess.Popen([str(binary),'--model',MODEL,'--tiered','--no-prefill-nrow'],cwd=binary.parent,env=env,stdin=subprocess.DEVNULL,stdout=f,stderr=subprocess.STDOUT,start_new_session=True);control_code,control_peak,control_reason=wait_bounded_process(control_proc,180,16*1024**3,host_free_floor=15)
+ assert control_reason is None,control_reason
+ print('RECOVERY_CONTROL_STOP',stamp(),'exit',control_code,flush=True)
+ write(a.out/'result.json',dict(status='PASS' if control_code==0 else 'FAIL',cases=cases,recovery_exact=control_code==0,server_budget=budget[0],control_peak_rss_bytes=control_peak,pre_gpu=loads,binary_sha256=sha(binary),source_head=subprocess.check_output(['git','rev-parse','HEAD'],cwd=repo,text=True).strip()))
+ return control_code
 if __name__=='__main__':raise SystemExit(main())
