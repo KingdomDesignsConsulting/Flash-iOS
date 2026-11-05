@@ -8,8 +8,8 @@ from work_a_manifest import verify_bound_build
 P=pathlib.Path
 
 def main():
- p=argparse.ArgumentParser(description=__doc__);p.add_argument('--root',required=True,type=P);p.add_argument('--corpus-root',required=True,type=P);p.add_argument('--repeats16',type=int,choices=[1,2,3],default=3);p.add_argument('--repeats32',type=int,choices=[1,2,3],default=3);p.add_argument('--max-hours',type=float,default=14);a=p.parse_args();assert 1<=a.max_hours<=18
- repo=P(__file__).resolve().parents[1];root=a.root.resolve();out=root/'sequence';out.mkdir(exist_ok=False);manifest=root/'release-manifest.json';gate=root/'repaired-32768/result.json';binary=repo/'metal_infer/infer-work-a-http';control=repo/'metal_infer/infer-work-a-control';candidate=repo/'metal_infer/infer-work-a-performance';probe=root/'physical-probe';deadline=time.monotonic()+a.max_hours*3600
+ p=argparse.ArgumentParser(description=__doc__);p.add_argument('--root',required=True,type=P);p.add_argument('--sequence-name',default='sequence');p.add_argument('--corpus-root',required=True,type=P);p.add_argument('--repeats16',type=int,choices=[1,2,3],default=3);p.add_argument('--repeats32',type=int,choices=[1,2,3],default=3);p.add_argument('--max-hours',type=float,default=14);a=p.parse_args();assert 1<=a.max_hours<=18
+ repo=P(__file__).resolve().parents[1];root=a.root.resolve();assert a.sequence_name and P(a.sequence_name).name==a.sequence_name and not a.sequence_name.startswith('.');out=root/a.sequence_name;out.mkdir(exist_ok=False);manifest=root/'release-manifest.json';gate=root/'repaired-32768/result.json';binary=repo/'metal_infer/infer-work-a-http';control=repo/'metal_infer/infer-work-a-control';candidate=repo/'metal_infer/infer-work-a-performance';probe=root/'physical-probe';deadline=time.monotonic()+a.max_hours*3600
  report=dict(status='WAIT_NATIVE_GATE',started=stamp(),release_manifest_sha256=sha(manifest),runner_sha256=sha(P(__file__)),cases=[],production_modified=False)
  def save(): (out/'suite.json').write_text(json.dumps(report,indent=2)+'\n')
  save();print('WORK_A_QUEUE_WAIT',stamp(),str(gate),flush=True)

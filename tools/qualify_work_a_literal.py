@@ -9,6 +9,10 @@ from experiment_session_token_exact import collect
 from qualify_session_accumulation import wait_bounded_process
 ACTIVE_OUT=None
 
+def parse_cli_samples(text):
+ first=re.search(r'\[debug\] Top 5 logits \(next_token=(\d+)\)',text);assert first,'First native CLI sample missing'
+ return [int(first[1])]+[int(x) for x in re.findall(r'\[gen \d+/\d+\] token_id=(\d+)',text)]
+
 def make_cases(messages):
  return [dict(name='original',messages=messages,options={},target='ADAPTER_FOLLOWUP_73941'),
   dict(name='latest-only',messages=[messages[0],messages[-1]],options={},target='ADAPTER_FOLLOWUP_73941'),
@@ -54,7 +58,7 @@ def main():
  with (a.out/'native-cli.log').open('w') as log:
   proc=subprocess.Popen(cmd,cwd=b.parent,env=dict(os.environ,FLASH_FE027_NUMERICS='63'),stdin=subprocess.DEVNULL,stdout=log,stderr=subprocess.STDOUT,start_new_session=True);code,peak,reason=wait_bounded_process(proc,300,16*1024**3,host_free_floor=15)
  print('LITERAL_CLI_STOP',stamp(),code,flush=True);assert code==0 and reason is None
- parsed=[int(x) for x in re.findall(r'\[gen \d+/\d+\] token_id=(\d+)',(a.out/'native-cli.log').read_text())];sampled=original['generated']['sampled_token_ids'];assert parsed and len(parsed)>=len(sampled)-1 and parsed==sampled[:len(parsed)]
+ parsed=parse_cli_samples((a.out/'native-cli.log').read_text());sampled=original['generated']['sampled_token_ids'];assert parsed==sampled,'Native CLI and HTTP raw samples differ'
  report.update(status='DIAGNOSIS_COMPLETE',budgets=budgets,native_cli=dict(exit=code,pre_gpu=pre,reported_sample_prefix_exact=True,reported_tokens=len(parsed),http_sampled_tokens=len(sampled),peak_rss_bytes=peak),classification=('Incorrect original literal reproduced with identical native-rendered input in fresh scalar CLI, bypassing HTTP/SDK/session reuse; model/native-response behavior, not proven universal intrinsic model limitation' if not original['literal_honored'] else 'Original SDK failure not reproduced in this direct native pair; no intrinsic-model attribution; integration remains unresolved'),original_request_parameters_exact=True,original_native_prompt_ids_exact=True,original_sdk_record_sha256=sha(a.sdk_record),original_literal_failure_preserved=not original['literal_honored'],template_changed=False);write(a.out/'result.json',report);return 0
 if __name__=='__main__':
  try:raise SystemExit(main())
