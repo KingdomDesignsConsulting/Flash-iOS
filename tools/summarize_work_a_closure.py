@@ -10,7 +10,7 @@ def read(path):
  except FileNotFoundError:return dict(status='NOT_RUN')
  except json.JSONDecodeError:return dict(status='INCOMPLETE_JSON')
 
-def summarize(root):
+def summarize(root,performance_prefix="performance"):
  manifest=read(root/'release-manifest.json');md=sha(root/'release-manifest.json');out=dict(status='EVIDENCE_ONLY_REVIEW_REQUIRED',updated=datetime.datetime.now().astimezone().isoformat(),starting_head=manifest['head'],runtime_repair_commit=manifest['runtime_repair_commit'],release_manifest_sha256=md,candidate_binary_sha256=manifest['binary_sha256'],source_tree=manifest['tree'],runtime_source_sha256=manifest['source_sha256'],model_contract=manifest['model_contract'],execution=manifest['execution'],fixtures={k:{field:v[field] for field in ['sha256','bytes']} for k,v in manifest.get('fixtures',{}).items()},production_modified=False,raw_payloads_exported=False)
  out['identity_self_test']=read(root/'identity-proof.json')
  repro=read(root/'repro-evidence.json');out['build_reproducibility']={k:v for k,v in repro.items() if k in ['whole_file_exact','all_sections_exact','normalized_payload_exact','exclusions']}
@@ -31,7 +31,7 @@ def summarize(root):
   raw=read(root/name/'result.json');out['named_profile' if name=='profile' else name]={k:v for k,v in raw.items() if k not in ['profile','command','requests','messages','events','traces','token_ids','generated_token_ids','sampled_token_ids','effective_token_ids']}
  out['performance']={}
  for count in [16384,32768]:
-  raw=read(root/f'performance-{count}/result.json');item={k:v for k,v in raw.items() if k in ['status','started','ended','count','repeats','release_manifest_sha256','runner_sha256','input_sha256','rendered_ids_sha256','cache_scope','attention_latency_scope','summary','confidence','error_type','error']}
+  raw=read(root/f'{performance_prefix}-{count}/result.json');item={k:v for k,v in raw.items() if k in ['status','started','ended','count','repeats','release_manifest_sha256','runner_sha256','input_sha256','rendered_ids_sha256','cache_scope','attention_latency_scope','summary','confidence','error_type','error']}
   rows=[]
   for row in raw.get('rows',[]):
    selected={k:v for k,v in row.items() if k in ['trial','mode','binary_sha256','post_gpu','host_free_before','budget','memory','cases','boundary_routes','expert_cache_hit_counters_available']};phases=row.get('nrow_host_phase_records',[]);totals={}
@@ -48,5 +48,5 @@ def summarize(root):
  return clean(out)
 
 def main():
- p=argparse.ArgumentParser(description=__doc__);p.add_argument('--root',required=True,type=P);p.add_argument('--out',required=True,type=P);a=p.parse_args();result=summarize(a.root);a.out.write_text(json.dumps(result,indent=2,allow_nan=False)+'\n');print('SANITIZED_WORK_A',a.out)
+ p=argparse.ArgumentParser(description=__doc__);p.add_argument('--root',required=True,type=P);p.add_argument('--out',required=True,type=P);p.add_argument('--performance-prefix',default='performance');a=p.parse_args();assert P(a.performance_prefix).name==a.performance_prefix and not a.performance_prefix.startswith('.');result=summarize(a.root,a.performance_prefix);a.out.write_text(json.dumps(result,indent=2,allow_nan=False)+'\n');print('SANITIZED_WORK_A',a.out)
 if __name__=='__main__':main()

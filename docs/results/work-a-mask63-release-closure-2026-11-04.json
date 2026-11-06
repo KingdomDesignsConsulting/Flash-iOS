@@ -1,6 +1,6 @@
 {
   "status": "EVIDENCE_ONLY_REVIEW_REQUIRED",
-  "updated": "2026-11-04T18:02:03.593893-08:00",
+  "updated": "2026-11-06T00:51:52.317823-08:00",
   "starting_head": "66adf92e2ea950528917000d1b59b788e1687371",
   "runtime_repair_commit": "ac06b920dbb7e26b804480b36eea4dbe83b40d4e",
   "release_manifest_sha256": "86f5ffa6bd6ce42dcc81a934fdc82040a8f1059cf14ec53ec23e575957f56fce",
@@ -3657,13 +3657,13 @@
   "performance": {
     "16384": {
       "status": "RUNNING",
-      "started": "2026-11-04T17:58:08.212628-08:00",
+      "started": "2026-11-06T00:46:36.171090-08:00",
       "release_manifest_sha256": "86f5ffa6bd6ce42dcc81a934fdc82040a8f1059cf14ec53ec23e575957f56fce",
       "runner_sha256": "10da695cc4b341fe34e9d4affeea81ee1b5de98709dd4c368b960373bf35b310",
       "input_sha256": "4c47e67e103633e210da90df539b843eb5aa859e0656cb00c08f68a59573d4d9",
       "rendered_ids_sha256": "d969ba21b443c40da6a5cc25ea7d8598d0cd4fa6ede5ff1be544da1b98eed31f",
       "count": 16384,
-      "repeats": 3,
+      "repeats": 1,
       "cache_scope": "Fresh process first-request then same-process repeat; same IDs/cache settings, no OS-page-cache purge; system startup may warm experts; no full-binary cache invalidation",
       "attention_latency_scope": "Existing host wall-phase aggregates, not GPU timestamp counters",
       "rows": [],
