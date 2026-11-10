@@ -1,6 +1,6 @@
 # Workstream A: mask63 release closure — 2026-11-04
 
-Bounded closure reviewed November10; performance completion is memory-blocked. No promotion authorized. Production, arithmetic defaults, model files and existing profiles remain unchanged. PR #2 remains draft. Work A starts from verified remote experimental HEAD `66adf92e2ea950528917000d1b59b788e1687371`; intervening commits since `3df795af` change only documentation. Runtime repair remains `ac06b920dbb7e26b804480b36eea4dbe83b40d4e`.
+Bounded closure reviewed November10. An early memory block remains historical; later continuation has a validated mask63 32K pair and scalar running. No promotion authorized. Production, arithmetic defaults, model files and existing profiles remain unchanged. PR #2 remains draft. Work A starts from verified remote experimental HEAD `66adf92e2ea950528917000d1b59b788e1687371`; intervening commits since `3df795af` change only documentation. Runtime repair remains `ac06b920dbb7e26b804480b36eea4dbe83b40d4e`.
 
 ## Isolation and integration
 
@@ -259,3 +259,13 @@ At the same16384-token prefix of the same32768-token request, the prior interrup
 Read-only observation11:56 PST: memory availability31%, WindowServer24.6% CPU, wallpaper extension7.3% CPU, no reported thermal warning. CPU percentages do not prove per-process GPU attribution; GPU utilization includes the benchmark itself. No unrelated app is closed or changed.
 
 An additional bounded six-GiB reserve guard began11:58:10 PST. It estimates available bytes from the existing host-availability percentage and physical memory, stops only verified native child process groups of this exact driver after three below-reserve readings, and fails closed on an unavailable reserve monitor. Existing35% launch admission,16GiB RSS,15% floor, process/phase bounds remain unchanged. Its source, launch and state/log files are private in this attempt directory (`reserve-guard.py`, `reserve-guard-result.json`); it is additional supervision, not an inference/runtime modification.
+
+### Validated mask63 32K process trial — November 10, 14:10 PST
+
+The complete same-process pair is accepted as one exploratory trial, separate from the November6 interrupted cold observation. Cold prefill5128.867s, warm5084.331s; both consume32768 logical and physically prefetched prompt tokens, cached0,32 generated,32800 total. Warm visible TTFT5084.491s and generation-wall0.853 tok/s. Both resident allocation observations show all10 KV lengths32800 and Metal allocated5,357,207,552 bytes. Actual routing covers all10 GPU layers at32768 and CPU at32769; this does not extend native numerical qualification beyond the GPU window.
+
+Server started11:19:31.255, cold finished12:45:32.040, warm finished14:10:53.980 and server stopped14:10:54.104 PST with expected SIGTERM(-15). No watchdog fired. RSS watchdog peak7,291,469,824 bytes, charged lifetime peak3,524,718,904 bytes, launch host47%, GPU6/19/15% and post14/12/14%. Metrics overlap; not total unified memory. Lifecycle/provenance/usage/routes validated independently with the same row checks used for the full cohort.28 model-free tests PASS.
+
+Warm mask63 is about61.6% more time than the retained November6 ordinary warm observation; comparison is cross-date and confounded by staging/cache conditions, not a causal arithmetic overhead estimate. The new cold result is43.2% slower than its own earlier interrupted-request observation with the same binary. Read-only app preferences show Memory Cleaner5.1 AutoCleaning=true; plausible cache-eviction confound, causation unproven, no setting or app changed. No production change or runtime repair is justified by this result.
+
+Scalar admitted sequentially after mask63 stopped, with GPU0/12/13%; actual start14:10:58.761 PST. Scalar cold/warm and complete cohort disposition remain pending. No repeats or duplicate server are launched. The bounded post-processing and reserve supervision remain active.

@@ -9172,7 +9172,7 @@
     }
   },
   "performance_continuation": {
-    "status": "RUNNING_NOT_YET_ACCEPTED",
+    "status": "MASK63_COMPLETE_SCALAR_RUNNING",
     "starting_head": "9759b0265b64b51320ffb07166ff00d2f9ee483a",
     "server_started": "2026-11-10T11:19:31.255366-08:00",
     "host_availability_before_percent": 47,
@@ -9211,6 +9211,183 @@
       "consecutive_low_samples": 3,
       "existing_driver_guards_unchanged": true,
       "scope": "Only verified native child process groups of this exact driver; private source/state retained"
+    },
+    "validated_mask63_trial": {
+      "status": "MASK63_COMPLETE_TRIAL_VALIDATED",
+      "mode": "mask63",
+      "binary_sha256": "734e00a3374ddaf5c84746ded6cc8a27f57d0b33865ba7d173fdb58d2183052a",
+      "release_manifest_sha256": "86f5ffa6bd6ce42dcc81a934fdc82040a8f1059cf14ec53ec23e575957f56fce",
+      "n": 1,
+      "cohort_status": "RUNNING",
+      "all_ten_boundary_routes": true,
+      "cached_prefix_tokens": 0,
+      "generation_tokens": 32,
+      "host_free_before": 47,
+      "post_gpu": [
+        14,
+        12,
+        14
+      ],
+      "budget": {
+        "exit": -15,
+        "peak_rss_bytes": 7291469824,
+        "stop_reason": null
+      },
+      "memory": {
+        "samples": 9982,
+        "observed_peak_physical_bytes": 3523244344,
+        "lifetime_peak_physical_bytes": 3524718904,
+        "sampled_peak_rss_bytes": 7296237568
+      },
+      "cases": [
+        {
+          "label": "cold",
+          "started": "2026-11-10T11:19:34.967242-08:00",
+          "ended": "2026-11-10T12:45:32.033033-08:00",
+          "wall_ms": 5157063.966667,
+          "wire_ttft_ms": 5128959.441916999,
+          "timings": {
+            "generated_tokens": 32,
+            "decode_tokens_per_second": 1.137273053627259,
+            "cached_prefix_tokens": 0,
+            "prefill_ms": 5128867.307861328,
+            "decode_ms": 28137.48193359375,
+            "context_tokens": 32768,
+            "prefill_tokens": 32768,
+            "prefill_tokens_per_second": 6.388935028553865,
+            "session_reused": 0,
+            "warm_prefix_reused": false
+          },
+          "usage": {
+            "prompt_tokens": 32768,
+            "completion_tokens": 32,
+            "total_tokens": 32800
+          },
+          "allocation": {
+            "gpu_capacity": 32768,
+            "kv_lengths": {
+              "7": 32800,
+              "3": 32800,
+              "39": 32800,
+              "11": 32800,
+              "19": 32800,
+              "27": 32800,
+              "35": 32800,
+              "15": 32800,
+              "23": 32800,
+              "31": 32800
+            },
+            "metal_allocated_bytes": 5357207552,
+            "resident_pos": 32800,
+            "context_tokens": 32818,
+            "prefill_tokens": 18,
+            "cpu_capacity": 65536,
+            "session_reused": 1,
+            "state_hash": "not_requested"
+          },
+          "nrow_host_phases": {
+            "records": 255,
+            "totals": {
+              "full_layers": 2550.0,
+              "full_qkv": 49095.14099999996,
+              "full_rowwise": 131492.72299999994,
+              "full_grouped": 508115.86600000004,
+              "linear_layers": 7650.0,
+              "linear_batch": 227580.1140000001,
+              "linear_post_batch": 103013.66800000002,
+              "linear_rowwise": 0.0,
+              "linear_grouped": 1393891.5100000016,
+              "linear_grouping": 150.40400000000002,
+              "linear_stage": 1084650.0409999986,
+              "linear_expert": 221660.61600000013,
+              "linear_cache": 61665.61499999998,
+              "linear_shared": 23938.677000000007,
+              "linear_combine": 7776.547000000003
+            },
+            "scope": "Existing host wall-time phase counters; count fields retain original names, not hardware GPU timestamps"
+          }
+        },
+        {
+          "label": "warm",
+          "started": "2026-11-10T12:45:32.040196-08:00",
+          "ended": "2026-11-10T14:10:53.963529-08:00",
+          "wall_ms": 5121969.737583,
+          "wire_ttft_ms": 5084491.2651659995,
+          "timings": {
+            "generated_tokens": 32,
+            "decode_tokens_per_second": 0.8530162178901435,
+            "cached_prefix_tokens": 0,
+            "prefill_ms": 5084331.183105469,
+            "decode_ms": 37513.94091796875,
+            "context_tokens": 32768,
+            "prefill_tokens": 32768,
+            "prefill_tokens_per_second": 6.444898811643809,
+            "session_reused": 0,
+            "warm_prefix_reused": false
+          },
+          "usage": {
+            "prompt_tokens": 32768,
+            "completion_tokens": 32,
+            "total_tokens": 32800
+          },
+          "allocation": {
+            "gpu_capacity": 32768,
+            "kv_lengths": {
+              "7": 32800,
+              "3": 32800,
+              "39": 32800,
+              "11": 32800,
+              "19": 32800,
+              "27": 32800,
+              "35": 32800,
+              "15": 32800,
+              "23": 32800,
+              "31": 32800
+            },
+            "metal_allocated_bytes": 5357207552,
+            "resident_pos": 32800,
+            "context_tokens": 32818,
+            "prefill_tokens": 18,
+            "cpu_capacity": 65536,
+            "session_reused": 1,
+            "state_hash": "not_requested"
+          },
+          "nrow_host_phases": {
+            "records": 255,
+            "totals": {
+              "full_layers": 2550.0,
+              "full_qkv": 47419.962999999974,
+              "full_rowwise": 130124.00700000006,
+              "full_grouped": 515878.20100000023,
+              "linear_layers": 7650.0,
+              "linear_batch": 221716.35699999993,
+              "linear_post_batch": 100457.02800000005,
+              "linear_rowwise": 0.0,
+              "linear_grouped": 1359065.465,
+              "linear_grouping": 141.10999999999996,
+              "linear_stage": 1044171.3989999999,
+              "linear_expert": 238810.82300000015,
+              "linear_cache": 51281.316000000006,
+              "linear_shared": 22911.28700000001,
+              "linear_combine": 7070.383
+            },
+            "scope": "Existing host wall-time phase counters; count fields retain original names, not hardware GPU timestamps"
+          }
+        }
+      ]
+    },
+    "scalar_started": "2026-11-10T14:10:58.760953-08:00",
+    "scalar_launch_gpu_percent": [
+      0,
+      12,
+      13
+    ],
+    "environment_observation": {
+      "observed": "2026-11-10T12:07:50.465222-08:00",
+      "memory_cleaner_version": "5.1",
+      "auto_cleaning_enabled": true,
+      "settings_changed": false,
+      "interpretation": "Plausible cache-eviction confound; setting alone does not prove active purging or causation. Retain exploratory cross-date comparison limitations."
     }
   }
 }
