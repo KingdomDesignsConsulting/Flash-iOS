@@ -1,6 +1,6 @@
 {
   "status": "EVIDENCE_ONLY_REVIEW_REQUIRED",
-  "updated": "2026-11-06T00:51:52.317823-08:00",
+  "updated": "2026-11-10T11:06:25.944296-08:00",
   "starting_head": "66adf92e2ea950528917000d1b59b788e1687371",
   "runtime_repair_commit": "ac06b920dbb7e26b804480b36eea4dbe83b40d4e",
   "release_manifest_sha256": "86f5ffa6bd6ce42dcc81a934fdc82040a8f1059cf14ec53ec23e575957f56fce",
@@ -90,6 +90,2614 @@
     "binary_sha256": "5960178f4dbc677a4b7fa660b8a9fb46773ea3dadc495f5604b400cc7f194602",
     "log_sha256": "ce1b87d6e8c5976776c7d57aac185b2603ba34d630f33fa7ecf95bea5271426c",
     "evidence": "Existing model-free native warm-state self-test; no whole-binary compatibility key"
+  },
+  "eos_continuation": {
+    "status": "PASS",
+    "scope": "Saved first three capture/restart turns; no new inference",
+    "stages": {
+      "capture": [
+        {
+          "initial_position": 0,
+          "end_position": 170,
+          "eos_committed": true,
+          "completed_tokens": 2,
+          "last_digest": "66dcb050733031e4a8fe1543f3ae408f497604844a5979c6a4dd267a43a9da6e",
+          "generated_sha256": "14df62418b62390c68941bab6867d93aff9a0141e5ce684ec63f7c5dc7612355",
+          "state_sha256": "27942eff6b9427720e9200918b189b2405afe24923a52ec161781dbf4386de88"
+        },
+        {
+          "initial_position": 170,
+          "end_position": 202,
+          "eos_committed": true,
+          "completed_tokens": 8,
+          "last_digest": "32ebb3eb5cf518ef5477da32c3e7bba4331eda04896ca080f5c4976fd33bd10e",
+          "generated_sha256": "2c9e4c7d4abf5ccdf6cefedb747a9185d529773d5df8f55b56e0565182c32a86",
+          "state_sha256": "8586f19d8396599145109a0584a5705f0429e33805d17227493780f798ce45ef"
+        },
+        {
+          "initial_position": 202,
+          "end_position": 234,
+          "eos_committed": true,
+          "completed_tokens": 8,
+          "last_digest": "93d9a10e76f27bfd3a29a22bc372fac3780b3fbbef4217d342c9fd9962c3af19",
+          "generated_sha256": "fd010822b7f06749a855f28dd9f570e7a5e88a4c019c6cd6954d6ddd45342e08",
+          "state_sha256": "302ab03e60d7775fa49021dd01a1b9fa0e0772b15b59fa86af880639a96a28b9"
+        }
+      ],
+      "restart": [
+        {
+          "initial_position": 142,
+          "end_position": 170,
+          "eos_committed": true,
+          "completed_tokens": 2,
+          "last_digest": "66dcb050733031e4a8fe1543f3ae408f497604844a5979c6a4dd267a43a9da6e",
+          "generated_sha256": "bb2634b90e177c35afdd168bb67a2626e5711491bff0615ba19cfcb1c027cd8c",
+          "state_sha256": "e17a0a45e08e5bd007a32544eb0314be499b1bd6b280dbab49fb05759a37a3b1"
+        },
+        {
+          "initial_position": 170,
+          "end_position": 202,
+          "eos_committed": true,
+          "completed_tokens": 8,
+          "last_digest": "32ebb3eb5cf518ef5477da32c3e7bba4331eda04896ca080f5c4976fd33bd10e",
+          "generated_sha256": "746082d72f7ccfe5e02db559a98bd08c1bb2e959b8ecf7c717dcadd83027bfa2",
+          "state_sha256": "4528836be1d98ac7f15ea5ee3a8bcfecf0f30afa67426a56ac30fea845f4f526"
+        },
+        {
+          "initial_position": 202,
+          "end_position": 234,
+          "eos_committed": true,
+          "completed_tokens": 8,
+          "last_digest": "93d9a10e76f27bfd3a29a22bc372fac3780b3fbbef4217d342c9fd9962c3af19",
+          "generated_sha256": "0a2590141abb401399ac84ff78231aaccac1f816a54eeed08fa011bec891b84e",
+          "state_sha256": "e003b59221b5338a757ad4af92b4027dfd99deae4949e73cd5bfaa9427626ed0"
+        }
+      ]
+    }
+  },
+  "performance_review": {
+    "status": "PARTIAL_PERFORMANCE_QUALIFICATION",
+    "release_manifest_sha256": "86f5ffa6bd6ce42dcc81a934fdc82040a8f1059cf14ec53ec23e575957f56fce",
+    "completed_trials": [
+      {
+        "context_tokens": 16384,
+        "mode": "ordinary",
+        "status": "COMPLETE_PROCESS_TRIAL",
+        "n": 1,
+        "binary_sha256": "175bd2b7672cde0dd71ff0db6ccb4cbf365e70db76713e242312691a6839530e",
+        "pre_host_free_percent": 63,
+        "post_gpu": [
+          83,
+          0,
+          0,
+          0
+        ],
+        "memory": {
+          "samples": 2273,
+          "observed_peak_physical_bytes": 2749755464,
+          "lifetime_peak_physical_bytes": 2749755464,
+          "sampled_peak_rss_bytes": 9264906240
+        },
+        "budget": {
+          "exit": -15,
+          "peak_rss_bytes": 9271083008,
+          "stop_reason": null
+        },
+        "cases": [
+          {
+            "label": "cold",
+            "timings": {
+              "generated_tokens": 32,
+              "decode_tokens_per_second": 4.003470537844788,
+              "cached_prefix_tokens": 0,
+              "prefill_ms": 1325304.9560546875,
+              "decode_ms": 7993.06494140625,
+              "context_tokens": 16384,
+              "prefill_tokens": 16384,
+              "prefill_tokens_per_second": 12.36243773566929,
+              "session_reused": 0,
+              "warm_prefix_reused": false
+            },
+            "wire_ttft_ms": 1325380.6532080001,
+            "wall_ms": 1333356.295667,
+            "allocation": {
+              "gpu_capacity": 32768,
+              "kv_lengths": {
+                "7": 16416,
+                "3": 16416,
+                "39": 16416,
+                "11": 16416,
+                "19": 16416,
+                "27": 16416,
+                "35": 16416,
+                "15": 16416,
+                "23": 16416,
+                "31": 16416
+              },
+              "metal_allocated_bytes": 5357207552,
+              "resident_pos": 16416,
+              "context_tokens": 16434,
+              "prefill_tokens": 18,
+              "cpu_capacity": 65536,
+              "session_reused": 1,
+              "state_hash": "not_requested"
+            },
+            "host_phases": {
+              "records": 127,
+              "totals": {
+                "full_layers": 1270.0,
+                "full_qkv": 23793.288,
+                "full_rowwise": 59730.63300000002,
+                "full_grouped": 157837.98799999992,
+                "linear_layers": 3810.0,
+                "linear_batch": 112869.88599999998,
+                "linear_post_batch": 51414.024000000005,
+                "linear_rowwise": 0.0,
+                "linear_grouped": 444854.80799999984,
+                "linear_grouping": 79.55899999999998,
+                "linear_stage": 306741.6870000002,
+                "linear_expert": 110751.46500000001,
+                "linear_cache": 17115.28900000001,
+                "linear_shared": 9135.608000000004,
+                "linear_combine": 1609.8640000000003
+              },
+              "scope": "Existing host wall-time phase counters; count fields retain original names, not hardware GPU timestamps"
+            }
+          },
+          {
+            "label": "warm",
+            "timings": {
+              "generated_tokens": 32,
+              "decode_tokens_per_second": 4.467040783149899,
+              "cached_prefix_tokens": 0,
+              "prefill_ms": 995824.16015625,
+              "decode_ms": 7163.5791015625,
+              "context_tokens": 16384,
+              "prefill_tokens": 16384,
+              "prefill_tokens_per_second": 16.45270385630056,
+              "session_reused": 0,
+              "warm_prefix_reused": false
+            },
+            "wire_ttft_ms": 995882.290625,
+            "wall_ms": 1003032.4896660001,
+            "allocation": {
+              "gpu_capacity": 32768,
+              "kv_lengths": {
+                "7": 16416,
+                "3": 16416,
+                "39": 16416,
+                "11": 16416,
+                "19": 16416,
+                "27": 16416,
+                "35": 16416,
+                "15": 16416,
+                "23": 16416,
+                "31": 16416
+              },
+              "metal_allocated_bytes": 5357207552,
+              "resident_pos": 16416,
+              "context_tokens": 16434,
+              "prefill_tokens": 18,
+              "cpu_capacity": 65536,
+              "session_reused": 1,
+              "state_hash": "not_requested"
+            },
+            "host_phases": {
+              "records": 127,
+              "totals": {
+                "full_layers": 1270.0,
+                "full_qkv": 21963.438000000006,
+                "full_rowwise": 52230.29699999997,
+                "full_grouped": 58903.46399999998,
+                "linear_layers": 3810.0,
+                "linear_batch": 106067.08899999998,
+                "linear_post_batch": 48035.38799999999,
+                "linear_rowwise": 0.0,
+                "linear_grouped": 171883.04799999992,
+                "linear_grouping": 66.68100000000001,
+                "linear_stage": 53147.166000000005,
+                "linear_expert": 100512.81099999997,
+                "linear_cache": 9622.553999999998,
+                "linear_shared": 7863.066000000001,
+                "linear_combine": 1257.3130000000003
+              },
+              "scope": "Existing host wall-time phase counters; count fields retain original names, not hardware GPU timestamps"
+            }
+          }
+        ],
+        "routes": [
+          {
+            "length": 8191,
+            "layer": 3,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "nrow-attention"
+          },
+          {
+            "length": 8192,
+            "layer": 3,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "nrow-attention"
+          },
+          {
+            "length": 8191,
+            "layer": 7,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "nrow-attention"
+          },
+          {
+            "length": 8192,
+            "layer": 7,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "nrow-attention"
+          },
+          {
+            "length": 8191,
+            "layer": 11,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "nrow-attention"
+          },
+          {
+            "length": 8192,
+            "layer": 11,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "nrow-attention"
+          },
+          {
+            "length": 8191,
+            "layer": 15,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "nrow-attention"
+          },
+          {
+            "length": 8192,
+            "layer": 15,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "nrow-attention"
+          },
+          {
+            "length": 8191,
+            "layer": 19,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "nrow-attention"
+          },
+          {
+            "length": 8192,
+            "layer": 19,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "nrow-attention"
+          },
+          {
+            "length": 8191,
+            "layer": 23,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "nrow-attention"
+          },
+          {
+            "length": 8192,
+            "layer": 23,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "nrow-attention"
+          },
+          {
+            "length": 8191,
+            "layer": 27,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "nrow-attention"
+          },
+          {
+            "length": 8192,
+            "layer": 27,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "nrow-attention"
+          },
+          {
+            "length": 8191,
+            "layer": 31,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "nrow-attention"
+          },
+          {
+            "length": 8192,
+            "layer": 31,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "nrow-attention"
+          },
+          {
+            "length": 8191,
+            "layer": 35,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "nrow-attention"
+          },
+          {
+            "length": 8192,
+            "layer": 35,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "nrow-attention"
+          },
+          {
+            "length": 8191,
+            "layer": 39,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "nrow-attention"
+          },
+          {
+            "length": 8192,
+            "layer": 39,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "nrow-attention"
+          },
+          {
+            "length": 8193,
+            "layer": 3,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "nrow-attention"
+          },
+          {
+            "length": 8193,
+            "layer": 7,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "nrow-attention"
+          },
+          {
+            "length": 8193,
+            "layer": 11,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "nrow-attention"
+          },
+          {
+            "length": 8193,
+            "layer": 15,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "nrow-attention"
+          },
+          {
+            "length": 8193,
+            "layer": 19,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "nrow-attention"
+          },
+          {
+            "length": 8193,
+            "layer": 23,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "nrow-attention"
+          },
+          {
+            "length": 8193,
+            "layer": 27,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "nrow-attention"
+          },
+          {
+            "length": 8193,
+            "layer": 31,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "nrow-attention"
+          },
+          {
+            "length": 8193,
+            "layer": 35,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "nrow-attention"
+          },
+          {
+            "length": 8193,
+            "layer": 39,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "nrow-attention"
+          },
+          {
+            "length": 12288,
+            "layer": 3,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "nrow-attention"
+          },
+          {
+            "length": 12288,
+            "layer": 7,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "nrow-attention"
+          },
+          {
+            "length": 12288,
+            "layer": 11,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "nrow-attention"
+          },
+          {
+            "length": 12288,
+            "layer": 15,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "nrow-attention"
+          },
+          {
+            "length": 12288,
+            "layer": 19,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "nrow-attention"
+          },
+          {
+            "length": 12288,
+            "layer": 23,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "nrow-attention"
+          },
+          {
+            "length": 12288,
+            "layer": 27,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "nrow-attention"
+          },
+          {
+            "length": 12288,
+            "layer": 31,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "nrow-attention"
+          },
+          {
+            "length": 12288,
+            "layer": 35,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "nrow-attention"
+          },
+          {
+            "length": 12288,
+            "layer": 39,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "nrow-attention"
+          },
+          {
+            "length": 16384,
+            "layer": 3,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "cmd12-chain"
+          },
+          {
+            "length": 16384,
+            "layer": 7,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "cmd12-chain"
+          },
+          {
+            "length": 16384,
+            "layer": 11,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "cmd12-chain"
+          },
+          {
+            "length": 16384,
+            "layer": 15,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "cmd12-chain"
+          },
+          {
+            "length": 16384,
+            "layer": 19,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "cmd12-chain"
+          },
+          {
+            "length": 16384,
+            "layer": 23,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "cmd12-chain"
+          },
+          {
+            "length": 16384,
+            "layer": 27,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "cmd12-chain"
+          },
+          {
+            "length": 16384,
+            "layer": 31,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "cmd12-chain"
+          },
+          {
+            "length": 16384,
+            "layer": 35,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "cmd12-chain"
+          },
+          {
+            "length": 16384,
+            "layer": 39,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "cmd12-chain"
+          },
+          {
+            "length": 16385,
+            "layer": 3,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "cmd12-chain"
+          },
+          {
+            "length": 16385,
+            "layer": 7,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "cmd12-chain"
+          },
+          {
+            "length": 16385,
+            "layer": 11,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "cmd12-chain"
+          },
+          {
+            "length": 16385,
+            "layer": 15,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "cmd12-chain"
+          },
+          {
+            "length": 16385,
+            "layer": 19,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "cmd12-chain"
+          },
+          {
+            "length": 16385,
+            "layer": 23,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "cmd12-chain"
+          },
+          {
+            "length": 16385,
+            "layer": 27,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "cmd12-chain"
+          },
+          {
+            "length": 16385,
+            "layer": 31,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "cmd12-chain"
+          },
+          {
+            "length": 16385,
+            "layer": 35,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "cmd12-chain"
+          },
+          {
+            "length": 16385,
+            "layer": 39,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "cmd12-chain"
+          }
+        ]
+      },
+      {
+        "context_tokens": 16384,
+        "mode": "mask63",
+        "status": "COMPLETE_PROCESS_TRIAL",
+        "n": 1,
+        "binary_sha256": "734e00a3374ddaf5c84746ded6cc8a27f57d0b33865ba7d173fdb58d2183052a",
+        "pre_host_free_percent": 59,
+        "post_gpu": [
+          80,
+          0,
+          0,
+          0
+        ],
+        "memory": {
+          "samples": 2305,
+          "observed_peak_physical_bytes": 2091216224,
+          "lifetime_peak_physical_bytes": 2091216224,
+          "sampled_peak_rss_bytes": 9388146688
+        },
+        "budget": {
+          "exit": -15,
+          "peak_rss_bytes": 9430745088,
+          "stop_reason": null
+        },
+        "cases": [
+          {
+            "label": "cold",
+            "timings": {
+              "generated_tokens": 32,
+              "decode_tokens_per_second": 4.554413851850552,
+              "cached_prefix_tokens": 0,
+              "prefill_ms": 1174335.0209960938,
+              "decode_ms": 7026.151123046875,
+              "context_tokens": 16384,
+              "prefill_tokens": 16384,
+              "prefill_tokens_per_second": 13.951725620941435,
+              "session_reused": 0,
+              "warm_prefix_reused": false
+            },
+            "wire_ttft_ms": 1174385.3992919999,
+            "wall_ms": 1181396.340625,
+            "allocation": {
+              "gpu_capacity": 32768,
+              "kv_lengths": {
+                "7": 16416,
+                "3": 16416,
+                "39": 16416,
+                "11": 16416,
+                "19": 16416,
+                "27": 16416,
+                "35": 16416,
+                "15": 16416,
+                "23": 16416,
+                "31": 16416
+              },
+              "metal_allocated_bytes": 5357207552,
+              "resident_pos": 16416,
+              "context_tokens": 16434,
+              "prefill_tokens": 18,
+              "cpu_capacity": 65536,
+              "session_reused": 1,
+              "state_hash": "not_requested"
+            },
+            "host_phases": {
+              "records": 127,
+              "totals": {
+                "full_layers": 1270.0,
+                "full_qkv": 22636.283999999996,
+                "full_rowwise": 48678.35399999999,
+                "full_grouped": 67395.70799999998,
+                "linear_layers": 3810.0,
+                "linear_batch": 107438.11199999994,
+                "linear_post_batch": 49304.888999999974,
+                "linear_rowwise": 0.0,
+                "linear_grouped": 195282.38499999992,
+                "linear_grouping": 68.60799999999999,
+                "linear_stage": 72704.64900000002,
+                "linear_expert": 101063.332,
+                "linear_cache": 9990.158000000001,
+                "linear_shared": 10804.19,
+                "linear_combine": 3379.9190000000003
+              },
+              "scope": "Existing host wall-time phase counters; count fields retain original names, not hardware GPU timestamps"
+            }
+          },
+          {
+            "label": "warm",
+            "timings": {
+              "generated_tokens": 32,
+              "decode_tokens_per_second": 3.9504036752449427,
+              "cached_prefix_tokens": 0,
+              "prefill_ms": 1180461.9448242188,
+              "decode_ms": 8100.43798828125,
+              "context_tokens": 16384,
+              "prefill_tokens": 16384,
+              "prefill_tokens_per_second": 13.879312308064046,
+              "session_reused": 0,
+              "warm_prefix_reused": false
+            },
+            "wire_ttft_ms": 1180488.2954589997,
+            "wall_ms": 1188576.1425420002,
+            "allocation": {
+              "gpu_capacity": 32768,
+              "kv_lengths": {
+                "7": 16416,
+                "3": 16416,
+                "39": 16416,
+                "11": 16416,
+                "19": 16416,
+                "27": 16416,
+                "35": 16416,
+                "15": 16416,
+                "23": 16416,
+                "31": 16416
+              },
+              "metal_allocated_bytes": 5357207552,
+              "resident_pos": 16416,
+              "context_tokens": 16434,
+              "prefill_tokens": 18,
+              "cpu_capacity": 65536,
+              "session_reused": 1,
+              "state_hash": "not_requested"
+            },
+            "host_phases": {
+              "records": 127,
+              "totals": {
+                "full_layers": 1270.0,
+                "full_qkv": 22831.08399999999,
+                "full_rowwise": 51496.44300000001,
+                "full_grouped": 67734.85700000003,
+                "linear_layers": 3810.0,
+                "linear_batch": 108222.24699999997,
+                "linear_post_batch": 50392.20300000003,
+                "linear_rowwise": 0.0,
+                "linear_grouped": 196749.247,
+                "linear_grouping": 67.79299999999999,
+                "linear_stage": 72099.72700000003,
+                "linear_expert": 101374.92900000005,
+                "linear_cache": 11256.989999999994,
+                "linear_shared": 11309.035000000005,
+                "linear_combine": 3539.326000000001
+              },
+              "scope": "Existing host wall-time phase counters; count fields retain original names, not hardware GPU timestamps"
+            }
+          }
+        ],
+        "routes": [
+          {
+            "length": 16384,
+            "layer": 3,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "cmd12-chain"
+          },
+          {
+            "length": 16384,
+            "layer": 7,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "cmd12-chain"
+          },
+          {
+            "length": 16384,
+            "layer": 11,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "cmd12-chain"
+          },
+          {
+            "length": 16384,
+            "layer": 15,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "cmd12-chain"
+          },
+          {
+            "length": 16384,
+            "layer": 19,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "cmd12-chain"
+          },
+          {
+            "length": 16384,
+            "layer": 23,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "cmd12-chain"
+          },
+          {
+            "length": 16384,
+            "layer": 27,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "cmd12-chain"
+          },
+          {
+            "length": 16384,
+            "layer": 31,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "cmd12-chain"
+          },
+          {
+            "length": 16384,
+            "layer": 35,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "cmd12-chain"
+          },
+          {
+            "length": 16384,
+            "layer": 39,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "cmd12-chain"
+          },
+          {
+            "length": 16385,
+            "layer": 3,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "cmd12-chain"
+          },
+          {
+            "length": 16385,
+            "layer": 7,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "cmd12-chain"
+          },
+          {
+            "length": 16385,
+            "layer": 11,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "cmd12-chain"
+          },
+          {
+            "length": 16385,
+            "layer": 15,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "cmd12-chain"
+          },
+          {
+            "length": 16385,
+            "layer": 19,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "cmd12-chain"
+          },
+          {
+            "length": 16385,
+            "layer": 23,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "cmd12-chain"
+          },
+          {
+            "length": 16385,
+            "layer": 27,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "cmd12-chain"
+          },
+          {
+            "length": 16385,
+            "layer": 31,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "cmd12-chain"
+          },
+          {
+            "length": 16385,
+            "layer": 35,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "cmd12-chain"
+          },
+          {
+            "length": 16385,
+            "layer": 39,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "cmd12-chain"
+          }
+        ]
+      },
+      {
+        "context_tokens": 16384,
+        "mode": "scalar",
+        "status": "COMPLETE_PROCESS_TRIAL",
+        "n": 1,
+        "binary_sha256": "175bd2b7672cde0dd71ff0db6ccb4cbf365e70db76713e242312691a6839530e",
+        "pre_host_free_percent": 59,
+        "post_gpu": [
+          78,
+          0,
+          0,
+          0
+        ],
+        "memory": {
+          "samples": 4152,
+          "observed_peak_physical_bytes": 2219350760,
+          "lifetime_peak_physical_bytes": 2219350760,
+          "sampled_peak_rss_bytes": 1423507456
+        },
+        "budget": {
+          "exit": -15,
+          "peak_rss_bytes": 1423802368,
+          "stop_reason": null
+        },
+        "cases": [
+          {
+            "label": "cold",
+            "timings": {
+              "generated_tokens": 32,
+              "decode_tokens_per_second": 4.3733262864696885,
+              "cached_prefix_tokens": 0,
+              "prefill_ms": 2123869.4970703125,
+              "decode_ms": 7317.0849609375,
+              "context_tokens": 16384,
+              "prefill_tokens": 16384,
+              "prefill_tokens_per_second": 7.714221623597994,
+              "session_reused": 0,
+              "warm_prefix_reused": false
+            },
+            "wire_ttft_ms": 2123898.4468750004,
+            "wall_ms": 2131201.122125,
+            "allocation": {
+              "gpu_capacity": 32768,
+              "kv_lengths": {
+                "7": 16416,
+                "3": 16416,
+                "39": 16416,
+                "11": 16416,
+                "19": 16416,
+                "27": 16416,
+                "35": 16416,
+                "15": 16416,
+                "23": 16416,
+                "31": 16416
+              },
+              "metal_allocated_bytes": 4845830144,
+              "resident_pos": 16416,
+              "context_tokens": 16434,
+              "prefill_tokens": 18,
+              "cpu_capacity": 65536,
+              "session_reused": 1,
+              "state_hash": "not_requested"
+            },
+            "host_phases": {
+              "records": 0,
+              "totals": {},
+              "scope": "Existing host wall-time phase counters; count fields retain original names, not hardware GPU timestamps"
+            }
+          },
+          {
+            "label": "warm",
+            "timings": {
+              "generated_tokens": 32,
+              "decode_tokens_per_second": 3.986814118441765,
+              "cached_prefix_tokens": 0,
+              "prefill_ms": 2148033.58203125,
+              "decode_ms": 8026.458984375,
+              "context_tokens": 16384,
+              "prefill_tokens": 16384,
+              "prefill_tokens_per_second": 7.627441273290876,
+              "session_reused": 0,
+              "warm_prefix_reused": false
+            },
+            "wire_ttft_ms": 2148090.2974170004,
+            "wall_ms": 2156102.2945830007,
+            "allocation": {
+              "gpu_capacity": 32768,
+              "kv_lengths": {
+                "7": 16416,
+                "3": 16416,
+                "39": 16416,
+                "11": 16416,
+                "19": 16416,
+                "27": 16416,
+                "35": 16416,
+                "15": 16416,
+                "23": 16416,
+                "31": 16416
+              },
+              "metal_allocated_bytes": 4845830144,
+              "resident_pos": 16416,
+              "context_tokens": 16434,
+              "prefill_tokens": 18,
+              "cpu_capacity": 65536,
+              "session_reused": 1,
+              "state_hash": "not_requested"
+            },
+            "host_phases": {
+              "records": 0,
+              "totals": {},
+              "scope": "Existing host wall-time phase counters; count fields retain original names, not hardware GPU timestamps"
+            }
+          }
+        ],
+        "routes": [
+          {
+            "length": 8191,
+            "layer": 3,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "cmd12-chain"
+          },
+          {
+            "length": 8191,
+            "layer": 7,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "cmd12-chain"
+          },
+          {
+            "length": 8191,
+            "layer": 11,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "cmd12-chain"
+          },
+          {
+            "length": 8191,
+            "layer": 15,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "cmd12-chain"
+          },
+          {
+            "length": 8191,
+            "layer": 19,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "cmd12-chain"
+          },
+          {
+            "length": 8191,
+            "layer": 23,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "cmd12-chain"
+          },
+          {
+            "length": 8191,
+            "layer": 27,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "cmd12-chain"
+          },
+          {
+            "length": 8191,
+            "layer": 31,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "cmd12-chain"
+          },
+          {
+            "length": 8191,
+            "layer": 35,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "cmd12-chain"
+          },
+          {
+            "length": 8191,
+            "layer": 39,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "cmd12-chain"
+          },
+          {
+            "length": 8192,
+            "layer": 3,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "cmd12-chain"
+          },
+          {
+            "length": 8192,
+            "layer": 7,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "cmd12-chain"
+          },
+          {
+            "length": 8192,
+            "layer": 11,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "cmd12-chain"
+          },
+          {
+            "length": 8192,
+            "layer": 15,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "cmd12-chain"
+          },
+          {
+            "length": 8192,
+            "layer": 19,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "cmd12-chain"
+          },
+          {
+            "length": 8192,
+            "layer": 23,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "cmd12-chain"
+          },
+          {
+            "length": 8192,
+            "layer": 27,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "cmd12-chain"
+          },
+          {
+            "length": 8192,
+            "layer": 31,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "cmd12-chain"
+          },
+          {
+            "length": 8192,
+            "layer": 35,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "cmd12-chain"
+          },
+          {
+            "length": 8192,
+            "layer": 39,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "cmd12-chain"
+          },
+          {
+            "length": 8193,
+            "layer": 3,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "cmd12-chain"
+          },
+          {
+            "length": 8193,
+            "layer": 7,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "cmd12-chain"
+          },
+          {
+            "length": 8193,
+            "layer": 11,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "cmd12-chain"
+          },
+          {
+            "length": 8193,
+            "layer": 15,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "cmd12-chain"
+          },
+          {
+            "length": 8193,
+            "layer": 19,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "cmd12-chain"
+          },
+          {
+            "length": 8193,
+            "layer": 23,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "cmd12-chain"
+          },
+          {
+            "length": 8193,
+            "layer": 27,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "cmd12-chain"
+          },
+          {
+            "length": 8193,
+            "layer": 31,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "cmd12-chain"
+          },
+          {
+            "length": 8193,
+            "layer": 35,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "cmd12-chain"
+          },
+          {
+            "length": 8193,
+            "layer": 39,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "cmd12-chain"
+          },
+          {
+            "length": 12288,
+            "layer": 3,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "cmd12-chain"
+          },
+          {
+            "length": 12288,
+            "layer": 7,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "cmd12-chain"
+          },
+          {
+            "length": 12288,
+            "layer": 11,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "cmd12-chain"
+          },
+          {
+            "length": 12288,
+            "layer": 15,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "cmd12-chain"
+          },
+          {
+            "length": 12288,
+            "layer": 19,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "cmd12-chain"
+          },
+          {
+            "length": 12288,
+            "layer": 23,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "cmd12-chain"
+          },
+          {
+            "length": 12288,
+            "layer": 27,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "cmd12-chain"
+          },
+          {
+            "length": 12288,
+            "layer": 31,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "cmd12-chain"
+          },
+          {
+            "length": 12288,
+            "layer": 35,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "cmd12-chain"
+          },
+          {
+            "length": 12288,
+            "layer": 39,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "cmd12-chain"
+          },
+          {
+            "length": 16384,
+            "layer": 3,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "cmd12-chain"
+          },
+          {
+            "length": 16384,
+            "layer": 7,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "cmd12-chain"
+          },
+          {
+            "length": 16384,
+            "layer": 11,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "cmd12-chain"
+          },
+          {
+            "length": 16384,
+            "layer": 15,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "cmd12-chain"
+          },
+          {
+            "length": 16384,
+            "layer": 19,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "cmd12-chain"
+          },
+          {
+            "length": 16384,
+            "layer": 23,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "cmd12-chain"
+          },
+          {
+            "length": 16384,
+            "layer": 27,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "cmd12-chain"
+          },
+          {
+            "length": 16384,
+            "layer": 31,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "cmd12-chain"
+          },
+          {
+            "length": 16384,
+            "layer": 35,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "cmd12-chain"
+          },
+          {
+            "length": 16384,
+            "layer": 39,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "cmd12-chain"
+          },
+          {
+            "length": 16385,
+            "layer": 3,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "cmd12-chain"
+          },
+          {
+            "length": 16385,
+            "layer": 7,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "cmd12-chain"
+          },
+          {
+            "length": 16385,
+            "layer": 11,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "cmd12-chain"
+          },
+          {
+            "length": 16385,
+            "layer": 15,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "cmd12-chain"
+          },
+          {
+            "length": 16385,
+            "layer": 19,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "cmd12-chain"
+          },
+          {
+            "length": 16385,
+            "layer": 23,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "cmd12-chain"
+          },
+          {
+            "length": 16385,
+            "layer": 27,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "cmd12-chain"
+          },
+          {
+            "length": 16385,
+            "layer": 31,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "cmd12-chain"
+          },
+          {
+            "length": 16385,
+            "layer": 35,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "cmd12-chain"
+          },
+          {
+            "length": 16385,
+            "layer": 39,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "cmd12-chain"
+          }
+        ]
+      },
+      {
+        "context_tokens": 32768,
+        "mode": "ordinary",
+        "status": "COMPLETE_PROCESS_TRIAL",
+        "n": 1,
+        "binary_sha256": "175bd2b7672cde0dd71ff0db6ccb4cbf365e70db76713e242312691a6839530e",
+        "pre_host_free_percent": 58,
+        "post_gpu": [
+          8,
+          0,
+          0
+        ],
+        "memory": {
+          "samples": 6128,
+          "observed_peak_physical_bytes": 3505091160,
+          "lifetime_peak_physical_bytes": 3505091160,
+          "sampled_peak_rss_bytes": 9214394368
+        },
+        "budget": {
+          "exit": -15,
+          "peak_rss_bytes": 9267773440,
+          "stop_reason": null
+        },
+        "cases": [
+          {
+            "label": "cold",
+            "timings": {
+              "generated_tokens": 32,
+              "decode_tokens_per_second": 1.1838360069205707,
+              "cached_prefix_tokens": 0,
+              "prefill_ms": 3098960.5849609375,
+              "decode_ms": 27030.77099609375,
+              "context_tokens": 32768,
+              "prefill_tokens": 32768,
+              "prefill_tokens_per_second": 10.573867947537332,
+              "session_reused": 0,
+              "warm_prefix_reused": false
+            },
+            "wire_ttft_ms": 3099083.797417,
+            "wall_ms": 3126083.328,
+            "allocation": {
+              "gpu_capacity": 32768,
+              "kv_lengths": {
+                "7": 32800,
+                "3": 32800,
+                "39": 32800,
+                "11": 32800,
+                "19": 32800,
+                "27": 32800,
+                "35": 32800,
+                "15": 32800,
+                "23": 32800,
+                "31": 32800
+              },
+              "metal_allocated_bytes": 5357207552,
+              "resident_pos": 32800,
+              "context_tokens": 32818,
+              "prefill_tokens": 18,
+              "cpu_capacity": 65536,
+              "session_reused": 1,
+              "state_hash": "not_requested"
+            },
+            "host_phases": {
+              "records": 255,
+              "totals": {
+                "full_layers": 2550.0,
+                "full_qkv": 44087.71200000004,
+                "full_rowwise": 116581.04000000001,
+                "full_grouped": 120481.84899999999,
+                "linear_layers": 7650.0,
+                "linear_batch": 213182.38099999994,
+                "linear_post_batch": 96593.32799999998,
+                "linear_rowwise": 0.0,
+                "linear_grouped": 333330.9309999997,
+                "linear_grouping": 129.18399999999997,
+                "linear_stage": 96592.611,
+                "linear_expert": 200954.97200000004,
+                "linear_cache": 18538.096000000012,
+                "linear_shared": 15745.283999999987,
+                "linear_combine": 2463.560000000001
+              },
+              "scope": "Existing host wall-time phase counters; count fields retain original names, not hardware GPU timestamps"
+            }
+          },
+          {
+            "label": "warm",
+            "timings": {
+              "generated_tokens": 32,
+              "decode_tokens_per_second": 1.1799004491402971,
+              "cached_prefix_tokens": 0,
+              "prefill_ms": 3145699.0791015625,
+              "decode_ms": 27120.93212890625,
+              "context_tokens": 32768,
+              "prefill_tokens": 32768,
+              "prefill_tokens_per_second": 10.416762435318132,
+              "session_reused": 0,
+              "warm_prefix_reused": false
+            },
+            "wire_ttft_ms": 3145816.131917,
+            "wall_ms": 3172888.478417,
+            "allocation": {
+              "gpu_capacity": 32768,
+              "kv_lengths": {
+                "7": 32800,
+                "3": 32800,
+                "39": 32800,
+                "11": 32800,
+                "19": 32800,
+                "27": 32800,
+                "35": 32800,
+                "15": 32800,
+                "23": 32800,
+                "31": 32800
+              },
+              "metal_allocated_bytes": 5357207552,
+              "resident_pos": 32800,
+              "context_tokens": 32818,
+              "prefill_tokens": 18,
+              "cpu_capacity": 65536,
+              "session_reused": 1,
+              "state_hash": "not_requested"
+            },
+            "host_phases": {
+              "records": 255,
+              "totals": {
+                "full_layers": 2550.0,
+                "full_qkv": 44127.25099999997,
+                "full_rowwise": 117249.81899999997,
+                "full_grouped": 130700.02900000001,
+                "linear_layers": 7650.0,
+                "linear_batch": 213281.58699999997,
+                "linear_post_batch": 96441.68299999998,
+                "linear_rowwise": 0.0,
+                "linear_grouped": 364450.2320000002,
+                "linear_grouping": 129.84799999999987,
+                "linear_stage": 126668.37,
+                "linear_expert": 201104.58300000007,
+                "linear_cache": 19468.853000000014,
+                "linear_shared": 15695.538999999993,
+                "linear_combine": 2474.735999999997
+              },
+              "scope": "Existing host wall-time phase counters; count fields retain original names, not hardware GPU timestamps"
+            }
+          }
+        ],
+        "routes": [
+          {
+            "length": 8191,
+            "layer": 3,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "nrow-attention"
+          },
+          {
+            "length": 8192,
+            "layer": 3,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "nrow-attention"
+          },
+          {
+            "length": 8191,
+            "layer": 7,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "nrow-attention"
+          },
+          {
+            "length": 8192,
+            "layer": 7,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "nrow-attention"
+          },
+          {
+            "length": 8191,
+            "layer": 11,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "nrow-attention"
+          },
+          {
+            "length": 8192,
+            "layer": 11,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "nrow-attention"
+          },
+          {
+            "length": 8191,
+            "layer": 15,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "nrow-attention"
+          },
+          {
+            "length": 8192,
+            "layer": 15,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "nrow-attention"
+          },
+          {
+            "length": 8191,
+            "layer": 19,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "nrow-attention"
+          },
+          {
+            "length": 8192,
+            "layer": 19,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "nrow-attention"
+          },
+          {
+            "length": 8191,
+            "layer": 23,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "nrow-attention"
+          },
+          {
+            "length": 8192,
+            "layer": 23,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "nrow-attention"
+          },
+          {
+            "length": 8191,
+            "layer": 27,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "nrow-attention"
+          },
+          {
+            "length": 8192,
+            "layer": 27,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "nrow-attention"
+          },
+          {
+            "length": 8191,
+            "layer": 31,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "nrow-attention"
+          },
+          {
+            "length": 8192,
+            "layer": 31,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "nrow-attention"
+          },
+          {
+            "length": 8191,
+            "layer": 35,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "nrow-attention"
+          },
+          {
+            "length": 8192,
+            "layer": 35,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "nrow-attention"
+          },
+          {
+            "length": 8191,
+            "layer": 39,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "nrow-attention"
+          },
+          {
+            "length": 8192,
+            "layer": 39,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "nrow-attention"
+          },
+          {
+            "length": 8193,
+            "layer": 3,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "nrow-attention"
+          },
+          {
+            "length": 8193,
+            "layer": 7,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "nrow-attention"
+          },
+          {
+            "length": 8193,
+            "layer": 11,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "nrow-attention"
+          },
+          {
+            "length": 8193,
+            "layer": 15,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "nrow-attention"
+          },
+          {
+            "length": 8193,
+            "layer": 19,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "nrow-attention"
+          },
+          {
+            "length": 8193,
+            "layer": 23,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "nrow-attention"
+          },
+          {
+            "length": 8193,
+            "layer": 27,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "nrow-attention"
+          },
+          {
+            "length": 8193,
+            "layer": 31,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "nrow-attention"
+          },
+          {
+            "length": 8193,
+            "layer": 35,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "nrow-attention"
+          },
+          {
+            "length": 8193,
+            "layer": 39,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "nrow-attention"
+          },
+          {
+            "length": 12288,
+            "layer": 3,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "nrow-attention"
+          },
+          {
+            "length": 12288,
+            "layer": 7,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "nrow-attention"
+          },
+          {
+            "length": 12288,
+            "layer": 11,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "nrow-attention"
+          },
+          {
+            "length": 12288,
+            "layer": 15,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "nrow-attention"
+          },
+          {
+            "length": 12288,
+            "layer": 19,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "nrow-attention"
+          },
+          {
+            "length": 12288,
+            "layer": 23,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "nrow-attention"
+          },
+          {
+            "length": 12288,
+            "layer": 27,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "nrow-attention"
+          },
+          {
+            "length": 12288,
+            "layer": 31,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "nrow-attention"
+          },
+          {
+            "length": 12288,
+            "layer": 35,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "nrow-attention"
+          },
+          {
+            "length": 12288,
+            "layer": 39,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "nrow-attention"
+          },
+          {
+            "length": 16384,
+            "layer": 3,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "nrow-attention"
+          },
+          {
+            "length": 16384,
+            "layer": 7,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "nrow-attention"
+          },
+          {
+            "length": 16384,
+            "layer": 11,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "nrow-attention"
+          },
+          {
+            "length": 16384,
+            "layer": 15,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "nrow-attention"
+          },
+          {
+            "length": 16384,
+            "layer": 19,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "nrow-attention"
+          },
+          {
+            "length": 16384,
+            "layer": 23,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "nrow-attention"
+          },
+          {
+            "length": 16384,
+            "layer": 27,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "nrow-attention"
+          },
+          {
+            "length": 16384,
+            "layer": 31,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "nrow-attention"
+          },
+          {
+            "length": 16384,
+            "layer": 35,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "nrow-attention"
+          },
+          {
+            "length": 16384,
+            "layer": 39,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "nrow-attention"
+          },
+          {
+            "length": 16385,
+            "layer": 3,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "nrow-attention"
+          },
+          {
+            "length": 16385,
+            "layer": 7,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "nrow-attention"
+          },
+          {
+            "length": 16385,
+            "layer": 11,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "nrow-attention"
+          },
+          {
+            "length": 16385,
+            "layer": 15,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "nrow-attention"
+          },
+          {
+            "length": 16385,
+            "layer": 19,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "nrow-attention"
+          },
+          {
+            "length": 16385,
+            "layer": 23,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "nrow-attention"
+          },
+          {
+            "length": 16385,
+            "layer": 27,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "nrow-attention"
+          },
+          {
+            "length": 16385,
+            "layer": 31,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "nrow-attention"
+          },
+          {
+            "length": 16385,
+            "layer": 35,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "nrow-attention"
+          },
+          {
+            "length": 16385,
+            "layer": 39,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "nrow-attention"
+          },
+          {
+            "length": 24576,
+            "layer": 3,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "nrow-attention"
+          },
+          {
+            "length": 24576,
+            "layer": 7,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "nrow-attention"
+          },
+          {
+            "length": 24576,
+            "layer": 11,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "nrow-attention"
+          },
+          {
+            "length": 24576,
+            "layer": 15,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "nrow-attention"
+          },
+          {
+            "length": 24576,
+            "layer": 19,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "nrow-attention"
+          },
+          {
+            "length": 24576,
+            "layer": 23,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "nrow-attention"
+          },
+          {
+            "length": 24576,
+            "layer": 27,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "nrow-attention"
+          },
+          {
+            "length": 24576,
+            "layer": 31,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "nrow-attention"
+          },
+          {
+            "length": 24576,
+            "layer": 35,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "nrow-attention"
+          },
+          {
+            "length": 24576,
+            "layer": 39,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "nrow-attention"
+          },
+          {
+            "length": 32767,
+            "layer": 3,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "cmd12-chain"
+          },
+          {
+            "length": 32767,
+            "layer": 7,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "cmd12-chain"
+          },
+          {
+            "length": 32767,
+            "layer": 11,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "cmd12-chain"
+          },
+          {
+            "length": 32767,
+            "layer": 15,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "cmd12-chain"
+          },
+          {
+            "length": 32767,
+            "layer": 19,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "cmd12-chain"
+          },
+          {
+            "length": 32767,
+            "layer": 23,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "cmd12-chain"
+          },
+          {
+            "length": 32767,
+            "layer": 27,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "cmd12-chain"
+          },
+          {
+            "length": 32767,
+            "layer": 31,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "cmd12-chain"
+          },
+          {
+            "length": 32767,
+            "layer": 35,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "cmd12-chain"
+          },
+          {
+            "length": 32767,
+            "layer": 39,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "cmd12-chain"
+          },
+          {
+            "length": 32768,
+            "layer": 3,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "cmd12-chain"
+          },
+          {
+            "length": 32768,
+            "layer": 7,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "cmd12-chain"
+          },
+          {
+            "length": 32768,
+            "layer": 11,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "cmd12-chain"
+          },
+          {
+            "length": 32768,
+            "layer": 15,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "cmd12-chain"
+          },
+          {
+            "length": 32768,
+            "layer": 19,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "cmd12-chain"
+          },
+          {
+            "length": 32768,
+            "layer": 23,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "cmd12-chain"
+          },
+          {
+            "length": 32768,
+            "layer": 27,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "cmd12-chain"
+          },
+          {
+            "length": 32768,
+            "layer": 31,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "cmd12-chain"
+          },
+          {
+            "length": 32768,
+            "layer": 35,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "cmd12-chain"
+          },
+          {
+            "length": 32768,
+            "layer": 39,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "cmd12-chain"
+          },
+          {
+            "length": 32769,
+            "layer": 3,
+            "cap": 32768,
+            "backend": "CPU",
+            "route": "standalone-attn"
+          },
+          {
+            "length": 32769,
+            "layer": 7,
+            "cap": 32768,
+            "backend": "CPU",
+            "route": "standalone-attn"
+          },
+          {
+            "length": 32769,
+            "layer": 11,
+            "cap": 32768,
+            "backend": "CPU",
+            "route": "standalone-attn"
+          },
+          {
+            "length": 32769,
+            "layer": 15,
+            "cap": 32768,
+            "backend": "CPU",
+            "route": "standalone-attn"
+          },
+          {
+            "length": 32769,
+            "layer": 19,
+            "cap": 32768,
+            "backend": "CPU",
+            "route": "standalone-attn"
+          },
+          {
+            "length": 32769,
+            "layer": 23,
+            "cap": 32768,
+            "backend": "CPU",
+            "route": "standalone-attn"
+          },
+          {
+            "length": 32769,
+            "layer": 27,
+            "cap": 32768,
+            "backend": "CPU",
+            "route": "standalone-attn"
+          },
+          {
+            "length": 32769,
+            "layer": 31,
+            "cap": 32768,
+            "backend": "CPU",
+            "route": "standalone-attn"
+          },
+          {
+            "length": 32769,
+            "layer": 35,
+            "cap": 32768,
+            "backend": "CPU",
+            "route": "standalone-attn"
+          },
+          {
+            "length": 32769,
+            "layer": 39,
+            "cap": 32768,
+            "backend": "CPU",
+            "route": "standalone-attn"
+          },
+          {
+            "length": 32770,
+            "layer": 3,
+            "cap": 32768,
+            "backend": "CPU",
+            "route": "standalone-attn"
+          },
+          {
+            "length": 32770,
+            "layer": 7,
+            "cap": 32768,
+            "backend": "CPU",
+            "route": "standalone-attn"
+          },
+          {
+            "length": 32770,
+            "layer": 11,
+            "cap": 32768,
+            "backend": "CPU",
+            "route": "standalone-attn"
+          },
+          {
+            "length": 32770,
+            "layer": 15,
+            "cap": 32768,
+            "backend": "CPU",
+            "route": "standalone-attn"
+          },
+          {
+            "length": 32770,
+            "layer": 19,
+            "cap": 32768,
+            "backend": "CPU",
+            "route": "standalone-attn"
+          },
+          {
+            "length": 32770,
+            "layer": 23,
+            "cap": 32768,
+            "backend": "CPU",
+            "route": "standalone-attn"
+          },
+          {
+            "length": 32770,
+            "layer": 27,
+            "cap": 32768,
+            "backend": "CPU",
+            "route": "standalone-attn"
+          },
+          {
+            "length": 32770,
+            "layer": 31,
+            "cap": 32768,
+            "backend": "CPU",
+            "route": "standalone-attn"
+          },
+          {
+            "length": 32770,
+            "layer": 35,
+            "cap": 32768,
+            "backend": "CPU",
+            "route": "standalone-attn"
+          },
+          {
+            "length": 32770,
+            "layer": 39,
+            "cap": 32768,
+            "backend": "CPU",
+            "route": "standalone-attn"
+          },
+          {
+            "length": 32771,
+            "layer": 3,
+            "cap": 32768,
+            "backend": "CPU",
+            "route": "standalone-attn"
+          },
+          {
+            "length": 32771,
+            "layer": 7,
+            "cap": 32768,
+            "backend": "CPU",
+            "route": "standalone-attn"
+          },
+          {
+            "length": 32771,
+            "layer": 11,
+            "cap": 32768,
+            "backend": "CPU",
+            "route": "standalone-attn"
+          },
+          {
+            "length": 32771,
+            "layer": 15,
+            "cap": 32768,
+            "backend": "CPU",
+            "route": "standalone-attn"
+          },
+          {
+            "length": 32771,
+            "layer": 19,
+            "cap": 32768,
+            "backend": "CPU",
+            "route": "standalone-attn"
+          },
+          {
+            "length": 32771,
+            "layer": 23,
+            "cap": 32768,
+            "backend": "CPU",
+            "route": "standalone-attn"
+          },
+          {
+            "length": 32771,
+            "layer": 27,
+            "cap": 32768,
+            "backend": "CPU",
+            "route": "standalone-attn"
+          },
+          {
+            "length": 32771,
+            "layer": 31,
+            "cap": 32768,
+            "backend": "CPU",
+            "route": "standalone-attn"
+          },
+          {
+            "length": 32771,
+            "layer": 35,
+            "cap": 32768,
+            "backend": "CPU",
+            "route": "standalone-attn"
+          },
+          {
+            "length": 32771,
+            "layer": 39,
+            "cap": 32768,
+            "backend": "CPU",
+            "route": "standalone-attn"
+          }
+        ]
+      }
+    ],
+    "interrupted_trial_requests": [
+      {
+        "context_tokens": 32768,
+        "mode": "mask63",
+        "status": "COMPLETE_REQUEST_IN_INTERRUPTED_TRIAL",
+        "scope": "SSE finish/DONE and allocation observer completed; parent console pipe failed before warm request or final post-process guard record",
+        "cases": [
+          {
+            "label": "cold",
+            "timings": {
+              "generated_tokens": 32,
+              "decode_tokens_per_second": 1.1815076741750288,
+              "cached_prefix_tokens": 0,
+              "prefill_ms": 3580765.4279785156,
+              "decode_ms": 27084.0390625,
+              "context_tokens": 32768,
+              "prefill_tokens": 32768,
+              "prefill_tokens_per_second": 9.151116055792249,
+              "session_reused": 0,
+              "warm_prefix_reused": false
+            },
+            "wire_ttft_ms": 3580937.2237500004,
+            "wall_ms": 3607981.9619590007,
+            "allocation": {
+              "gpu_capacity": 32768,
+              "kv_lengths": {
+                "7": 32800,
+                "3": 32800,
+                "39": 32800,
+                "11": 32800,
+                "19": 32800,
+                "27": 32800,
+                "35": 32800,
+                "15": 32800,
+                "23": 32800,
+                "31": 32800
+              },
+              "metal_allocated_bytes": 5357207552,
+              "resident_pos": 32800,
+              "context_tokens": 32818,
+              "prefill_tokens": 18,
+              "cpu_capacity": 65536,
+              "session_reused": 1,
+              "state_hash": "not_requested"
+            },
+            "host_phases": {
+              "records": 255,
+              "totals": {
+                "full_layers": 2550.0,
+                "full_qkv": 45740.495,
+                "full_rowwise": 120653.24999999999,
+                "full_grouped": 112861.58400000005,
+                "linear_layers": 7650.0,
+                "linear_batch": 217526.08400000003,
+                "linear_post_batch": 101585.10300000002,
+                "linear_rowwise": 0.0,
+                "linear_grouped": 313162.38300000015,
+                "linear_grouping": 130.12100000000004,
+                "linear_stage": 72359.08100000005,
+                "linear_expert": 202246.21900000004,
+                "linear_cache": 14634.143999999995,
+                "linear_shared": 22468.23699999999,
+                "linear_combine": 7024.128999999995
+              },
+              "scope": "Existing host wall-time phase counters; count fields retain original names, not hardware GPU timestamps"
+            }
+          }
+        ]
+      }
+    ],
+    "warm_16k_mask63_overhead_percent": 18.541203563387953,
+    "warm_16k_mask63_vs_scalar_throughput": 1.8196550862561784,
+    "ordinary_32k_boundary_routes": {
+      "32768": {
+        "GPU": [
+          3,
+          7,
+          11,
+          15,
+          19,
+          23,
+          27,
+          31,
+          35,
+          39
+        ],
+        "CPU": []
+      },
+      "32769": {
+        "GPU": [],
+        "CPU": [
+          3,
+          7,
+          11,
+          15,
+          19,
+          23,
+          27,
+          31,
+          35,
+          39
+        ]
+      },
+      "32770": {
+        "GPU": [],
+        "CPU": [
+          3,
+          7,
+          11,
+          15,
+          19,
+          23,
+          27,
+          31,
+          35,
+          39
+        ]
+      },
+      "32771": {
+        "GPU": [],
+        "CPU": [
+          3,
+          7,
+          11,
+          15,
+          19,
+          23,
+          27,
+          31,
+          35,
+          39
+        ]
+      }
+    },
+    "variability": "NOT_MEASURED: n=1 per mode/context/temperature; cold and warm are distinct conditions",
+    "confidence": "Exploratory process-wall timing, launch/post GPU gated; OS cache not purged, in-run contention not independently separable, expert-cache contents may diverge by arithmetic path",
+    "missing": [
+      "32K mask63 warm complete process trial",
+      "32K scalar cold/warm",
+      "Second and third repetitions",
+      "Hardware timestamp attention latency",
+      "HTTP per-expert cache hit counters"
+    ],
+    "completion_attempt": {
+      "original_parent_status": "RUNNING stale after console pipe lost",
+      "actual_model_processes_running": false,
+      "november6_child_status": "STOPPED",
+      "november6_error_type": "BrokenPipeError",
+      "november10_status": "BLOCKED_BEFORE_MODEL_LAUNCH",
+      "november10_stop_code": "HOST_MEMORY_LAUNCH_BLOCKED",
+      "memory_free_percent_observed": 34,
+      "required_launch_percent": 35,
+      "automatic_retry": false,
+      "production_modified": false
+    }
   },
   "build_reproducibility": {
     "whole_file_exact": false,
@@ -3656,7 +6264,7 @@
   },
   "performance": {
     "16384": {
-      "status": "RUNNING",
+      "status": "COMPLETED_EXPLORATORY",
       "started": "2026-11-06T00:46:36.171090-08:00",
       "release_manifest_sha256": "86f5ffa6bd6ce42dcc81a934fdc82040a8f1059cf14ec53ec23e575957f56fce",
       "runner_sha256": "10da695cc4b341fe34e9d4affeea81ee1b5de98709dd4c368b960373bf35b310",
@@ -3666,13 +6274,2901 @@
       "repeats": 1,
       "cache_scope": "Fresh process first-request then same-process repeat; same IDs/cache settings, no OS-page-cache purge; system startup may warm experts; no full-binary cache invalidation",
       "attention_latency_scope": "Existing host wall-phase aggregates, not GPU timestamp counters",
-      "rows": [],
-      "completed_process_trials": 0
+      "ended": "2026-11-06T03:16:55.964593-08:00",
+      "summary": {
+        "ordinary": {
+          "cold": {
+            "prefill_ms": {
+              "n": 1,
+              "median": 1325304.9560546875,
+              "min": 1325304.9560546875,
+              "max": 1325304.9560546875,
+              "stdev": null
+            },
+            "prefill_tokens_per_second": {
+              "n": 1,
+              "median": 12.36243773566929,
+              "min": 12.36243773566929,
+              "max": 12.36243773566929,
+              "stdev": null
+            },
+            "generated_tokens": {
+              "n": 1,
+              "median": 32,
+              "min": 32,
+              "max": 32,
+              "stdev": null
+            },
+            "decode_ms": {
+              "n": 1,
+              "median": 7993.06494140625,
+              "min": 7993.06494140625,
+              "max": 7993.06494140625,
+              "stdev": null
+            },
+            "decode_tokens_per_second": {
+              "n": 1,
+              "median": 4.003470537844788,
+              "min": 4.003470537844788,
+              "max": 4.003470537844788,
+              "stdev": null
+            },
+            "cached_prefix_tokens": {
+              "n": 1,
+              "median": 0,
+              "min": 0,
+              "max": 0,
+              "stdev": null
+            },
+            "prefill_tokens": {
+              "n": 1,
+              "median": 16384,
+              "min": 16384,
+              "max": 16384,
+              "stdev": null
+            },
+            "wall_ms": {
+              "n": 1,
+              "median": 1333356.295667,
+              "min": 1333356.295667,
+              "max": 1333356.295667
+            },
+            "wire_ttft_ms": {
+              "n": 1,
+              "median": 1325380.6532080001,
+              "min": 1325380.6532080001,
+              "max": 1325380.6532080001
+            }
+          },
+          "warm": {
+            "prefill_ms": {
+              "n": 1,
+              "median": 995824.16015625,
+              "min": 995824.16015625,
+              "max": 995824.16015625,
+              "stdev": null
+            },
+            "prefill_tokens_per_second": {
+              "n": 1,
+              "median": 16.45270385630056,
+              "min": 16.45270385630056,
+              "max": 16.45270385630056,
+              "stdev": null
+            },
+            "generated_tokens": {
+              "n": 1,
+              "median": 32,
+              "min": 32,
+              "max": 32,
+              "stdev": null
+            },
+            "decode_ms": {
+              "n": 1,
+              "median": 7163.5791015625,
+              "min": 7163.5791015625,
+              "max": 7163.5791015625,
+              "stdev": null
+            },
+            "decode_tokens_per_second": {
+              "n": 1,
+              "median": 4.467040783149899,
+              "min": 4.467040783149899,
+              "max": 4.467040783149899,
+              "stdev": null
+            },
+            "cached_prefix_tokens": {
+              "n": 1,
+              "median": 0,
+              "min": 0,
+              "max": 0,
+              "stdev": null
+            },
+            "prefill_tokens": {
+              "n": 1,
+              "median": 16384,
+              "min": 16384,
+              "max": 16384,
+              "stdev": null
+            },
+            "wall_ms": {
+              "n": 1,
+              "median": 1003032.4896660001,
+              "min": 1003032.4896660001,
+              "max": 1003032.4896660001
+            },
+            "wire_ttft_ms": {
+              "n": 1,
+              "median": 995882.290625,
+              "min": 995882.290625,
+              "max": 995882.290625
+            }
+          }
+        },
+        "mask63": {
+          "cold": {
+            "prefill_ms": {
+              "n": 1,
+              "median": 1174335.0209960938,
+              "min": 1174335.0209960938,
+              "max": 1174335.0209960938,
+              "stdev": null
+            },
+            "prefill_tokens_per_second": {
+              "n": 1,
+              "median": 13.951725620941435,
+              "min": 13.951725620941435,
+              "max": 13.951725620941435,
+              "stdev": null
+            },
+            "generated_tokens": {
+              "n": 1,
+              "median": 32,
+              "min": 32,
+              "max": 32,
+              "stdev": null
+            },
+            "decode_ms": {
+              "n": 1,
+              "median": 7026.151123046875,
+              "min": 7026.151123046875,
+              "max": 7026.151123046875,
+              "stdev": null
+            },
+            "decode_tokens_per_second": {
+              "n": 1,
+              "median": 4.554413851850552,
+              "min": 4.554413851850552,
+              "max": 4.554413851850552,
+              "stdev": null
+            },
+            "cached_prefix_tokens": {
+              "n": 1,
+              "median": 0,
+              "min": 0,
+              "max": 0,
+              "stdev": null
+            },
+            "prefill_tokens": {
+              "n": 1,
+              "median": 16384,
+              "min": 16384,
+              "max": 16384,
+              "stdev": null
+            },
+            "wall_ms": {
+              "n": 1,
+              "median": 1181396.340625,
+              "min": 1181396.340625,
+              "max": 1181396.340625
+            },
+            "wire_ttft_ms": {
+              "n": 1,
+              "median": 1174385.3992919999,
+              "min": 1174385.3992919999,
+              "max": 1174385.3992919999
+            }
+          },
+          "warm": {
+            "prefill_ms": {
+              "n": 1,
+              "median": 1180461.9448242188,
+              "min": 1180461.9448242188,
+              "max": 1180461.9448242188,
+              "stdev": null
+            },
+            "prefill_tokens_per_second": {
+              "n": 1,
+              "median": 13.879312308064046,
+              "min": 13.879312308064046,
+              "max": 13.879312308064046,
+              "stdev": null
+            },
+            "generated_tokens": {
+              "n": 1,
+              "median": 32,
+              "min": 32,
+              "max": 32,
+              "stdev": null
+            },
+            "decode_ms": {
+              "n": 1,
+              "median": 8100.43798828125,
+              "min": 8100.43798828125,
+              "max": 8100.43798828125,
+              "stdev": null
+            },
+            "decode_tokens_per_second": {
+              "n": 1,
+              "median": 3.9504036752449427,
+              "min": 3.9504036752449427,
+              "max": 3.9504036752449427,
+              "stdev": null
+            },
+            "cached_prefix_tokens": {
+              "n": 1,
+              "median": 0,
+              "min": 0,
+              "max": 0,
+              "stdev": null
+            },
+            "prefill_tokens": {
+              "n": 1,
+              "median": 16384,
+              "min": 16384,
+              "max": 16384,
+              "stdev": null
+            },
+            "wall_ms": {
+              "n": 1,
+              "median": 1188576.1425420002,
+              "min": 1188576.1425420002,
+              "max": 1188576.1425420002
+            },
+            "wire_ttft_ms": {
+              "n": 1,
+              "median": 1180488.2954589997,
+              "min": 1180488.2954589997,
+              "max": 1180488.2954589997
+            }
+          }
+        },
+        "scalar": {
+          "cold": {
+            "prefill_ms": {
+              "n": 1,
+              "median": 2123869.4970703125,
+              "min": 2123869.4970703125,
+              "max": 2123869.4970703125,
+              "stdev": null
+            },
+            "prefill_tokens_per_second": {
+              "n": 1,
+              "median": 7.714221623597994,
+              "min": 7.714221623597994,
+              "max": 7.714221623597994,
+              "stdev": null
+            },
+            "generated_tokens": {
+              "n": 1,
+              "median": 32,
+              "min": 32,
+              "max": 32,
+              "stdev": null
+            },
+            "decode_ms": {
+              "n": 1,
+              "median": 7317.0849609375,
+              "min": 7317.0849609375,
+              "max": 7317.0849609375,
+              "stdev": null
+            },
+            "decode_tokens_per_second": {
+              "n": 1,
+              "median": 4.3733262864696885,
+              "min": 4.3733262864696885,
+              "max": 4.3733262864696885,
+              "stdev": null
+            },
+            "cached_prefix_tokens": {
+              "n": 1,
+              "median": 0,
+              "min": 0,
+              "max": 0,
+              "stdev": null
+            },
+            "prefill_tokens": {
+              "n": 1,
+              "median": 16384,
+              "min": 16384,
+              "max": 16384,
+              "stdev": null
+            },
+            "wall_ms": {
+              "n": 1,
+              "median": 2131201.122125,
+              "min": 2131201.122125,
+              "max": 2131201.122125
+            },
+            "wire_ttft_ms": {
+              "n": 1,
+              "median": 2123898.4468750004,
+              "min": 2123898.4468750004,
+              "max": 2123898.4468750004
+            }
+          },
+          "warm": {
+            "prefill_ms": {
+              "n": 1,
+              "median": 2148033.58203125,
+              "min": 2148033.58203125,
+              "max": 2148033.58203125,
+              "stdev": null
+            },
+            "prefill_tokens_per_second": {
+              "n": 1,
+              "median": 7.627441273290876,
+              "min": 7.627441273290876,
+              "max": 7.627441273290876,
+              "stdev": null
+            },
+            "generated_tokens": {
+              "n": 1,
+              "median": 32,
+              "min": 32,
+              "max": 32,
+              "stdev": null
+            },
+            "decode_ms": {
+              "n": 1,
+              "median": 8026.458984375,
+              "min": 8026.458984375,
+              "max": 8026.458984375,
+              "stdev": null
+            },
+            "decode_tokens_per_second": {
+              "n": 1,
+              "median": 3.986814118441765,
+              "min": 3.986814118441765,
+              "max": 3.986814118441765,
+              "stdev": null
+            },
+            "cached_prefix_tokens": {
+              "n": 1,
+              "median": 0,
+              "min": 0,
+              "max": 0,
+              "stdev": null
+            },
+            "prefill_tokens": {
+              "n": 1,
+              "median": 16384,
+              "min": 16384,
+              "max": 16384,
+              "stdev": null
+            },
+            "wall_ms": {
+              "n": 1,
+              "median": 2156102.2945830007,
+              "min": 2156102.2945830007,
+              "max": 2156102.2945830007
+            },
+            "wire_ttft_ms": {
+              "n": 1,
+              "median": 2148090.2974170004,
+              "min": 2148090.2974170004,
+              "max": 2148090.2974170004
+            }
+          }
+        }
+      },
+      "confidence": "Single process/path: variability NOT MEASURED",
+      "rows": [
+        {
+          "trial": 0,
+          "mode": "ordinary",
+          "binary_sha256": "175bd2b7672cde0dd71ff0db6ccb4cbf365e70db76713e242312691a6839530e",
+          "post_gpu": [
+            83,
+            0,
+            0,
+            0
+          ],
+          "host_free_before": 63,
+          "budget": {
+            "exit": -15,
+            "peak_rss_bytes": 9271083008,
+            "stop_reason": null
+          },
+          "memory": {
+            "samples": 2273,
+            "observed_peak_physical_bytes": 2749755464,
+            "lifetime_peak_physical_bytes": 2749755464,
+            "sampled_peak_rss_bytes": 9264906240
+          },
+          "cases": [
+            {
+              "label": "cold",
+              "started": "2026-11-06T00:46:42.894416-08:00",
+              "ended": "2026-11-06T01:08:56.250747-08:00",
+              "wall_ms": 1333356.295667,
+              "wire_ttft_ms": 1325380.6532080001,
+              "timings": {
+                "generated_tokens": 32,
+                "decode_tokens_per_second": 4.003470537844788,
+                "cached_prefix_tokens": 0,
+                "prefill_ms": 1325304.9560546875,
+                "decode_ms": 7993.06494140625,
+                "context_tokens": 16384,
+                "prefill_tokens": 16384,
+                "prefill_tokens_per_second": 12.36243773566929,
+                "session_reused": 0,
+                "warm_prefix_reused": false
+              },
+              "usage": {
+                "prompt_tokens": 16384,
+                "completion_tokens": 32,
+                "total_tokens": 16416
+              },
+              "allocation": {
+                "gpu_capacity": 32768,
+                "kv_lengths": {
+                  "7": 16416,
+                  "3": 16416,
+                  "39": 16416,
+                  "11": 16416,
+                  "19": 16416,
+                  "27": 16416,
+                  "35": 16416,
+                  "15": 16416,
+                  "23": 16416,
+                  "31": 16416
+                },
+                "metal_allocated_bytes": 5357207552,
+                "resident_pos": 16416,
+                "context_tokens": 16434,
+                "prefill_tokens": 18,
+                "cpu_capacity": 65536,
+                "session_reused": 1,
+                "state_hash": "not_requested"
+              },
+              "nrow_host_phases": {
+                "records": 127,
+                "totals": {
+                  "full_layers": 1270.0,
+                  "full_qkv": 23793.288,
+                  "full_rowwise": 59730.63300000002,
+                  "full_grouped": 157837.98799999992,
+                  "linear_layers": 3810.0,
+                  "linear_batch": 112869.88599999998,
+                  "linear_post_batch": 51414.024000000005,
+                  "linear_rowwise": 0.0,
+                  "linear_grouped": 444854.80799999984,
+                  "linear_grouping": 79.55899999999998,
+                  "linear_stage": 306741.6870000002,
+                  "linear_expert": 110751.46500000001,
+                  "linear_cache": 17115.28900000001,
+                  "linear_shared": 9135.608000000004,
+                  "linear_combine": 1609.8640000000003
+                },
+                "scope": "Existing host wall-time phase counters; count fields retain original names, not hardware GPU timestamps"
+              }
+            },
+            {
+              "label": "warm",
+              "started": "2026-11-06T01:08:56.253546-08:00",
+              "ended": "2026-11-06T01:25:39.289126-08:00",
+              "wall_ms": 1003032.4896660001,
+              "wire_ttft_ms": 995882.290625,
+              "timings": {
+                "generated_tokens": 32,
+                "decode_tokens_per_second": 4.467040783149899,
+                "cached_prefix_tokens": 0,
+                "prefill_ms": 995824.16015625,
+                "decode_ms": 7163.5791015625,
+                "context_tokens": 16384,
+                "prefill_tokens": 16384,
+                "prefill_tokens_per_second": 16.45270385630056,
+                "session_reused": 0,
+                "warm_prefix_reused": false
+              },
+              "usage": {
+                "prompt_tokens": 16384,
+                "completion_tokens": 32,
+                "total_tokens": 16416
+              },
+              "allocation": {
+                "gpu_capacity": 32768,
+                "kv_lengths": {
+                  "7": 16416,
+                  "3": 16416,
+                  "39": 16416,
+                  "11": 16416,
+                  "19": 16416,
+                  "27": 16416,
+                  "35": 16416,
+                  "15": 16416,
+                  "23": 16416,
+                  "31": 16416
+                },
+                "metal_allocated_bytes": 5357207552,
+                "resident_pos": 16416,
+                "context_tokens": 16434,
+                "prefill_tokens": 18,
+                "cpu_capacity": 65536,
+                "session_reused": 1,
+                "state_hash": "not_requested"
+              },
+              "nrow_host_phases": {
+                "records": 127,
+                "totals": {
+                  "full_layers": 1270.0,
+                  "full_qkv": 21963.438000000006,
+                  "full_rowwise": 52230.29699999997,
+                  "full_grouped": 58903.46399999998,
+                  "linear_layers": 3810.0,
+                  "linear_batch": 106067.08899999998,
+                  "linear_post_batch": 48035.38799999999,
+                  "linear_rowwise": 0.0,
+                  "linear_grouped": 171883.04799999992,
+                  "linear_grouping": 66.68100000000001,
+                  "linear_stage": 53147.166000000005,
+                  "linear_expert": 100512.81099999997,
+                  "linear_cache": 9622.553999999998,
+                  "linear_shared": 7863.066000000001,
+                  "linear_combine": 1257.3130000000003
+                },
+                "scope": "Existing host wall-time phase counters; count fields retain original names, not hardware GPU timestamps"
+              }
+            }
+          ],
+          "boundary_routes": [
+            {
+              "length": 8191,
+              "layer": 3,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "nrow-attention"
+            },
+            {
+              "length": 8192,
+              "layer": 3,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "nrow-attention"
+            },
+            {
+              "length": 8191,
+              "layer": 7,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "nrow-attention"
+            },
+            {
+              "length": 8192,
+              "layer": 7,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "nrow-attention"
+            },
+            {
+              "length": 8191,
+              "layer": 11,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "nrow-attention"
+            },
+            {
+              "length": 8192,
+              "layer": 11,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "nrow-attention"
+            },
+            {
+              "length": 8191,
+              "layer": 15,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "nrow-attention"
+            },
+            {
+              "length": 8192,
+              "layer": 15,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "nrow-attention"
+            },
+            {
+              "length": 8191,
+              "layer": 19,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "nrow-attention"
+            },
+            {
+              "length": 8192,
+              "layer": 19,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "nrow-attention"
+            },
+            {
+              "length": 8191,
+              "layer": 23,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "nrow-attention"
+            },
+            {
+              "length": 8192,
+              "layer": 23,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "nrow-attention"
+            },
+            {
+              "length": 8191,
+              "layer": 27,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "nrow-attention"
+            },
+            {
+              "length": 8192,
+              "layer": 27,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "nrow-attention"
+            },
+            {
+              "length": 8191,
+              "layer": 31,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "nrow-attention"
+            },
+            {
+              "length": 8192,
+              "layer": 31,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "nrow-attention"
+            },
+            {
+              "length": 8191,
+              "layer": 35,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "nrow-attention"
+            },
+            {
+              "length": 8192,
+              "layer": 35,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "nrow-attention"
+            },
+            {
+              "length": 8191,
+              "layer": 39,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "nrow-attention"
+            },
+            {
+              "length": 8192,
+              "layer": 39,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "nrow-attention"
+            },
+            {
+              "length": 8193,
+              "layer": 3,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "nrow-attention"
+            },
+            {
+              "length": 8193,
+              "layer": 7,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "nrow-attention"
+            },
+            {
+              "length": 8193,
+              "layer": 11,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "nrow-attention"
+            },
+            {
+              "length": 8193,
+              "layer": 15,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "nrow-attention"
+            },
+            {
+              "length": 8193,
+              "layer": 19,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "nrow-attention"
+            },
+            {
+              "length": 8193,
+              "layer": 23,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "nrow-attention"
+            },
+            {
+              "length": 8193,
+              "layer": 27,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "nrow-attention"
+            },
+            {
+              "length": 8193,
+              "layer": 31,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "nrow-attention"
+            },
+            {
+              "length": 8193,
+              "layer": 35,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "nrow-attention"
+            },
+            {
+              "length": 8193,
+              "layer": 39,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "nrow-attention"
+            },
+            {
+              "length": 12288,
+              "layer": 3,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "nrow-attention"
+            },
+            {
+              "length": 12288,
+              "layer": 7,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "nrow-attention"
+            },
+            {
+              "length": 12288,
+              "layer": 11,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "nrow-attention"
+            },
+            {
+              "length": 12288,
+              "layer": 15,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "nrow-attention"
+            },
+            {
+              "length": 12288,
+              "layer": 19,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "nrow-attention"
+            },
+            {
+              "length": 12288,
+              "layer": 23,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "nrow-attention"
+            },
+            {
+              "length": 12288,
+              "layer": 27,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "nrow-attention"
+            },
+            {
+              "length": 12288,
+              "layer": 31,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "nrow-attention"
+            },
+            {
+              "length": 12288,
+              "layer": 35,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "nrow-attention"
+            },
+            {
+              "length": 12288,
+              "layer": 39,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "nrow-attention"
+            },
+            {
+              "length": 16384,
+              "layer": 3,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "cmd12-chain"
+            },
+            {
+              "length": 16384,
+              "layer": 7,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "cmd12-chain"
+            },
+            {
+              "length": 16384,
+              "layer": 11,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "cmd12-chain"
+            },
+            {
+              "length": 16384,
+              "layer": 15,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "cmd12-chain"
+            },
+            {
+              "length": 16384,
+              "layer": 19,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "cmd12-chain"
+            },
+            {
+              "length": 16384,
+              "layer": 23,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "cmd12-chain"
+            },
+            {
+              "length": 16384,
+              "layer": 27,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "cmd12-chain"
+            },
+            {
+              "length": 16384,
+              "layer": 31,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "cmd12-chain"
+            },
+            {
+              "length": 16384,
+              "layer": 35,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "cmd12-chain"
+            },
+            {
+              "length": 16384,
+              "layer": 39,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "cmd12-chain"
+            },
+            {
+              "length": 16385,
+              "layer": 3,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "cmd12-chain"
+            },
+            {
+              "length": 16385,
+              "layer": 7,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "cmd12-chain"
+            },
+            {
+              "length": 16385,
+              "layer": 11,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "cmd12-chain"
+            },
+            {
+              "length": 16385,
+              "layer": 15,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "cmd12-chain"
+            },
+            {
+              "length": 16385,
+              "layer": 19,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "cmd12-chain"
+            },
+            {
+              "length": 16385,
+              "layer": 23,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "cmd12-chain"
+            },
+            {
+              "length": 16385,
+              "layer": 27,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "cmd12-chain"
+            },
+            {
+              "length": 16385,
+              "layer": 31,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "cmd12-chain"
+            },
+            {
+              "length": 16385,
+              "layer": 35,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "cmd12-chain"
+            },
+            {
+              "length": 16385,
+              "layer": 39,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "cmd12-chain"
+            }
+          ],
+          "expert_cache_hit_counters_available": false,
+          "profile_phase_totals_two_requests": {
+            "full_layers": 2540.0,
+            "full_qkv": 45756.72599999998,
+            "full_rowwise": 111960.93000000011,
+            "full_grouped": 216741.45199999996,
+            "linear_layers": 7620.0,
+            "linear_batch": 218936.9750000001,
+            "linear_post_batch": 99449.41200000001,
+            "linear_rowwise": 0.0,
+            "linear_grouped": 616737.8560000001,
+            "linear_grouping": 146.23999999999998,
+            "linear_stage": 359888.85299999994,
+            "linear_expert": 211264.27600000007,
+            "linear_cache": 26737.843000000015,
+            "linear_shared": 16998.674,
+            "linear_combine": 2867.177
+          }
+        },
+        {
+          "trial": 0,
+          "mode": "mask63",
+          "binary_sha256": "734e00a3374ddaf5c84746ded6cc8a27f57d0b33865ba7d173fdb58d2183052a",
+          "post_gpu": [
+            80,
+            0,
+            0,
+            0
+          ],
+          "host_free_before": 59,
+          "budget": {
+            "exit": -15,
+            "peak_rss_bytes": 9430745088,
+            "stop_reason": null
+          },
+          "memory": {
+            "samples": 2305,
+            "observed_peak_physical_bytes": 2091216224,
+            "lifetime_peak_physical_bytes": 2091216224,
+            "sampled_peak_rss_bytes": 9388146688
+          },
+          "cases": [
+            {
+              "label": "cold",
+              "started": "2026-11-06T01:25:47.264272-08:00",
+              "ended": "2026-11-06T01:45:28.659763-08:00",
+              "wall_ms": 1181396.340625,
+              "wire_ttft_ms": 1174385.3992919999,
+              "timings": {
+                "generated_tokens": 32,
+                "decode_tokens_per_second": 4.554413851850552,
+                "cached_prefix_tokens": 0,
+                "prefill_ms": 1174335.0209960938,
+                "decode_ms": 7026.151123046875,
+                "context_tokens": 16384,
+                "prefill_tokens": 16384,
+                "prefill_tokens_per_second": 13.951725620941435,
+                "session_reused": 0,
+                "warm_prefix_reused": false
+              },
+              "usage": {
+                "prompt_tokens": 16384,
+                "completion_tokens": 32,
+                "total_tokens": 16416
+              },
+              "allocation": {
+                "gpu_capacity": 32768,
+                "kv_lengths": {
+                  "7": 16416,
+                  "3": 16416,
+                  "39": 16416,
+                  "11": 16416,
+                  "19": 16416,
+                  "27": 16416,
+                  "35": 16416,
+                  "15": 16416,
+                  "23": 16416,
+                  "31": 16416
+                },
+                "metal_allocated_bytes": 5357207552,
+                "resident_pos": 16416,
+                "context_tokens": 16434,
+                "prefill_tokens": 18,
+                "cpu_capacity": 65536,
+                "session_reused": 1,
+                "state_hash": "not_requested"
+              },
+              "nrow_host_phases": {
+                "records": 127,
+                "totals": {
+                  "full_layers": 1270.0,
+                  "full_qkv": 22636.283999999996,
+                  "full_rowwise": 48678.35399999999,
+                  "full_grouped": 67395.70799999998,
+                  "linear_layers": 3810.0,
+                  "linear_batch": 107438.11199999994,
+                  "linear_post_batch": 49304.888999999974,
+                  "linear_rowwise": 0.0,
+                  "linear_grouped": 195282.38499999992,
+                  "linear_grouping": 68.60799999999999,
+                  "linear_stage": 72704.64900000002,
+                  "linear_expert": 101063.332,
+                  "linear_cache": 9990.158000000001,
+                  "linear_shared": 10804.19,
+                  "linear_combine": 3379.9190000000003
+                },
+                "scope": "Existing host wall-time phase counters; count fields retain original names, not hardware GPU timestamps"
+              }
+            },
+            {
+              "label": "warm",
+              "started": "2026-11-06T01:45:28.661929-08:00",
+              "ended": "2026-11-06T02:05:17.272859-08:00",
+              "wall_ms": 1188576.1425420002,
+              "wire_ttft_ms": 1180488.2954589997,
+              "timings": {
+                "generated_tokens": 32,
+                "decode_tokens_per_second": 3.9504036752449427,
+                "cached_prefix_tokens": 0,
+                "prefill_ms": 1180461.9448242188,
+                "decode_ms": 8100.43798828125,
+                "context_tokens": 16384,
+                "prefill_tokens": 16384,
+                "prefill_tokens_per_second": 13.879312308064046,
+                "session_reused": 0,
+                "warm_prefix_reused": false
+              },
+              "usage": {
+                "prompt_tokens": 16384,
+                "completion_tokens": 32,
+                "total_tokens": 16416
+              },
+              "allocation": {
+                "gpu_capacity": 32768,
+                "kv_lengths": {
+                  "7": 16416,
+                  "3": 16416,
+                  "39": 16416,
+                  "11": 16416,
+                  "19": 16416,
+                  "27": 16416,
+                  "35": 16416,
+                  "15": 16416,
+                  "23": 16416,
+                  "31": 16416
+                },
+                "metal_allocated_bytes": 5357207552,
+                "resident_pos": 16416,
+                "context_tokens": 16434,
+                "prefill_tokens": 18,
+                "cpu_capacity": 65536,
+                "session_reused": 1,
+                "state_hash": "not_requested"
+              },
+              "nrow_host_phases": {
+                "records": 127,
+                "totals": {
+                  "full_layers": 1270.0,
+                  "full_qkv": 22831.08399999999,
+                  "full_rowwise": 51496.44300000001,
+                  "full_grouped": 67734.85700000003,
+                  "linear_layers": 3810.0,
+                  "linear_batch": 108222.24699999997,
+                  "linear_post_batch": 50392.20300000003,
+                  "linear_rowwise": 0.0,
+                  "linear_grouped": 196749.247,
+                  "linear_grouping": 67.79299999999999,
+                  "linear_stage": 72099.72700000003,
+                  "linear_expert": 101374.92900000005,
+                  "linear_cache": 11256.989999999994,
+                  "linear_shared": 11309.035000000005,
+                  "linear_combine": 3539.326000000001
+                },
+                "scope": "Existing host wall-time phase counters; count fields retain original names, not hardware GPU timestamps"
+              }
+            }
+          ],
+          "boundary_routes": [
+            {
+              "length": 16384,
+              "layer": 3,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "cmd12-chain"
+            },
+            {
+              "length": 16384,
+              "layer": 7,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "cmd12-chain"
+            },
+            {
+              "length": 16384,
+              "layer": 11,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "cmd12-chain"
+            },
+            {
+              "length": 16384,
+              "layer": 15,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "cmd12-chain"
+            },
+            {
+              "length": 16384,
+              "layer": 19,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "cmd12-chain"
+            },
+            {
+              "length": 16384,
+              "layer": 23,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "cmd12-chain"
+            },
+            {
+              "length": 16384,
+              "layer": 27,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "cmd12-chain"
+            },
+            {
+              "length": 16384,
+              "layer": 31,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "cmd12-chain"
+            },
+            {
+              "length": 16384,
+              "layer": 35,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "cmd12-chain"
+            },
+            {
+              "length": 16384,
+              "layer": 39,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "cmd12-chain"
+            },
+            {
+              "length": 16385,
+              "layer": 3,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "cmd12-chain"
+            },
+            {
+              "length": 16385,
+              "layer": 7,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "cmd12-chain"
+            },
+            {
+              "length": 16385,
+              "layer": 11,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "cmd12-chain"
+            },
+            {
+              "length": 16385,
+              "layer": 15,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "cmd12-chain"
+            },
+            {
+              "length": 16385,
+              "layer": 19,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "cmd12-chain"
+            },
+            {
+              "length": 16385,
+              "layer": 23,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "cmd12-chain"
+            },
+            {
+              "length": 16385,
+              "layer": 27,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "cmd12-chain"
+            },
+            {
+              "length": 16385,
+              "layer": 31,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "cmd12-chain"
+            },
+            {
+              "length": 16385,
+              "layer": 35,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "cmd12-chain"
+            },
+            {
+              "length": 16385,
+              "layer": 39,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "cmd12-chain"
+            }
+          ],
+          "expert_cache_hit_counters_available": false,
+          "profile_phase_totals_two_requests": {
+            "full_layers": 2540.0,
+            "full_qkv": 45467.368000000046,
+            "full_rowwise": 100174.79699999996,
+            "full_grouped": 135130.56500000003,
+            "linear_layers": 7620.0,
+            "linear_batch": 215660.35900000005,
+            "linear_post_batch": 99697.09200000003,
+            "linear_rowwise": 0.0,
+            "linear_grouped": 392031.6319999999,
+            "linear_grouping": 136.40099999999998,
+            "linear_stage": 144804.37599999996,
+            "linear_expert": 202438.26099999997,
+            "linear_cache": 21247.14800000001,
+            "linear_shared": 22113.224999999995,
+            "linear_combine": 6919.245
+          }
+        },
+        {
+          "trial": 0,
+          "mode": "scalar",
+          "binary_sha256": "175bd2b7672cde0dd71ff0db6ccb4cbf365e70db76713e242312691a6839530e",
+          "post_gpu": [
+            78,
+            0,
+            0,
+            0
+          ],
+          "host_free_before": 59,
+          "budget": {
+            "exit": -15,
+            "peak_rss_bytes": 1423802368,
+            "stop_reason": null
+          },
+          "memory": {
+            "samples": 4152,
+            "observed_peak_physical_bytes": 2219350760,
+            "lifetime_peak_physical_bytes": 2219350760,
+            "sampled_peak_rss_bytes": 1423507456
+          },
+          "cases": [
+            {
+              "label": "cold",
+              "started": "2026-11-06T02:05:25.395152-08:00",
+              "ended": "2026-11-06T02:40:56.619711-08:00",
+              "wall_ms": 2131201.122125,
+              "wire_ttft_ms": 2123898.4468750004,
+              "timings": {
+                "generated_tokens": 32,
+                "decode_tokens_per_second": 4.3733262864696885,
+                "cached_prefix_tokens": 0,
+                "prefill_ms": 2123869.4970703125,
+                "decode_ms": 7317.0849609375,
+                "context_tokens": 16384,
+                "prefill_tokens": 16384,
+                "prefill_tokens_per_second": 7.714221623597994,
+                "session_reused": 0,
+                "warm_prefix_reused": false
+              },
+              "usage": {
+                "prompt_tokens": 16384,
+                "completion_tokens": 32,
+                "total_tokens": 16416
+              },
+              "allocation": {
+                "gpu_capacity": 32768,
+                "kv_lengths": {
+                  "7": 16416,
+                  "3": 16416,
+                  "39": 16416,
+                  "11": 16416,
+                  "19": 16416,
+                  "27": 16416,
+                  "35": 16416,
+                  "15": 16416,
+                  "23": 16416,
+                  "31": 16416
+                },
+                "metal_allocated_bytes": 4845830144,
+                "resident_pos": 16416,
+                "context_tokens": 16434,
+                "prefill_tokens": 18,
+                "cpu_capacity": 65536,
+                "session_reused": 1,
+                "state_hash": "not_requested"
+              },
+              "nrow_host_phases": {
+                "records": 0,
+                "totals": {},
+                "scope": "Existing host wall-time phase counters; count fields retain original names, not hardware GPU timestamps"
+              }
+            },
+            {
+              "label": "warm",
+              "started": "2026-11-06T02:40:56.621574-08:00",
+              "ended": "2026-11-06T03:16:52.715080-08:00",
+              "wall_ms": 2156102.2945830007,
+              "wire_ttft_ms": 2148090.2974170004,
+              "timings": {
+                "generated_tokens": 32,
+                "decode_tokens_per_second": 3.986814118441765,
+                "cached_prefix_tokens": 0,
+                "prefill_ms": 2148033.58203125,
+                "decode_ms": 8026.458984375,
+                "context_tokens": 16384,
+                "prefill_tokens": 16384,
+                "prefill_tokens_per_second": 7.627441273290876,
+                "session_reused": 0,
+                "warm_prefix_reused": false
+              },
+              "usage": {
+                "prompt_tokens": 16384,
+                "completion_tokens": 32,
+                "total_tokens": 16416
+              },
+              "allocation": {
+                "gpu_capacity": 32768,
+                "kv_lengths": {
+                  "7": 16416,
+                  "3": 16416,
+                  "39": 16416,
+                  "11": 16416,
+                  "19": 16416,
+                  "27": 16416,
+                  "35": 16416,
+                  "15": 16416,
+                  "23": 16416,
+                  "31": 16416
+                },
+                "metal_allocated_bytes": 4845830144,
+                "resident_pos": 16416,
+                "context_tokens": 16434,
+                "prefill_tokens": 18,
+                "cpu_capacity": 65536,
+                "session_reused": 1,
+                "state_hash": "not_requested"
+              },
+              "nrow_host_phases": {
+                "records": 0,
+                "totals": {},
+                "scope": "Existing host wall-time phase counters; count fields retain original names, not hardware GPU timestamps"
+              }
+            }
+          ],
+          "boundary_routes": [
+            {
+              "length": 8191,
+              "layer": 3,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "cmd12-chain"
+            },
+            {
+              "length": 8191,
+              "layer": 7,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "cmd12-chain"
+            },
+            {
+              "length": 8191,
+              "layer": 11,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "cmd12-chain"
+            },
+            {
+              "length": 8191,
+              "layer": 15,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "cmd12-chain"
+            },
+            {
+              "length": 8191,
+              "layer": 19,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "cmd12-chain"
+            },
+            {
+              "length": 8191,
+              "layer": 23,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "cmd12-chain"
+            },
+            {
+              "length": 8191,
+              "layer": 27,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "cmd12-chain"
+            },
+            {
+              "length": 8191,
+              "layer": 31,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "cmd12-chain"
+            },
+            {
+              "length": 8191,
+              "layer": 35,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "cmd12-chain"
+            },
+            {
+              "length": 8191,
+              "layer": 39,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "cmd12-chain"
+            },
+            {
+              "length": 8192,
+              "layer": 3,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "cmd12-chain"
+            },
+            {
+              "length": 8192,
+              "layer": 7,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "cmd12-chain"
+            },
+            {
+              "length": 8192,
+              "layer": 11,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "cmd12-chain"
+            },
+            {
+              "length": 8192,
+              "layer": 15,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "cmd12-chain"
+            },
+            {
+              "length": 8192,
+              "layer": 19,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "cmd12-chain"
+            },
+            {
+              "length": 8192,
+              "layer": 23,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "cmd12-chain"
+            },
+            {
+              "length": 8192,
+              "layer": 27,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "cmd12-chain"
+            },
+            {
+              "length": 8192,
+              "layer": 31,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "cmd12-chain"
+            },
+            {
+              "length": 8192,
+              "layer": 35,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "cmd12-chain"
+            },
+            {
+              "length": 8192,
+              "layer": 39,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "cmd12-chain"
+            },
+            {
+              "length": 8193,
+              "layer": 3,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "cmd12-chain"
+            },
+            {
+              "length": 8193,
+              "layer": 7,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "cmd12-chain"
+            },
+            {
+              "length": 8193,
+              "layer": 11,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "cmd12-chain"
+            },
+            {
+              "length": 8193,
+              "layer": 15,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "cmd12-chain"
+            },
+            {
+              "length": 8193,
+              "layer": 19,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "cmd12-chain"
+            },
+            {
+              "length": 8193,
+              "layer": 23,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "cmd12-chain"
+            },
+            {
+              "length": 8193,
+              "layer": 27,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "cmd12-chain"
+            },
+            {
+              "length": 8193,
+              "layer": 31,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "cmd12-chain"
+            },
+            {
+              "length": 8193,
+              "layer": 35,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "cmd12-chain"
+            },
+            {
+              "length": 8193,
+              "layer": 39,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "cmd12-chain"
+            },
+            {
+              "length": 12288,
+              "layer": 3,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "cmd12-chain"
+            },
+            {
+              "length": 12288,
+              "layer": 7,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "cmd12-chain"
+            },
+            {
+              "length": 12288,
+              "layer": 11,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "cmd12-chain"
+            },
+            {
+              "length": 12288,
+              "layer": 15,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "cmd12-chain"
+            },
+            {
+              "length": 12288,
+              "layer": 19,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "cmd12-chain"
+            },
+            {
+              "length": 12288,
+              "layer": 23,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "cmd12-chain"
+            },
+            {
+              "length": 12288,
+              "layer": 27,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "cmd12-chain"
+            },
+            {
+              "length": 12288,
+              "layer": 31,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "cmd12-chain"
+            },
+            {
+              "length": 12288,
+              "layer": 35,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "cmd12-chain"
+            },
+            {
+              "length": 12288,
+              "layer": 39,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "cmd12-chain"
+            },
+            {
+              "length": 16384,
+              "layer": 3,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "cmd12-chain"
+            },
+            {
+              "length": 16384,
+              "layer": 7,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "cmd12-chain"
+            },
+            {
+              "length": 16384,
+              "layer": 11,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "cmd12-chain"
+            },
+            {
+              "length": 16384,
+              "layer": 15,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "cmd12-chain"
+            },
+            {
+              "length": 16384,
+              "layer": 19,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "cmd12-chain"
+            },
+            {
+              "length": 16384,
+              "layer": 23,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "cmd12-chain"
+            },
+            {
+              "length": 16384,
+              "layer": 27,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "cmd12-chain"
+            },
+            {
+              "length": 16384,
+              "layer": 31,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "cmd12-chain"
+            },
+            {
+              "length": 16384,
+              "layer": 35,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "cmd12-chain"
+            },
+            {
+              "length": 16384,
+              "layer": 39,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "cmd12-chain"
+            },
+            {
+              "length": 16385,
+              "layer": 3,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "cmd12-chain"
+            },
+            {
+              "length": 16385,
+              "layer": 7,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "cmd12-chain"
+            },
+            {
+              "length": 16385,
+              "layer": 11,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "cmd12-chain"
+            },
+            {
+              "length": 16385,
+              "layer": 15,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "cmd12-chain"
+            },
+            {
+              "length": 16385,
+              "layer": 19,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "cmd12-chain"
+            },
+            {
+              "length": 16385,
+              "layer": 23,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "cmd12-chain"
+            },
+            {
+              "length": 16385,
+              "layer": 27,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "cmd12-chain"
+            },
+            {
+              "length": 16385,
+              "layer": 31,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "cmd12-chain"
+            },
+            {
+              "length": 16385,
+              "layer": 35,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "cmd12-chain"
+            },
+            {
+              "length": 16385,
+              "layer": 39,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "cmd12-chain"
+            }
+          ],
+          "expert_cache_hit_counters_available": false,
+          "profile_phase_totals_two_requests": {}
+        }
+      ],
+      "completed_process_trials": 3
     },
     "32768": {
-      "status": "NOT_RUN",
-      "rows": [],
-      "completed_process_trials": 0
+      "status": "STOPPED",
+      "started": "2026-11-06T03:16:56.234917-08:00",
+      "release_manifest_sha256": "86f5ffa6bd6ce42dcc81a934fdc82040a8f1059cf14ec53ec23e575957f56fce",
+      "runner_sha256": "10da695cc4b341fe34e9d4affeea81ee1b5de98709dd4c368b960373bf35b310",
+      "input_sha256": "862698c366e04b914203690836504912b1ecc1385adb657b447beb3dbd7f65a5",
+      "rendered_ids_sha256": "4d9322758dc4da7d546be77c0a7b1fed983de6b6dc6225ddabbdb800b7a0173d",
+      "count": 32768,
+      "repeats": 1,
+      "cache_scope": "Fresh process first-request then same-process repeat; same IDs/cache settings, no OS-page-cache purge; system startup may warm experts; no full-binary cache invalidation",
+      "attention_latency_scope": "Existing host wall-phase aggregates, not GPU timestamp counters",
+      "error_type": "BrokenPipeError",
+      "ended": "2026-11-06T06:02:15.472469-08:00",
+      "rows": [
+        {
+          "trial": 0,
+          "mode": "ordinary",
+          "binary_sha256": "175bd2b7672cde0dd71ff0db6ccb4cbf365e70db76713e242312691a6839530e",
+          "post_gpu": [
+            8,
+            0,
+            0
+          ],
+          "host_free_before": 58,
+          "budget": {
+            "exit": -15,
+            "peak_rss_bytes": 9267773440,
+            "stop_reason": null
+          },
+          "memory": {
+            "samples": 6128,
+            "observed_peak_physical_bytes": 3505091160,
+            "lifetime_peak_physical_bytes": 3505091160,
+            "sampled_peak_rss_bytes": 9214394368
+          },
+          "cases": [
+            {
+              "label": "cold",
+              "started": "2026-11-06T03:17:01.285164-08:00",
+              "ended": "2026-11-06T04:09:07.352030-08:00",
+              "wall_ms": 3126083.328,
+              "wire_ttft_ms": 3099083.797417,
+              "timings": {
+                "generated_tokens": 32,
+                "decode_tokens_per_second": 1.1838360069205707,
+                "cached_prefix_tokens": 0,
+                "prefill_ms": 3098960.5849609375,
+                "decode_ms": 27030.77099609375,
+                "context_tokens": 32768,
+                "prefill_tokens": 32768,
+                "prefill_tokens_per_second": 10.573867947537332,
+                "session_reused": 0,
+                "warm_prefix_reused": false
+              },
+              "usage": {
+                "prompt_tokens": 32768,
+                "completion_tokens": 32,
+                "total_tokens": 32800
+              },
+              "allocation": {
+                "gpu_capacity": 32768,
+                "kv_lengths": {
+                  "7": 32800,
+                  "3": 32800,
+                  "39": 32800,
+                  "11": 32800,
+                  "19": 32800,
+                  "27": 32800,
+                  "35": 32800,
+                  "15": 32800,
+                  "23": 32800,
+                  "31": 32800
+                },
+                "metal_allocated_bytes": 5357207552,
+                "resident_pos": 32800,
+                "context_tokens": 32818,
+                "prefill_tokens": 18,
+                "cpu_capacity": 65536,
+                "session_reused": 1,
+                "state_hash": "not_requested"
+              },
+              "nrow_host_phases": {
+                "records": 255,
+                "totals": {
+                  "full_layers": 2550.0,
+                  "full_qkv": 44087.71200000004,
+                  "full_rowwise": 116581.04000000001,
+                  "full_grouped": 120481.84899999999,
+                  "linear_layers": 7650.0,
+                  "linear_batch": 213182.38099999994,
+                  "linear_post_batch": 96593.32799999998,
+                  "linear_rowwise": 0.0,
+                  "linear_grouped": 333330.9309999997,
+                  "linear_grouping": 129.18399999999997,
+                  "linear_stage": 96592.611,
+                  "linear_expert": 200954.97200000004,
+                  "linear_cache": 18538.096000000012,
+                  "linear_shared": 15745.283999999987,
+                  "linear_combine": 2463.560000000001
+                },
+                "scope": "Existing host wall-time phase counters; count fields retain original names, not hardware GPU timestamps"
+              }
+            },
+            {
+              "label": "warm",
+              "started": "2026-11-06T04:09:07.354983-08:00",
+              "ended": "2026-11-06T05:02:00.237051-08:00",
+              "wall_ms": 3172888.478417,
+              "wire_ttft_ms": 3145816.131917,
+              "timings": {
+                "generated_tokens": 32,
+                "decode_tokens_per_second": 1.1799004491402971,
+                "cached_prefix_tokens": 0,
+                "prefill_ms": 3145699.0791015625,
+                "decode_ms": 27120.93212890625,
+                "context_tokens": 32768,
+                "prefill_tokens": 32768,
+                "prefill_tokens_per_second": 10.416762435318132,
+                "session_reused": 0,
+                "warm_prefix_reused": false
+              },
+              "usage": {
+                "prompt_tokens": 32768,
+                "completion_tokens": 32,
+                "total_tokens": 32800
+              },
+              "allocation": {
+                "gpu_capacity": 32768,
+                "kv_lengths": {
+                  "7": 32800,
+                  "3": 32800,
+                  "39": 32800,
+                  "11": 32800,
+                  "19": 32800,
+                  "27": 32800,
+                  "35": 32800,
+                  "15": 32800,
+                  "23": 32800,
+                  "31": 32800
+                },
+                "metal_allocated_bytes": 5357207552,
+                "resident_pos": 32800,
+                "context_tokens": 32818,
+                "prefill_tokens": 18,
+                "cpu_capacity": 65536,
+                "session_reused": 1,
+                "state_hash": "not_requested"
+              },
+              "nrow_host_phases": {
+                "records": 255,
+                "totals": {
+                  "full_layers": 2550.0,
+                  "full_qkv": 44127.25099999997,
+                  "full_rowwise": 117249.81899999997,
+                  "full_grouped": 130700.02900000001,
+                  "linear_layers": 7650.0,
+                  "linear_batch": 213281.58699999997,
+                  "linear_post_batch": 96441.68299999998,
+                  "linear_rowwise": 0.0,
+                  "linear_grouped": 364450.2320000002,
+                  "linear_grouping": 129.84799999999987,
+                  "linear_stage": 126668.37,
+                  "linear_expert": 201104.58300000007,
+                  "linear_cache": 19468.853000000014,
+                  "linear_shared": 15695.538999999993,
+                  "linear_combine": 2474.735999999997
+                },
+                "scope": "Existing host wall-time phase counters; count fields retain original names, not hardware GPU timestamps"
+              }
+            }
+          ],
+          "boundary_routes": [
+            {
+              "length": 8191,
+              "layer": 3,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "nrow-attention"
+            },
+            {
+              "length": 8192,
+              "layer": 3,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "nrow-attention"
+            },
+            {
+              "length": 8191,
+              "layer": 7,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "nrow-attention"
+            },
+            {
+              "length": 8192,
+              "layer": 7,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "nrow-attention"
+            },
+            {
+              "length": 8191,
+              "layer": 11,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "nrow-attention"
+            },
+            {
+              "length": 8192,
+              "layer": 11,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "nrow-attention"
+            },
+            {
+              "length": 8191,
+              "layer": 15,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "nrow-attention"
+            },
+            {
+              "length": 8192,
+              "layer": 15,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "nrow-attention"
+            },
+            {
+              "length": 8191,
+              "layer": 19,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "nrow-attention"
+            },
+            {
+              "length": 8192,
+              "layer": 19,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "nrow-attention"
+            },
+            {
+              "length": 8191,
+              "layer": 23,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "nrow-attention"
+            },
+            {
+              "length": 8192,
+              "layer": 23,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "nrow-attention"
+            },
+            {
+              "length": 8191,
+              "layer": 27,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "nrow-attention"
+            },
+            {
+              "length": 8192,
+              "layer": 27,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "nrow-attention"
+            },
+            {
+              "length": 8191,
+              "layer": 31,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "nrow-attention"
+            },
+            {
+              "length": 8192,
+              "layer": 31,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "nrow-attention"
+            },
+            {
+              "length": 8191,
+              "layer": 35,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "nrow-attention"
+            },
+            {
+              "length": 8192,
+              "layer": 35,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "nrow-attention"
+            },
+            {
+              "length": 8191,
+              "layer": 39,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "nrow-attention"
+            },
+            {
+              "length": 8192,
+              "layer": 39,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "nrow-attention"
+            },
+            {
+              "length": 8193,
+              "layer": 3,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "nrow-attention"
+            },
+            {
+              "length": 8193,
+              "layer": 7,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "nrow-attention"
+            },
+            {
+              "length": 8193,
+              "layer": 11,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "nrow-attention"
+            },
+            {
+              "length": 8193,
+              "layer": 15,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "nrow-attention"
+            },
+            {
+              "length": 8193,
+              "layer": 19,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "nrow-attention"
+            },
+            {
+              "length": 8193,
+              "layer": 23,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "nrow-attention"
+            },
+            {
+              "length": 8193,
+              "layer": 27,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "nrow-attention"
+            },
+            {
+              "length": 8193,
+              "layer": 31,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "nrow-attention"
+            },
+            {
+              "length": 8193,
+              "layer": 35,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "nrow-attention"
+            },
+            {
+              "length": 8193,
+              "layer": 39,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "nrow-attention"
+            },
+            {
+              "length": 12288,
+              "layer": 3,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "nrow-attention"
+            },
+            {
+              "length": 12288,
+              "layer": 7,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "nrow-attention"
+            },
+            {
+              "length": 12288,
+              "layer": 11,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "nrow-attention"
+            },
+            {
+              "length": 12288,
+              "layer": 15,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "nrow-attention"
+            },
+            {
+              "length": 12288,
+              "layer": 19,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "nrow-attention"
+            },
+            {
+              "length": 12288,
+              "layer": 23,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "nrow-attention"
+            },
+            {
+              "length": 12288,
+              "layer": 27,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "nrow-attention"
+            },
+            {
+              "length": 12288,
+              "layer": 31,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "nrow-attention"
+            },
+            {
+              "length": 12288,
+              "layer": 35,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "nrow-attention"
+            },
+            {
+              "length": 12288,
+              "layer": 39,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "nrow-attention"
+            },
+            {
+              "length": 16384,
+              "layer": 3,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "nrow-attention"
+            },
+            {
+              "length": 16384,
+              "layer": 7,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "nrow-attention"
+            },
+            {
+              "length": 16384,
+              "layer": 11,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "nrow-attention"
+            },
+            {
+              "length": 16384,
+              "layer": 15,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "nrow-attention"
+            },
+            {
+              "length": 16384,
+              "layer": 19,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "nrow-attention"
+            },
+            {
+              "length": 16384,
+              "layer": 23,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "nrow-attention"
+            },
+            {
+              "length": 16384,
+              "layer": 27,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "nrow-attention"
+            },
+            {
+              "length": 16384,
+              "layer": 31,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "nrow-attention"
+            },
+            {
+              "length": 16384,
+              "layer": 35,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "nrow-attention"
+            },
+            {
+              "length": 16384,
+              "layer": 39,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "nrow-attention"
+            },
+            {
+              "length": 16385,
+              "layer": 3,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "nrow-attention"
+            },
+            {
+              "length": 16385,
+              "layer": 7,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "nrow-attention"
+            },
+            {
+              "length": 16385,
+              "layer": 11,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "nrow-attention"
+            },
+            {
+              "length": 16385,
+              "layer": 15,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "nrow-attention"
+            },
+            {
+              "length": 16385,
+              "layer": 19,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "nrow-attention"
+            },
+            {
+              "length": 16385,
+              "layer": 23,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "nrow-attention"
+            },
+            {
+              "length": 16385,
+              "layer": 27,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "nrow-attention"
+            },
+            {
+              "length": 16385,
+              "layer": 31,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "nrow-attention"
+            },
+            {
+              "length": 16385,
+              "layer": 35,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "nrow-attention"
+            },
+            {
+              "length": 16385,
+              "layer": 39,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "nrow-attention"
+            },
+            {
+              "length": 24576,
+              "layer": 3,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "nrow-attention"
+            },
+            {
+              "length": 24576,
+              "layer": 7,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "nrow-attention"
+            },
+            {
+              "length": 24576,
+              "layer": 11,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "nrow-attention"
+            },
+            {
+              "length": 24576,
+              "layer": 15,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "nrow-attention"
+            },
+            {
+              "length": 24576,
+              "layer": 19,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "nrow-attention"
+            },
+            {
+              "length": 24576,
+              "layer": 23,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "nrow-attention"
+            },
+            {
+              "length": 24576,
+              "layer": 27,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "nrow-attention"
+            },
+            {
+              "length": 24576,
+              "layer": 31,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "nrow-attention"
+            },
+            {
+              "length": 24576,
+              "layer": 35,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "nrow-attention"
+            },
+            {
+              "length": 24576,
+              "layer": 39,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "nrow-attention"
+            },
+            {
+              "length": 32767,
+              "layer": 3,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "cmd12-chain"
+            },
+            {
+              "length": 32767,
+              "layer": 7,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "cmd12-chain"
+            },
+            {
+              "length": 32767,
+              "layer": 11,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "cmd12-chain"
+            },
+            {
+              "length": 32767,
+              "layer": 15,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "cmd12-chain"
+            },
+            {
+              "length": 32767,
+              "layer": 19,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "cmd12-chain"
+            },
+            {
+              "length": 32767,
+              "layer": 23,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "cmd12-chain"
+            },
+            {
+              "length": 32767,
+              "layer": 27,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "cmd12-chain"
+            },
+            {
+              "length": 32767,
+              "layer": 31,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "cmd12-chain"
+            },
+            {
+              "length": 32767,
+              "layer": 35,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "cmd12-chain"
+            },
+            {
+              "length": 32767,
+              "layer": 39,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "cmd12-chain"
+            },
+            {
+              "length": 32768,
+              "layer": 3,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "cmd12-chain"
+            },
+            {
+              "length": 32768,
+              "layer": 7,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "cmd12-chain"
+            },
+            {
+              "length": 32768,
+              "layer": 11,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "cmd12-chain"
+            },
+            {
+              "length": 32768,
+              "layer": 15,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "cmd12-chain"
+            },
+            {
+              "length": 32768,
+              "layer": 19,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "cmd12-chain"
+            },
+            {
+              "length": 32768,
+              "layer": 23,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "cmd12-chain"
+            },
+            {
+              "length": 32768,
+              "layer": 27,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "cmd12-chain"
+            },
+            {
+              "length": 32768,
+              "layer": 31,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "cmd12-chain"
+            },
+            {
+              "length": 32768,
+              "layer": 35,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "cmd12-chain"
+            },
+            {
+              "length": 32768,
+              "layer": 39,
+              "cap": 32768,
+              "backend": "GPU",
+              "route": "cmd12-chain"
+            },
+            {
+              "length": 32769,
+              "layer": 3,
+              "cap": 32768,
+              "backend": "CPU",
+              "route": "standalone-attn"
+            },
+            {
+              "length": 32769,
+              "layer": 7,
+              "cap": 32768,
+              "backend": "CPU",
+              "route": "standalone-attn"
+            },
+            {
+              "length": 32769,
+              "layer": 11,
+              "cap": 32768,
+              "backend": "CPU",
+              "route": "standalone-attn"
+            },
+            {
+              "length": 32769,
+              "layer": 15,
+              "cap": 32768,
+              "backend": "CPU",
+              "route": "standalone-attn"
+            },
+            {
+              "length": 32769,
+              "layer": 19,
+              "cap": 32768,
+              "backend": "CPU",
+              "route": "standalone-attn"
+            },
+            {
+              "length": 32769,
+              "layer": 23,
+              "cap": 32768,
+              "backend": "CPU",
+              "route": "standalone-attn"
+            },
+            {
+              "length": 32769,
+              "layer": 27,
+              "cap": 32768,
+              "backend": "CPU",
+              "route": "standalone-attn"
+            },
+            {
+              "length": 32769,
+              "layer": 31,
+              "cap": 32768,
+              "backend": "CPU",
+              "route": "standalone-attn"
+            },
+            {
+              "length": 32769,
+              "layer": 35,
+              "cap": 32768,
+              "backend": "CPU",
+              "route": "standalone-attn"
+            },
+            {
+              "length": 32769,
+              "layer": 39,
+              "cap": 32768,
+              "backend": "CPU",
+              "route": "standalone-attn"
+            },
+            {
+              "length": 32770,
+              "layer": 3,
+              "cap": 32768,
+              "backend": "CPU",
+              "route": "standalone-attn"
+            },
+            {
+              "length": 32770,
+              "layer": 7,
+              "cap": 32768,
+              "backend": "CPU",
+              "route": "standalone-attn"
+            },
+            {
+              "length": 32770,
+              "layer": 11,
+              "cap": 32768,
+              "backend": "CPU",
+              "route": "standalone-attn"
+            },
+            {
+              "length": 32770,
+              "layer": 15,
+              "cap": 32768,
+              "backend": "CPU",
+              "route": "standalone-attn"
+            },
+            {
+              "length": 32770,
+              "layer": 19,
+              "cap": 32768,
+              "backend": "CPU",
+              "route": "standalone-attn"
+            },
+            {
+              "length": 32770,
+              "layer": 23,
+              "cap": 32768,
+              "backend": "CPU",
+              "route": "standalone-attn"
+            },
+            {
+              "length": 32770,
+              "layer": 27,
+              "cap": 32768,
+              "backend": "CPU",
+              "route": "standalone-attn"
+            },
+            {
+              "length": 32770,
+              "layer": 31,
+              "cap": 32768,
+              "backend": "CPU",
+              "route": "standalone-attn"
+            },
+            {
+              "length": 32770,
+              "layer": 35,
+              "cap": 32768,
+              "backend": "CPU",
+              "route": "standalone-attn"
+            },
+            {
+              "length": 32770,
+              "layer": 39,
+              "cap": 32768,
+              "backend": "CPU",
+              "route": "standalone-attn"
+            },
+            {
+              "length": 32771,
+              "layer": 3,
+              "cap": 32768,
+              "backend": "CPU",
+              "route": "standalone-attn"
+            },
+            {
+              "length": 32771,
+              "layer": 7,
+              "cap": 32768,
+              "backend": "CPU",
+              "route": "standalone-attn"
+            },
+            {
+              "length": 32771,
+              "layer": 11,
+              "cap": 32768,
+              "backend": "CPU",
+              "route": "standalone-attn"
+            },
+            {
+              "length": 32771,
+              "layer": 15,
+              "cap": 32768,
+              "backend": "CPU",
+              "route": "standalone-attn"
+            },
+            {
+              "length": 32771,
+              "layer": 19,
+              "cap": 32768,
+              "backend": "CPU",
+              "route": "standalone-attn"
+            },
+            {
+              "length": 32771,
+              "layer": 23,
+              "cap": 32768,
+              "backend": "CPU",
+              "route": "standalone-attn"
+            },
+            {
+              "length": 32771,
+              "layer": 27,
+              "cap": 32768,
+              "backend": "CPU",
+              "route": "standalone-attn"
+            },
+            {
+              "length": 32771,
+              "layer": 31,
+              "cap": 32768,
+              "backend": "CPU",
+              "route": "standalone-attn"
+            },
+            {
+              "length": 32771,
+              "layer": 35,
+              "cap": 32768,
+              "backend": "CPU",
+              "route": "standalone-attn"
+            },
+            {
+              "length": 32771,
+              "layer": 39,
+              "cap": 32768,
+              "backend": "CPU",
+              "route": "standalone-attn"
+            }
+          ],
+          "expert_cache_hit_counters_available": false,
+          "profile_phase_totals_two_requests": {
+            "full_layers": 5100.0,
+            "full_qkv": 88214.96299999996,
+            "full_rowwise": 233830.859,
+            "full_grouped": 251181.87799999982,
+            "linear_layers": 15300.0,
+            "linear_batch": 426463.96800000005,
+            "linear_post_batch": 193035.01100000003,
+            "linear_rowwise": 0.0,
+            "linear_grouped": 697781.162999999,
+            "linear_grouping": 259.03200000000015,
+            "linear_stage": 223260.9810000002,
+            "linear_expert": 402059.55499999964,
+            "linear_cache": 38006.948999999964,
+            "linear_shared": 31440.823000000037,
+            "linear_combine": 4938.296000000004
+          }
+        }
+      ],
+      "completed_process_trials": 1
     }
   }
 }

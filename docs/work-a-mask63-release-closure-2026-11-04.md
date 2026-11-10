@@ -1,6 +1,6 @@
 # Workstream A: mask63 release closure — 2026-11-04
 
-IN PROGRESS. No promotion disposition yet. Production, arithmetic defaults, model files and existing profiles remain unchanged. PR #2 remains draft. Work A starts from verified remote experimental HEAD `66adf92e2ea950528917000d1b59b788e1687371`; intervening commits since `3df795af` change only documentation. Runtime repair remains `ac06b920dbb7e26b804480b36eea4dbe83b40d4e`.
+Bounded closure reviewed November10; performance completion is memory-blocked. No promotion authorized. Production, arithmetic defaults, model files and existing profiles remain unchanged. PR #2 remains draft. Work A starts from verified remote experimental HEAD `66adf92e2ea950528917000d1b59b788e1687371`; intervening commits since `3df795af` change only documentation. Runtime repair remains `ac06b920dbb7e26b804480b36eea4dbe83b40d4e`.
 
 ## Isolation and integration
 
@@ -27,10 +27,10 @@ The complete repaired-build native 32K test entered inference at **14:36:49 PST*
 | --- | --- | --- |
 | A1 freeze / identity | PASS | Manifest, source/model metadata, isolated variants, synthetic identity and measured short preflight |
 | A2 repaired native 32K | PASS | 256 exact endpoints; state max 0, hidden max 4.76837158203125e-7, logits max 5.7220458984375e-6; all ten candidate GPU layers at 8192/8193/16384/16385/24576/32768 |
-| A3 intended-capacity performance | RUNNING | Matched 16K cohort began 17:58:10 PST after A2; 32K remains NOT RUN |
+| A3 intended-capacity performance | PARTIAL / BLOCKED | Complete n=1 cold/warm16K all paths and32K ordinary;32K mask63 cold request completes before driver pipe failure; Nov10 completion blocked before model launch at34% host availability |
 | A4 sustained decode / lifecycle | PASS (bounded) | Four 384-token paired responses, uninstrumented repeat, profile restart/mismatch rejection and prefill/decode RST recovery PASS |
 | A5 literal-change diagnosis | COMPLETE (bounded) | Actual scalar/candidate raw IDs/state and fresh CLI agree; original wrong reply persists, latest-only/distinct/explicit override work; official template matches exactly. No general intrinsic-model claim |
-| A6 release engineering | PARTIAL | Build reproducibility characterized; deployment and rollback remain review-only |
+| A6 release engineering | PARTIAL | Payload reproducibility and unchanged production verified; review-only deployment/rollback proposal; actual service provenance must be established before approval |
 
 Eight focused model-free checks pass: three Mach-O comparison tests and five fail-closed native-gate tests. Gate validation requires all positions 128..32768 in order, exact nonempty fingerprints, unchanged numerical limits, finite state/greedy/KV checks, and candidate-specific GPU markers in all ten layers at 8192, 8193, 16384, 16385, 24576 and 32768. Generic scalar-first routing logs cannot substitute for candidate evidence.
 
@@ -110,3 +110,119 @@ Model-free invocation: `PYTHONPATH=tools python3 -m unittest test_work_a_summary
 User pause at November4 18:03:23 PST stopped the owned queue/test server and preserved the interrupted first16K trial without promoting it to a timing row. Resume at November6 00:46:35 uses fresh performance-resume-20261106-{16384,32768}/ outputs outside Drive. First server started00:46:38. The bounded initial cohort is one complete cold/warm process trial per ordinary/mask63/scalar path at each capacity, sequentially; n=1 cannot establish run-to-run variability and is explicitly exploratory. Additional repeats depend on elapsed/resource budget. Six-hour phase and per-process memory/time guards remain; no native correctness rerun. Source/model/binary binding is rechecked.
 
 The summary now accepts --performance-prefix performance-resume-20261106 so interrupted and resumed cohorts cannot silently mix. Four summary tests plus the existing14 model-free checks PASS (18 total). Release/rollback planning is [review-only](work-a-mask63-release-procedure-2026-11-06.md); the actual production launcher/executable provenance must be verified before approval. No deployment/production commands were executed.
+
+### Saved EOS proof (no additional inference)
+
+The first three capture/restart traces were audited explicitly: natural EOS is the final completed token and the final effective-history token; session remains reusable, all observed KV lengths/finite-state checks pass, and later turns begin at the prior end. Capture end positions170/202/234 match restored runs exactly. Restart begins at the independently logged142-token warm-prefix position, not zero. Post-processing initially assumed a cold restart and failed that assertion; correcting the audit to require the actual restored-prefix length resolves it without a product or trace change. `tools/check_work_a_eos.py` exports only positions/component digests/file hashes. The source traces remain private.
+
+## Final bounded handback — November 10
+
+### 1. Source and branch
+
+Start66adf92e2ea950528917000d1b59b788e1687371 on experiment/http-resident-prefix-reuse-20261023; all Work A changes are on work/release-mask63-final-qualification. Final HEAD is the commit containing this closure. Runtime repair remains ac06b920dbb7e26b804480b36eea4dbe83b40d4e and all45 authenticated runtime files remain unchanged. No Work B code was imported.
+
+### 2. Changes and commits
+
+8bf3e3da freezes candidate/harness gates;20043a57 sequences guarded workloads and exact SDK baseline;1e75d5d2 preserves every CLI sample;089601d5 records repaired32K/sustained/lifecycle results;8fad8607 isolates resumed evidence and review-only release procedure. This final commit adds saved-EOS auditing, conservative performance summary, explicit missing-mode selection and model-free selection tests. Runtime product code and production defaults are unchanged.
+
+### 3. Repaired native numerical qualification
+
+PASS all256 endpoints128..32768, independently evolving reference/candidate, exact active persistent fingerprints and state max0; hidden max4.76837158203125e-7, logits max5.7220458984375e-6. Greedy tokens, finite active tensors, all10 KV lengths/mirrors and GDN/conv checks PASS. Actual candidate GPU routes cover all10 full-attention layers at8192/8193/16384/16385/24576/32768. Not universal whole-model bitwise equivalence or unobservable intermediate batch-state equivalence. No extra independent long history was attempted within this budget.
+
+### 4. Measured long-context performance
+
+All values below are **one process trial/path** with distinct cold/warm requests; no run-to-run variability is measured. Cold means first request after fresh process/startup, not cold disk/OS cache. Launch and post-process GPU gates pass for complete trials; in-run competing GPU work cannot be separated from the model's own utilization. Ordinary arithmetic is a performance control, not the qualified numerical alternative. Expert-cache configuration matches; exact cache contents/routes need not match across arithmetic modes.
+
+| Context | Path | Cold prefill s | Warm prefill s | Warm prefill tok/s | Warm visible TTFT s | Warm generation-wall tok/s |
+| --- | --- | ---: | ---: | ---: | ---: | ---: |
+| 16384 | ordinary | 1325.305 | 995.824 | 16.453 | 995.882 | 4.467 |
+| 16384 | mask63 | 1174.335 | 1180.462 | 13.879 | 1180.488 | 3.950 |
+| 16384 | scalar | 2123.869 | 2148.034 | 7.627 | 2148.090 | 3.987 |
+| 32768 | ordinary | 3098.961 | 3145.699 | 10.417 | 3145.816 | 1.180 |
+| 32768 | mask63, completed request in interrupted trial | 3580.765 | NOT RUN | NOT RUN | NOT RUN | NOT RUN |
+| 32768 | scalar | BLOCKED | BLOCKED | NOT RUN | NOT RUN | NOT RUN |
+
+All completed requests processed the full logical context with cached_prefix_tokens=0 and generated32 tokens. GPU allocation/length observers report every full-attention KV length at16416 or32800 as appropriate. At16K, warm mask63 costs18.541% versus ordinary and yields1.820x scalar prefill throughput in this single cohort. Its cold time is lower than ordinary's cold time, illustrating order/cache sensitivity; no causal speedup claim follows. These HTTP wall-time results cannot be treated as a matched continuation of the historical1K/4K CLI medians. No arithmetic optimization is justified from this evidence alone.
+
+Complete16K sequence: November6 00:46:38–03:16:52, results finalized03:16:55. Complete32K ordinary server03:16:58–05:02:00. Mask63 server started05:02:04; its cold request finished at06:02:15 with prefill3580.765s, decode27.084s,32 tokens. Driver BrokenPipeError occurred during progress output after the completed record was saved; context cleanup stopped its server. This is a harness/console lifetime defect, not evidence of model failure. The parent status file remained stale RUNNING; a separate reconciliation record preserves that discrepancy. The interrupted request is retained separately, never upgraded to a complete cold/warm process trial.
+
+November10 completion selected only mask63/scalar, direct stdout/stderr file logging, stdin DEVNULL and an explicit bounded4-hour process cap/6-hour phase cap. Existing3-hour process default remains unchanged. It stopped before any model launch with HOST_MEMORY_LAUNCH_BLOCKED; independently observed host availability34%, required35%. No automatic retry or threshold reduction. New GPU readings are not claimed because launch stopped before that stage.
+
+Hardware GPU timestamp latency and HTTP per-expert cache-hit counters are **NOT MEASURED**. Existing per-request host wall-phase counters are preserved, including staging/cache/expert/combine totals; their overlapping scopes must not be summed as isolated hardware latency. They are not a replacement for missing GPU timestamp measurements. Second/third long-context repetitions are NOT RUN. The32K complete three-way warm comparison is still a release gate.
+
+### 5. Sustained decode, EOS and resident sessions
+
+Four384-token responses/path (1536 each) preserve scalar/candidate sampled IDs, visible output and observed state. Three resident turns and stateless N128 replacement exercise repeated decode-to-prefill ownership. Thinking on/off included. Non-observer repeats produce7.716–13.690 full-generation-wall tok/s across different short contexts, not a fixed-context repetition distribution or isolated steady-state kernel metric. Saved natural-EOS capture/restart proof passes at170/202/234; EOS is committed into effective history and subsequent turns start from the previous end.
+
+### 6. Literal-change classification
+
+The original wrong reply persists in scalar and mask63, and independent scalar CLI reproduces all9 sampled IDs. Exact531-byte official text/no-tools/nonthinking rendering and198-token marker counts match. Original256-token limit is not reached. Latest-only/distinct-literal/explicit-override variations succeed. This is history-dependent native model/input-response behavior in the current model; transport/template/resident mismatch is not demonstrated for this case. Independent full-precision model verification is NOT RUN. No template/post-generation rewrite hides the failure. Product instruction-following remains a separate behavioral limitation for Architect review.
+
+### 7. Checkpoint and identity
+
+Synthetic corruption/identity checks, all64 numerical identities, unchanged unrelated-build policy,67,427,311-byte named-profile restore, stale-session409, prefix mismatch without overwrite, header-version/model-signature rejection and actual mode-switch rebuild PASS. Prior repaired cross-build restore remains accepted within its original scope. Selective epochv2 invalidates affected old GPU-N128 checkpoints; scalar/CPU identities and global execution3/layout2/storage formats remain unchanged. Full-binary cache hashing stays disabled.
+
+### 8. Memory and safety
+
+| Measured complete trial | RSS watchdog high water GiB | Charged physical peak GiB | Metal allocated bytes |
+| --- | ---: | ---: | ---: |
+| 16384 ordinary | 8.634 | 2.561 | 5357207552 |
+| 16384 mask63 | 8.783 | 1.948 | 5357207552 |
+| 16384 scalar | 1.326 | 2.067 | 4845830144 |
+| 32768 ordinary | 8.631 | 3.264 | 5357207552 |
+
+Charged footprint, RSS, mapped file residency, allocation reservations and CPU/Metal aliases overlap. Do not add these columns or call them total unified-memory attribution. Diagnostic32K RSS high-water10,319,511,552 bytes and charged peak9,407,890,040 include two3,076,587,520-byte total oracle banks. Serving measurements do not allocate that oracle pair. Complete trials trip no memory/time guards. The later34% availability block is preserved as a safety success, not a model execution result.
+
+### 9. Gate matrix
+
+| Gate | Result |
+| --- | --- |
+| A1 authenticated repaired candidate/selective identity | PASS |
+| A2 repaired native32K,256 endpoints/all10 GPU layers | PASS |
+| A3 matched16K three paths,cold/warm | PASS for n=1 exploratory cohort |
+| A3 complete32K three paths/cold+warm/repetitions | PARTIAL; remaining launch BLOCKED |
+| A3 hardware-timestamp attention latency/expert hit counters | NOT RUN / NOT MEASURED |
+| A4 substantial outputs,thinking,resident/replacement,EOS | PASS in bounded tested scope |
+| A4 restart/mismatch/cancellation/RST/fresh recovery | PASS in bounded tested scope |
+| A5 original literal requested response | FAIL behavior on scalar and candidate; bounded diagnosis COMPLETE |
+| A6 build payload/provenance/cache policy | PASS in documented scope |
+| A6 production launcher ownership/approved deployment | NOT ESTABLISHED / NOT AUTHORIZED |
+| Installed GUI,real hardware faults,other long modes | NOT RUN |
+
+### 10. Proposed configuration
+
+Only the documented M4/24GiB,tieredK8,defaultGPU-linear/chaining/prefetch/N128/mask63,lazy32K envelope is a proposed candidate. One evolving resident conversation, existing5-slot/pinned/768MiB dynamic-prefix policy,8192 static-prefix cap. Do not infer64K or arbitrary concurrent-model support. Operator/client GPU-only admission should bound prompt+maximum output to32768; this report adds no server-side limit enforcement.
+
+### 11. Remaining restrictions
+
+Complete the missing32K comparison after host memory satisfies launch admission. n=3 and hardware latency/cache attribution remain unmeasured; no uncontended performance or production win is claimed. Retain the literal behavior failure, separate Work B client/GUI qualification, actual service provenance and architectural acceptance. No large workload is automatically retried after the memory block.
+
+### 12. Reproduction, deployment and rollback
+
+[Review-only release procedure](work-a-mask63-release-procedure-2026-11-06.md) contains actual Makefile build form, source-baseline distinction, supported flags, intentional checkpoint rebuild, backup and rollback preconditions. No merge/deploy/production stop or restart is executed. Observed production HEAD5c26430f2790b84516b7384915eb0500abc5392f, clean tracked checkout; installed binary/shader SHA256 still7ae16f0a22ca9e871406bb0a9566e366432df6074027c7feeb246a239203bfbb /7067f44056fa947f54ab7095d7461f10c30d507f11c90ca484c09ad5e15aac6b on November10. These hashes do not establish the installed executable's build-source identity.
+
+After a fresh resource check and explicit resume, the exact missing-case runner command is below. A fresh output directory is mandatory; direct file output avoids the prior pipe lifetime failure. The runner itself fails closed if host availability is below35% or GPU readings fail. No need to rerun A2 or the complete ordinary32K pair.
+
+```bash
+cd '/Users/knagel/.codex/worktrees/release-mask63-final-qualification/Flash-iOS'
+ROOT='/Users/knagel/Flash-iOS-Work-A/2026-11-04-mask63-release'
+STAMP=$(date +%Y%m%d-%H%M%S)
+python3 -u tools/benchmark_work_a_long.py \
+  --control "$PWD/metal_infer/infer-work-a-control" \
+  --candidate "$PWD/metal_infer/infer-work-a-performance" \
+  --variants "$ROOT/build-variants.json" \
+  --render-input "$ROOT/long-32768-input.json" \
+  --render-output "$ROOT/long-32768-render.json" \
+  --probe "$ROOT/physical-probe" --count 32768 --repeats 1 \
+  --modes mask63,scalar --max-process-seconds 14400 --max-seconds 21600 \
+  --manifest "$ROOT/release-manifest.json" \
+  --native-gate "$ROOT/repaired-32768/result.json" \
+  --out "$ROOT/performance-missing-$STAMP" \
+  > "/Users/Shared/Main Hard Drive/AI Storage/Apps/Flash-iOS/benchmark-logs/work-a-missing-$STAMP.log" 2>&1 < /dev/null
+```
+
+### 13. Evidence and disposition
+
+[Draft Work A PR #3](https://github.com/KingdomDesignsConsulting/Flash-iOS/pull/3); [PR #2 remains draft](https://github.com/KingdomDesignsConsulting/Flash-iOS/pull/2). [Sanitized evidence](results/work-a-mask63-release-closure-2026-11-04.json). Private tokens/checkpoints/log records stay in /Users/knagel/Flash-iOS-Work-A/2026-11-04-mask63-release; small controller logs stay in root benchmark-logs. Original Drive fixtures and failed/interrupted results are retained. All owned test processes/listeners are stopped. Final model-free checks21/21 PASS; EOS audit PASS.
+
+**NO-GO — BLOCKERS REMAIN**

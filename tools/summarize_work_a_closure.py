@@ -13,6 +13,8 @@ def read(path):
 def summarize(root,performance_prefix="performance"):
  manifest=read(root/'release-manifest.json');md=sha(root/'release-manifest.json');out=dict(status='EVIDENCE_ONLY_REVIEW_REQUIRED',updated=datetime.datetime.now().astimezone().isoformat(),starting_head=manifest['head'],runtime_repair_commit=manifest['runtime_repair_commit'],release_manifest_sha256=md,candidate_binary_sha256=manifest['binary_sha256'],source_tree=manifest['tree'],runtime_source_sha256=manifest['source_sha256'],model_contract=manifest['model_contract'],execution=manifest['execution'],fixtures={k:{field:v[field] for field in ['sha256','bytes']} for k,v in manifest.get('fixtures',{}).items()},production_modified=False,raw_payloads_exported=False)
  out['identity_self_test']=read(root/'identity-proof.json')
+ out['eos_continuation']=read(root/'eos-observation.json')
+ out['performance_review']=read(root/'performance-closure.json')
  repro=read(root/'repro-evidence.json');out['build_reproducibility']={k:v for k,v in repro.items() if k in ['whole_file_exact','all_sections_exact','normalized_payload_exact','exclusions']}
  out['template_comparison']=read(root/'template-comparison.json')
  out['preflight']={k:v for k,v in read(root/'preflight257/result.json').items() if k in ['status','started','ended','input_tokens','completed_position','pre_gpu','max_errors','observed_native_rss_bytes','stop_reason','binary_sha256']}
