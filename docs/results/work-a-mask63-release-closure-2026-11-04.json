@@ -9195,6 +9195,22 @@
     "max_phase_seconds": 21600,
     "automatic_retry": false,
     "supervisor": "Read-only validation/summary after actual completion; no model launch, Git changes or production actions",
-    "result_publication_pending": true
+    "result_publication_pending": true,
+    "matched_prefix_diagnostic": {
+      "status": "PARTIAL_PREFIX_DIAGNOSTIC_NOT_COMPLETE_REQUEST",
+      "position": 16384,
+      "prior_elapsed_ms": 1152414,
+      "current_elapsed_ms": 2194556,
+      "prior_linear_stage_ms": 49685.6,
+      "current_linear_stage_ms": 747928.4,
+      "scope": "128 matched-prefix host-phase records; overlapping counters, not completed request, causal attribution or GPU hardware time"
+    },
+    "additional_reserve_guard": {
+      "started": "2026-11-10T11:58:10.932166-08:00",
+      "reserve_bytes": 6442450944,
+      "consecutive_low_samples": 3,
+      "existing_driver_guards_unchanged": true,
+      "scope": "Only verified native child process groups of this exact driver; private source/state retained"
+    }
   }
 }
