@@ -9170,5 +9170,31 @@
       ],
       "completed_process_trials": 1
     }
+  },
+  "performance_continuation": {
+    "status": "RUNNING_NOT_YET_ACCEPTED",
+    "starting_head": "9759b0265b64b51320ffb07166ff00d2f9ee483a",
+    "server_started": "2026-11-10T11:19:31.255366-08:00",
+    "host_availability_before_percent": 47,
+    "launch_gpu_percent": [
+      6,
+      19,
+      15
+    ],
+    "frozen_bindings_verified": true,
+    "modes": [
+      "mask63",
+      "scalar"
+    ],
+    "requested_trials_per_mode": 1,
+    "logical_prompt_tokens": 32768,
+    "generation_limit": 32,
+    "output_directory_basename": "performance-missing-20261110-111928",
+    "driver_log_basename": "work-a-missing-20261110-111928.log",
+    "max_process_seconds": 14400,
+    "max_phase_seconds": 21600,
+    "automatic_retry": false,
+    "supervisor": "Read-only validation/summary after actual completion; no model launch, Git changes or production actions",
+    "result_publication_pending": true
   }
 }

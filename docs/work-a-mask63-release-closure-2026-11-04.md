@@ -226,3 +226,28 @@ python3 -u tools/benchmark_work_a_long.py \
 [Draft Work A PR #3](https://github.com/KingdomDesignsConsulting/Flash-iOS/pull/3); [PR #2 remains draft](https://github.com/KingdomDesignsConsulting/Flash-iOS/pull/2). [Sanitized evidence](results/work-a-mask63-release-closure-2026-11-04.json). Private tokens/checkpoints/log records stay in /Users/knagel/Flash-iOS-Work-A/2026-11-04-mask63-release; small controller logs stay in root benchmark-logs. Original Drive fixtures and failed/interrupted results are retained. All owned test processes/listeners are stopped. Final model-free checks21/21 PASS; EOS audit PASS.
 
 **NO-GO — BLOCKERS REMAIN**
+
+## Architect continuation — admitted November 10, 11:19 PST
+
+Starting HEAD9759b0265b64b51320ffb07166ff00d2f9ee483a. No tracked edits at admission; all45 frozen runtime files, binaries/model/fixtures and completed native proof revalidated. Host availability47%; mask63 launch GPU readings6/19/15%. Actual server start11:19:31.255 PST. Only missing32K mask63/scalar cold/warm pairs are running, repeats1; ordinary32K and native correctness are not repeated. No measurement from this attempt is accepted before complete pair/lifecycle/resource checks.
+
+Private output: `/Users/knagel/Flash-iOS-Work-A/2026-11-04-mask63-release/performance-missing-20261110-111928`; durable log: root `benchmark-logs/work-a-missing-20261110-111928.log`. Driver launch/command/PID are preserved in private `latest-missing-case-launch.json` and its timestamped copy. Existing4-hour native/6-hour phase bounds,16GiB RSS watchdog, host floor and35% admission, three low GPU readings and one model remain unchanged. The prior34% block and interrupted cold request remain separate historical evidence.
+
+The user reports19% remaining five-hour quota. Priority is the n=1 missing cohort; no extra repetitions are scheduled. File-based logs and bounded native cleanup do not depend on the chat pipe. New post-processing validates complete cold/warm output, logical context/cached count, usage, binary/input signatures, finite timings, all10 backend-boundary layers, allocation lengths, launch/post GPU, host admission and actual server start/stop markers.28 model-free checks PASS. It accepts only n=1 exploratory evidence and labels reuse of the November6 control against a later cohort; cache/host conditions are not identical. No hardware latency or per-expert-hit data is invented.
+
+After successful completion, the exact read-only validation/aggregation commands are:
+
+```bash
+cd '/Users/knagel/.codex/worktrees/release-mask63-final-qualification/Flash-iOS'
+ROOT='/Users/knagel/Flash-iOS-Work-A/2026-11-04-mask63-release'
+OUT="$ROOT/performance-missing-20261110-111928"
+LOG='/Users/Shared/Main Hard Drive/AI Storage/Apps/Flash-iOS/benchmark-logs/work-a-missing-20261110-111928.log'
+python3 tools/validate_work_a_missing.py --root "$ROOT" --completion "$OUT" \
+  --driver-log "$LOG" --out "$OUT/validated-completion.json"
+python3 tools/summarize_work_a_performance.py --root "$ROOT" --completion "$OUT" \
+  --validation "$OUT/validated-completion.json" --out "$OUT/performance-closure.json"
+```
+
+An incomplete/blocked run cannot generate an accepted completion proof. Before publishing final evidence, inspect result/lifecycle/log timestamps and rerun frozen bindings; do not equate background launch or supervisor exit with a completed inference test. Whole-release promotion requirements remain separate. Runtime/arithmetic/checkpoint identity/production remain untouched.
+
+A bounded read-only completion supervisor is running alongside the driver. Its state/logs are in this attempt's private directory: `completion-supervisor-result.json`, `completion-supervisor.log`, `validated-completion.json` and, only after valid completion, `performance-closure.json`. It performs no model launches, retries, Git writes or deployment. If the parent chat quota ends, inspect these files before doing anything; do not start a duplicate model. A final GitHub result update remains pending actual evidence. The committed RUNNING checkpoint is not a completed-performance assertion.
