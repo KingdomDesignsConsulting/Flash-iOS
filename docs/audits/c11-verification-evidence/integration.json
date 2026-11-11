@@ -1,0 +1,27 @@
+{
+  "status": "PASS",
+  "scope": "Actual extracted preflight/rejection branch, synthetic resident KV/GDN/conv sentinels; no actual model KV advancement or HTTP socket",
+  "source_sha256": "aa360e9ac326d79c485357110884ec517a58cb38797b811961390754ce5339db",
+  "tested_source_sha256": "c87d22ec3c22ebaff5d9cb281eb89963bf02a797c8844deecd2e55572dafa527",
+  "results": [
+    {
+      "gpu_cap": 8192,
+      "cases": 20,
+      "failures": 0,
+      "resident_pos": 8190,
+      "turn_count": 7,
+      "all_kv_lengths": 8190,
+      "state_preserved": true
+    },
+    {
+      "gpu_cap": 32768,
+      "cases": 20,
+      "failures": 0,
+      "resident_pos": 32766,
+      "turn_count": 7,
+      "all_kv_lengths": 32766,
+      "state_preserved": true
+    }
+  ],
+  "known_mismatch": "Explicit empty environment disables policy; handoff says all explicit values other than1 fail. Supplied helper test intentionally expects empty disabled."
+}

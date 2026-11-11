@@ -1,0 +1,15 @@
+{
+  "status": "REPRODUCED",
+  "finding": "New admission header omitted from normal infer prerequisites; changing it alone does not rebuild infer",
+  "dry_run_only": true,
+  "results": {
+    "flash_serve_admission.h": {
+      "would_compile": false,
+      "output": "make: `/var/folders/wk/5zvwx99s26vc2mn_xz7f8h080000gn/T/c11-make-dependency-a9ido5wb/infer-sentinel' is up to date."
+    },
+    "infer.m": {
+      "would_compile": true,
+      "output": "clang -O2 -Wall -Wextra -fobjc-arc -DACCELERATE_NEW_LAPACK -I/opt/homebrew/include -DFLASH_PREFILL_NROW_PRODUCTION -DFLASH_PREFILL_NROW_ASYNC -DFLASH_PREFILL_NROW_GATEUP_M4_8ROW_BITSPLIT -framework Metal -framework Foundation -framework Accelerate -lpthread -lcompression -L/opt/homebrew/lib -lzstd infer.m -o /var/folders/wk/5zvwx99s26vc2mn_xz7f8h080000gn/T/c11-make-dependency-a9ido5wb/infer-sentinel"
+    }
+  }
+}
