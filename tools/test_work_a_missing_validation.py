@@ -1,5 +1,5 @@
 import copy,unittest
-from validate_work_a_missing import validate
+from validate_work_a_missing import validate,validate_split
 class MissingValidation(unittest.TestCase):
  def setUp(self):
   rows=[]
@@ -27,4 +27,25 @@ class MissingValidation(unittest.TestCase):
  def test_nonfinite_timing_cannot_pass(self):
   self.r['rows'][0]['cases'][0]['timings']['prefill_ms']=float('nan')
   with self.assertRaises(AssertionError):self.run_check()
+ def split_reports(self):
+  mask = copy.deepcopy(self.r)
+  mask.update(status='STOPPED', rows=mask['rows'][:1], runner_sha256='same')
+  scalar = copy.deepcopy(self.r)
+  scalar.update(selected_modes=['scalar'], rows=scalar['rows'][1:], runner_sha256='same')
+  return mask, scalar
+ def test_split_trials_preserve_original_stopped_status(self):
+  mask, scalar = self.split_reports()
+  result = validate_split(mask, scalar, 'm', {'mask63':'mask63','scalar':'scalar'}, 'i', 'r')
+  self.assertEqual(result['original_report_statuses'], ['STOPPED','COMPLETED_EXPLORATORY'])
+  self.assertEqual(mask['status'], 'STOPPED')
+ def test_split_incomplete_scalar_rejects(self):
+  mask, scalar = self.split_reports()
+  scalar['rows'][0]['cases'].pop()
+  with self.assertRaises(AssertionError):
+   validate_split(mask, scalar, 'm', {'mask63':'mask63','scalar':'scalar'}, 'i', 'r')
+ def test_split_foreign_fixture_rejects(self):
+  mask, scalar = self.split_reports()
+  scalar['input_sha256'] = 'foreign'
+  with self.assertRaises(AssertionError):
+   validate_split(mask, scalar, 'm', {'mask63':'mask63','scalar':'scalar'}, 'i', 'r')
 if __name__=='__main__':unittest.main()

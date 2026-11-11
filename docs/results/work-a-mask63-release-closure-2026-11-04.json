@@ -1,6 +1,6 @@
 {
   "status": "EVIDENCE_ONLY_REVIEW_REQUIRED",
-  "updated": "2026-11-10T11:06:25.944296-08:00",
+  "updated": "2026-11-10T17:37:53.770346-08:00",
   "starting_head": "66adf92e2ea950528917000d1b59b788e1687371",
   "runtime_repair_commit": "ac06b920dbb7e26b804480b36eea4dbe83b40d4e",
   "release_manifest_sha256": "86f5ffa6bd6ce42dcc81a934fdc82040a8f1059cf14ec53ec23e575957f56fce",
@@ -156,7 +156,7 @@
     }
   },
   "performance_review": {
-    "status": "PARTIAL_PERFORMANCE_QUALIFICATION",
+    "status": "BLOCKED_GPU_ADMISSION_PARTIAL_PERFORMANCE",
     "release_manifest_sha256": "86f5ffa6bd6ce42dcc81a934fdc82040a8f1059cf14ec53ec23e575957f56fce",
     "completed_trials": [
       {
@@ -186,6 +186,8 @@
         "cases": [
           {
             "label": "cold",
+            "started": "2026-11-06T00:46:42.894416-08:00",
+            "ended": "2026-11-06T01:08:56.250747-08:00",
             "timings": {
               "generated_tokens": 32,
               "decode_tokens_per_second": 4.003470537844788,
@@ -246,6 +248,8 @@
           },
           {
             "label": "warm",
+            "started": "2026-11-06T01:08:56.253546-08:00",
+            "ended": "2026-11-06T01:25:39.289126-08:00",
             "timings": {
               "generated_tokens": 32,
               "decode_tokens_per_second": 4.467040783149899,
@@ -755,6 +759,8 @@
         "cases": [
           {
             "label": "cold",
+            "started": "2026-11-06T01:25:47.264272-08:00",
+            "ended": "2026-11-06T01:45:28.659763-08:00",
             "timings": {
               "generated_tokens": 32,
               "decode_tokens_per_second": 4.554413851850552,
@@ -815,6 +821,8 @@
           },
           {
             "label": "warm",
+            "started": "2026-11-06T01:45:28.661929-08:00",
+            "ended": "2026-11-06T02:05:17.272859-08:00",
             "timings": {
               "generated_tokens": 32,
               "decode_tokens_per_second": 3.9504036752449427,
@@ -1044,6 +1052,8 @@
         "cases": [
           {
             "label": "cold",
+            "started": "2026-11-06T02:05:25.395152-08:00",
+            "ended": "2026-11-06T02:40:56.619711-08:00",
             "timings": {
               "generated_tokens": 32,
               "decode_tokens_per_second": 4.3733262864696885,
@@ -1088,6 +1098,8 @@
           },
           {
             "label": "warm",
+            "started": "2026-11-06T02:40:56.621574-08:00",
+            "ended": "2026-11-06T03:16:52.715080-08:00",
             "timings": {
               "generated_tokens": 32,
               "decode_tokens_per_second": 3.986814118441765,
@@ -1580,6 +1592,8 @@
         "cases": [
           {
             "label": "cold",
+            "started": "2026-11-06T03:17:01.285164-08:00",
+            "ended": "2026-11-06T04:09:07.352030-08:00",
             "timings": {
               "generated_tokens": 32,
               "decode_tokens_per_second": 1.1838360069205707,
@@ -1640,6 +1654,8 @@
           },
           {
             "label": "warm",
+            "started": "2026-11-06T04:09:07.354983-08:00",
+            "ended": "2026-11-06T05:02:00.237051-08:00",
             "timings": {
               "generated_tokens": 32,
               "decode_tokens_per_second": 1.1799004491402971,
@@ -2541,6 +2557,508 @@
             "route": "standalone-attn"
           }
         ]
+      },
+      {
+        "context_tokens": 32768,
+        "mode": "mask63",
+        "status": "COMPLETE_PROCESS_TRIAL",
+        "n": 1,
+        "binary_sha256": "734e00a3374ddaf5c84746ded6cc8a27f57d0b33865ba7d173fdb58d2183052a",
+        "pre_host_free_percent": 47,
+        "post_gpu": [
+          14,
+          12,
+          14
+        ],
+        "memory": {
+          "samples": 9982,
+          "observed_peak_physical_bytes": 3523244344,
+          "lifetime_peak_physical_bytes": 3524718904,
+          "sampled_peak_rss_bytes": 7296237568
+        },
+        "budget": {
+          "exit": -15,
+          "peak_rss_bytes": 7291469824,
+          "stop_reason": null
+        },
+        "cases": [
+          {
+            "label": "cold",
+            "started": "2026-11-10T11:19:34.967242-08:00",
+            "ended": "2026-11-10T12:45:32.033033-08:00",
+            "timings": {
+              "generated_tokens": 32,
+              "decode_tokens_per_second": 1.137273053627259,
+              "cached_prefix_tokens": 0,
+              "prefill_ms": 5128867.307861328,
+              "decode_ms": 28137.48193359375,
+              "context_tokens": 32768,
+              "prefill_tokens": 32768,
+              "prefill_tokens_per_second": 6.388935028553865,
+              "session_reused": 0,
+              "warm_prefix_reused": false
+            },
+            "wire_ttft_ms": 5128959.441916999,
+            "wall_ms": 5157063.966667,
+            "allocation": {
+              "gpu_capacity": 32768,
+              "kv_lengths": {
+                "7": 32800,
+                "3": 32800,
+                "39": 32800,
+                "11": 32800,
+                "19": 32800,
+                "27": 32800,
+                "35": 32800,
+                "15": 32800,
+                "23": 32800,
+                "31": 32800
+              },
+              "metal_allocated_bytes": 5357207552,
+              "resident_pos": 32800,
+              "context_tokens": 32818,
+              "prefill_tokens": 18,
+              "cpu_capacity": 65536,
+              "session_reused": 1,
+              "state_hash": "not_requested"
+            },
+            "host_phases": {
+              "records": 255,
+              "totals": {
+                "full_layers": 2550.0,
+                "full_qkv": 49095.14099999996,
+                "full_rowwise": 131492.72299999994,
+                "full_grouped": 508115.86600000004,
+                "linear_layers": 7650.0,
+                "linear_batch": 227580.1140000001,
+                "linear_post_batch": 103013.66800000002,
+                "linear_rowwise": 0.0,
+                "linear_grouped": 1393891.5100000016,
+                "linear_grouping": 150.40400000000002,
+                "linear_stage": 1084650.0409999986,
+                "linear_expert": 221660.61600000013,
+                "linear_cache": 61665.61499999998,
+                "linear_shared": 23938.677000000007,
+                "linear_combine": 7776.547000000003
+              },
+              "scope": "Existing host wall-time phase counters; count fields retain original names, not hardware GPU timestamps"
+            }
+          },
+          {
+            "label": "warm",
+            "started": "2026-11-10T12:45:32.040196-08:00",
+            "ended": "2026-11-10T14:10:53.963529-08:00",
+            "timings": {
+              "generated_tokens": 32,
+              "decode_tokens_per_second": 0.8530162178901435,
+              "cached_prefix_tokens": 0,
+              "prefill_ms": 5084331.183105469,
+              "decode_ms": 37513.94091796875,
+              "context_tokens": 32768,
+              "prefill_tokens": 32768,
+              "prefill_tokens_per_second": 6.444898811643809,
+              "session_reused": 0,
+              "warm_prefix_reused": false
+            },
+            "wire_ttft_ms": 5084491.2651659995,
+            "wall_ms": 5121969.737583,
+            "allocation": {
+              "gpu_capacity": 32768,
+              "kv_lengths": {
+                "7": 32800,
+                "3": 32800,
+                "39": 32800,
+                "11": 32800,
+                "19": 32800,
+                "27": 32800,
+                "35": 32800,
+                "15": 32800,
+                "23": 32800,
+                "31": 32800
+              },
+              "metal_allocated_bytes": 5357207552,
+              "resident_pos": 32800,
+              "context_tokens": 32818,
+              "prefill_tokens": 18,
+              "cpu_capacity": 65536,
+              "session_reused": 1,
+              "state_hash": "not_requested"
+            },
+            "host_phases": {
+              "records": 255,
+              "totals": {
+                "full_layers": 2550.0,
+                "full_qkv": 47419.962999999974,
+                "full_rowwise": 130124.00700000006,
+                "full_grouped": 515878.20100000023,
+                "linear_layers": 7650.0,
+                "linear_batch": 221716.35699999993,
+                "linear_post_batch": 100457.02800000005,
+                "linear_rowwise": 0.0,
+                "linear_grouped": 1359065.465,
+                "linear_grouping": 141.10999999999996,
+                "linear_stage": 1044171.3989999999,
+                "linear_expert": 238810.82300000015,
+                "linear_cache": 51281.316000000006,
+                "linear_shared": 22911.28700000001,
+                "linear_combine": 7070.383
+              },
+              "scope": "Existing host wall-time phase counters; count fields retain original names, not hardware GPU timestamps"
+            }
+          }
+        ],
+        "routes": [
+          {
+            "length": 32767,
+            "layer": 3,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "cmd12-chain"
+          },
+          {
+            "length": 32767,
+            "layer": 7,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "cmd12-chain"
+          },
+          {
+            "length": 32767,
+            "layer": 11,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "cmd12-chain"
+          },
+          {
+            "length": 32767,
+            "layer": 15,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "cmd12-chain"
+          },
+          {
+            "length": 32767,
+            "layer": 19,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "cmd12-chain"
+          },
+          {
+            "length": 32767,
+            "layer": 23,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "cmd12-chain"
+          },
+          {
+            "length": 32767,
+            "layer": 27,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "cmd12-chain"
+          },
+          {
+            "length": 32767,
+            "layer": 31,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "cmd12-chain"
+          },
+          {
+            "length": 32767,
+            "layer": 35,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "cmd12-chain"
+          },
+          {
+            "length": 32767,
+            "layer": 39,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "cmd12-chain"
+          },
+          {
+            "length": 32768,
+            "layer": 3,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "cmd12-chain"
+          },
+          {
+            "length": 32768,
+            "layer": 7,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "cmd12-chain"
+          },
+          {
+            "length": 32768,
+            "layer": 11,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "cmd12-chain"
+          },
+          {
+            "length": 32768,
+            "layer": 15,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "cmd12-chain"
+          },
+          {
+            "length": 32768,
+            "layer": 19,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "cmd12-chain"
+          },
+          {
+            "length": 32768,
+            "layer": 23,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "cmd12-chain"
+          },
+          {
+            "length": 32768,
+            "layer": 27,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "cmd12-chain"
+          },
+          {
+            "length": 32768,
+            "layer": 31,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "cmd12-chain"
+          },
+          {
+            "length": 32768,
+            "layer": 35,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "cmd12-chain"
+          },
+          {
+            "length": 32768,
+            "layer": 39,
+            "cap": 32768,
+            "backend": "GPU",
+            "route": "cmd12-chain"
+          },
+          {
+            "length": 32769,
+            "layer": 3,
+            "cap": 32768,
+            "backend": "CPU",
+            "route": "standalone-attn"
+          },
+          {
+            "length": 32769,
+            "layer": 7,
+            "cap": 32768,
+            "backend": "CPU",
+            "route": "standalone-attn"
+          },
+          {
+            "length": 32769,
+            "layer": 11,
+            "cap": 32768,
+            "backend": "CPU",
+            "route": "standalone-attn"
+          },
+          {
+            "length": 32769,
+            "layer": 15,
+            "cap": 32768,
+            "backend": "CPU",
+            "route": "standalone-attn"
+          },
+          {
+            "length": 32769,
+            "layer": 19,
+            "cap": 32768,
+            "backend": "CPU",
+            "route": "standalone-attn"
+          },
+          {
+            "length": 32769,
+            "layer": 23,
+            "cap": 32768,
+            "backend": "CPU",
+            "route": "standalone-attn"
+          },
+          {
+            "length": 32769,
+            "layer": 27,
+            "cap": 32768,
+            "backend": "CPU",
+            "route": "standalone-attn"
+          },
+          {
+            "length": 32769,
+            "layer": 31,
+            "cap": 32768,
+            "backend": "CPU",
+            "route": "standalone-attn"
+          },
+          {
+            "length": 32769,
+            "layer": 35,
+            "cap": 32768,
+            "backend": "CPU",
+            "route": "standalone-attn"
+          },
+          {
+            "length": 32769,
+            "layer": 39,
+            "cap": 32768,
+            "backend": "CPU",
+            "route": "standalone-attn"
+          },
+          {
+            "length": 32770,
+            "layer": 3,
+            "cap": 32768,
+            "backend": "CPU",
+            "route": "standalone-attn"
+          },
+          {
+            "length": 32770,
+            "layer": 7,
+            "cap": 32768,
+            "backend": "CPU",
+            "route": "standalone-attn"
+          },
+          {
+            "length": 32770,
+            "layer": 11,
+            "cap": 32768,
+            "backend": "CPU",
+            "route": "standalone-attn"
+          },
+          {
+            "length": 32770,
+            "layer": 15,
+            "cap": 32768,
+            "backend": "CPU",
+            "route": "standalone-attn"
+          },
+          {
+            "length": 32770,
+            "layer": 19,
+            "cap": 32768,
+            "backend": "CPU",
+            "route": "standalone-attn"
+          },
+          {
+            "length": 32770,
+            "layer": 23,
+            "cap": 32768,
+            "backend": "CPU",
+            "route": "standalone-attn"
+          },
+          {
+            "length": 32770,
+            "layer": 27,
+            "cap": 32768,
+            "backend": "CPU",
+            "route": "standalone-attn"
+          },
+          {
+            "length": 32770,
+            "layer": 31,
+            "cap": 32768,
+            "backend": "CPU",
+            "route": "standalone-attn"
+          },
+          {
+            "length": 32770,
+            "layer": 35,
+            "cap": 32768,
+            "backend": "CPU",
+            "route": "standalone-attn"
+          },
+          {
+            "length": 32770,
+            "layer": 39,
+            "cap": 32768,
+            "backend": "CPU",
+            "route": "standalone-attn"
+          },
+          {
+            "length": 32771,
+            "layer": 3,
+            "cap": 32768,
+            "backend": "CPU",
+            "route": "standalone-attn"
+          },
+          {
+            "length": 32771,
+            "layer": 7,
+            "cap": 32768,
+            "backend": "CPU",
+            "route": "standalone-attn"
+          },
+          {
+            "length": 32771,
+            "layer": 11,
+            "cap": 32768,
+            "backend": "CPU",
+            "route": "standalone-attn"
+          },
+          {
+            "length": 32771,
+            "layer": 15,
+            "cap": 32768,
+            "backend": "CPU",
+            "route": "standalone-attn"
+          },
+          {
+            "length": 32771,
+            "layer": 19,
+            "cap": 32768,
+            "backend": "CPU",
+            "route": "standalone-attn"
+          },
+          {
+            "length": 32771,
+            "layer": 23,
+            "cap": 32768,
+            "backend": "CPU",
+            "route": "standalone-attn"
+          },
+          {
+            "length": 32771,
+            "layer": 27,
+            "cap": 32768,
+            "backend": "CPU",
+            "route": "standalone-attn"
+          },
+          {
+            "length": 32771,
+            "layer": 31,
+            "cap": 32768,
+            "backend": "CPU",
+            "route": "standalone-attn"
+          },
+          {
+            "length": 32771,
+            "layer": 35,
+            "cap": 32768,
+            "backend": "CPU",
+            "route": "standalone-attn"
+          },
+          {
+            "length": 32771,
+            "layer": 39,
+            "cap": 32768,
+            "backend": "CPU",
+            "route": "standalone-attn"
+          }
+        ]
       }
     ],
     "interrupted_trial_requests": [
@@ -2552,6 +3070,8 @@
         "cases": [
           {
             "label": "cold",
+            "started": "2026-11-06T05:02:07.472066-08:00",
+            "ended": "2026-11-06T06:02:15.378857-08:00",
             "timings": {
               "generated_tokens": 32,
               "decode_tokens_per_second": 1.1815076741750288,
@@ -2611,6 +3131,66 @@
             }
           }
         ]
+      },
+      {
+        "context_tokens": 32768,
+        "mode": "scalar",
+        "status": "COMPLETE_COLD_REQUEST_IN_PHASE_INTERRUPTED_TRIAL",
+        "scope": "Cold SSE finish/DONE and allocation completed. Warm request interrupted at six-hour phase boundary. Watchdog return reason was not persisted by the old exception path.",
+        "cases": [
+          {
+            "label": "cold",
+            "started": "2026-11-10T14:11:03.082725-08:00",
+            "ended": "2026-11-10T16:03:52.292539-08:00",
+            "timings": {
+              "generated_tokens": 32,
+              "decode_tokens_per_second": 1.1400276004759566,
+              "cached_prefix_tokens": 0,
+              "prefill_ms": 6741073.854980469,
+              "decode_ms": 28069.495849609375,
+              "context_tokens": 32768,
+              "prefill_tokens": 32768,
+              "prefill_tokens_per_second": 4.860946594701704,
+              "session_reused": 0,
+              "warm_prefix_reused": false
+            },
+            "wire_ttft_ms": 6741211.496250002,
+            "wall_ms": 6769235.830707999,
+            "allocation": {
+              "gpu_capacity": 32768,
+              "kv_lengths": {
+                "7": 32800,
+                "3": 32800,
+                "39": 32800,
+                "11": 32800,
+                "19": 32800,
+                "27": 32800,
+                "35": 32800,
+                "15": 32800,
+                "23": 32800,
+                "31": 32800
+              },
+              "metal_allocated_bytes": 4845830144,
+              "resident_pos": 32800,
+              "context_tokens": 32818,
+              "prefill_tokens": 18,
+              "cpu_capacity": 65536,
+              "session_reused": 1,
+              "state_hash": "not_requested"
+            },
+            "host_phases": {
+              "records": 0,
+              "totals": {},
+              "scope": "Existing host wall-time phase counters; count fields retain original names, not hardware GPU timestamps"
+            }
+          }
+        ],
+        "memory": {
+          "scope": "Samples during completed cold request",
+          "samples": 6520,
+          "sampled_peak_rss_bytes": 2582347776,
+          "sampled_lifetime_peak_physical_bytes": 3567820360
+        }
       }
     ],
     "warm_16k_mask63_overhead_percent": 18.541203563387953,
@@ -2680,8 +3260,7 @@
     "variability": "NOT_MEASURED: n=1 per mode/context/temperature; cold and warm are distinct conditions",
     "confidence": "Exploratory process-wall timing, launch/post GPU gated; OS cache not purged, in-run contention not independently separable, expert-cache contents may diverge by arithmetic path",
     "missing": [
-      "32K mask63 warm complete process trial",
-      "32K scalar cold/warm",
+      "32K scalar complete cold/warm process trial",
       "Second and third repetitions",
       "Hardware timestamp attention latency",
       "HTTP per-expert cache hit counters"
@@ -2697,6 +3276,86 @@
       "required_launch_percent": 35,
       "automatic_retry": false,
       "production_modified": false
+    },
+    "comparison_32k": {
+      "cold_mask63_overhead_percent": 65.50282481007991,
+      "warm_mask63_overhead_percent": 61.62802147488296,
+      "cold_mask63_vs_scalar_request_throughput": 1.3143396875657152,
+      "warm_mask63_vs_scalar_throughput": null,
+      "scope": "Cross-date n=1, staging/cache confounded. Scalar cold is a complete request from an interrupted process trial."
+    },
+    "latest_cohort": {
+      "started": "2026-11-10T11:19:29.013099-08:00",
+      "ended": "2026-11-10T17:19:28.203063-08:00",
+      "status": "STOPPED",
+      "error_type": "AssertionError",
+      "last_warm_progress_position": 22144,
+      "stop_classification": "Consistent with exact six-hour phase deadline. Direct watchdog return reason lost on old error path.",
+      "result_sha256": "cce4ab9b59ae3acaa3bb4b4018e2a41b219b925981adef8aca944a7dc7e78c84"
+    },
+    "latest_admission": {
+      "status": "BLOCKED_BEFORE_MODEL_LAUNCH",
+      "started": "2026-11-10T17:31:52.724381-08:00",
+      "ended": "2026-11-10T17:32:03.073684-08:00",
+      "gpu_percent": [
+        33,
+        39,
+        57,
+        59,
+        55,
+        53,
+        60,
+        56,
+        46,
+        44
+      ],
+      "settling": {
+        "gpu_percent": [
+          33,
+          33,
+          40,
+          54,
+          46,
+          44,
+          35,
+          42,
+          41,
+          42,
+          39,
+          40
+        ],
+        "three_consecutive_below30": false,
+        "model_launched": false
+      },
+      "model_launched": false,
+      "final_gpu_observation": {
+        "observed": "2026-11-10T17:42:57.428150-08:00",
+        "gpu_percent": [
+          38,
+          38,
+          38
+        ],
+        "model_launched": false
+      }
+    },
+    "environment_observation": {
+      "memory_cleaner_bundle": "com.alice.mac.memorycleaner",
+      "memory_cleaner_version": "5.1",
+      "auto_cleaning_enabled": true,
+      "method": "Read-only Info.plist and numeric/boolean defaults export",
+      "settings_changed": false,
+      "apps_stopped": false,
+      "interpretation": "Plausible cache-eviction confound; setting alone does not prove active purging or causation. Retain exploratory cross-date comparison limitations."
+    },
+    "reserve_guard": {
+      "status": "DRIVER_EXITED",
+      "reserve_bytes": 6442450944,
+      "existing_driver_guards_unchanged": true,
+      "started": "2026-11-10T11:58:10.932166-08:00",
+      "host_available_percent": 37,
+      "available_bytes_estimate": 9534827397,
+      "low_readings": 0,
+      "ended": "2026-11-10T17:19:28.271380-08:00"
     }
   },
   "build_reproducibility": {
@@ -9169,225 +9828,6 @@
         }
       ],
       "completed_process_trials": 1
-    }
-  },
-  "performance_continuation": {
-    "status": "MASK63_COMPLETE_SCALAR_RUNNING",
-    "starting_head": "9759b0265b64b51320ffb07166ff00d2f9ee483a",
-    "server_started": "2026-11-10T11:19:31.255366-08:00",
-    "host_availability_before_percent": 47,
-    "launch_gpu_percent": [
-      6,
-      19,
-      15
-    ],
-    "frozen_bindings_verified": true,
-    "modes": [
-      "mask63",
-      "scalar"
-    ],
-    "requested_trials_per_mode": 1,
-    "logical_prompt_tokens": 32768,
-    "generation_limit": 32,
-    "output_directory_basename": "performance-missing-20261110-111928",
-    "driver_log_basename": "work-a-missing-20261110-111928.log",
-    "max_process_seconds": 14400,
-    "max_phase_seconds": 21600,
-    "automatic_retry": false,
-    "supervisor": "Read-only validation/summary after actual completion; no model launch, Git changes or production actions",
-    "result_publication_pending": true,
-    "matched_prefix_diagnostic": {
-      "status": "PARTIAL_PREFIX_DIAGNOSTIC_NOT_COMPLETE_REQUEST",
-      "position": 16384,
-      "prior_elapsed_ms": 1152414,
-      "current_elapsed_ms": 2194556,
-      "prior_linear_stage_ms": 49685.6,
-      "current_linear_stage_ms": 747928.4,
-      "scope": "128 matched-prefix host-phase records; overlapping counters, not completed request, causal attribution or GPU hardware time"
-    },
-    "additional_reserve_guard": {
-      "started": "2026-11-10T11:58:10.932166-08:00",
-      "reserve_bytes": 6442450944,
-      "consecutive_low_samples": 3,
-      "existing_driver_guards_unchanged": true,
-      "scope": "Only verified native child process groups of this exact driver; private source/state retained"
-    },
-    "validated_mask63_trial": {
-      "status": "MASK63_COMPLETE_TRIAL_VALIDATED",
-      "mode": "mask63",
-      "binary_sha256": "734e00a3374ddaf5c84746ded6cc8a27f57d0b33865ba7d173fdb58d2183052a",
-      "release_manifest_sha256": "86f5ffa6bd6ce42dcc81a934fdc82040a8f1059cf14ec53ec23e575957f56fce",
-      "n": 1,
-      "cohort_status": "RUNNING",
-      "all_ten_boundary_routes": true,
-      "cached_prefix_tokens": 0,
-      "generation_tokens": 32,
-      "host_free_before": 47,
-      "post_gpu": [
-        14,
-        12,
-        14
-      ],
-      "budget": {
-        "exit": -15,
-        "peak_rss_bytes": 7291469824,
-        "stop_reason": null
-      },
-      "memory": {
-        "samples": 9982,
-        "observed_peak_physical_bytes": 3523244344,
-        "lifetime_peak_physical_bytes": 3524718904,
-        "sampled_peak_rss_bytes": 7296237568
-      },
-      "cases": [
-        {
-          "label": "cold",
-          "started": "2026-11-10T11:19:34.967242-08:00",
-          "ended": "2026-11-10T12:45:32.033033-08:00",
-          "wall_ms": 5157063.966667,
-          "wire_ttft_ms": 5128959.441916999,
-          "timings": {
-            "generated_tokens": 32,
-            "decode_tokens_per_second": 1.137273053627259,
-            "cached_prefix_tokens": 0,
-            "prefill_ms": 5128867.307861328,
-            "decode_ms": 28137.48193359375,
-            "context_tokens": 32768,
-            "prefill_tokens": 32768,
-            "prefill_tokens_per_second": 6.388935028553865,
-            "session_reused": 0,
-            "warm_prefix_reused": false
-          },
-          "usage": {
-            "prompt_tokens": 32768,
-            "completion_tokens": 32,
-            "total_tokens": 32800
-          },
-          "allocation": {
-            "gpu_capacity": 32768,
-            "kv_lengths": {
-              "7": 32800,
-              "3": 32800,
-              "39": 32800,
-              "11": 32800,
-              "19": 32800,
-              "27": 32800,
-              "35": 32800,
-              "15": 32800,
-              "23": 32800,
-              "31": 32800
-            },
-            "metal_allocated_bytes": 5357207552,
-            "resident_pos": 32800,
-            "context_tokens": 32818,
-            "prefill_tokens": 18,
-            "cpu_capacity": 65536,
-            "session_reused": 1,
-            "state_hash": "not_requested"
-          },
-          "nrow_host_phases": {
-            "records": 255,
-            "totals": {
-              "full_layers": 2550.0,
-              "full_qkv": 49095.14099999996,
-              "full_rowwise": 131492.72299999994,
-              "full_grouped": 508115.86600000004,
-              "linear_layers": 7650.0,
-              "linear_batch": 227580.1140000001,
-              "linear_post_batch": 103013.66800000002,
-              "linear_rowwise": 0.0,
-              "linear_grouped": 1393891.5100000016,
-              "linear_grouping": 150.40400000000002,
-              "linear_stage": 1084650.0409999986,
-              "linear_expert": 221660.61600000013,
-              "linear_cache": 61665.61499999998,
-              "linear_shared": 23938.677000000007,
-              "linear_combine": 7776.547000000003
-            },
-            "scope": "Existing host wall-time phase counters; count fields retain original names, not hardware GPU timestamps"
-          }
-        },
-        {
-          "label": "warm",
-          "started": "2026-11-10T12:45:32.040196-08:00",
-          "ended": "2026-11-10T14:10:53.963529-08:00",
-          "wall_ms": 5121969.737583,
-          "wire_ttft_ms": 5084491.2651659995,
-          "timings": {
-            "generated_tokens": 32,
-            "decode_tokens_per_second": 0.8530162178901435,
-            "cached_prefix_tokens": 0,
-            "prefill_ms": 5084331.183105469,
-            "decode_ms": 37513.94091796875,
-            "context_tokens": 32768,
-            "prefill_tokens": 32768,
-            "prefill_tokens_per_second": 6.444898811643809,
-            "session_reused": 0,
-            "warm_prefix_reused": false
-          },
-          "usage": {
-            "prompt_tokens": 32768,
-            "completion_tokens": 32,
-            "total_tokens": 32800
-          },
-          "allocation": {
-            "gpu_capacity": 32768,
-            "kv_lengths": {
-              "7": 32800,
-              "3": 32800,
-              "39": 32800,
-              "11": 32800,
-              "19": 32800,
-              "27": 32800,
-              "35": 32800,
-              "15": 32800,
-              "23": 32800,
-              "31": 32800
-            },
-            "metal_allocated_bytes": 5357207552,
-            "resident_pos": 32800,
-            "context_tokens": 32818,
-            "prefill_tokens": 18,
-            "cpu_capacity": 65536,
-            "session_reused": 1,
-            "state_hash": "not_requested"
-          },
-          "nrow_host_phases": {
-            "records": 255,
-            "totals": {
-              "full_layers": 2550.0,
-              "full_qkv": 47419.962999999974,
-              "full_rowwise": 130124.00700000006,
-              "full_grouped": 515878.20100000023,
-              "linear_layers": 7650.0,
-              "linear_batch": 221716.35699999993,
-              "linear_post_batch": 100457.02800000005,
-              "linear_rowwise": 0.0,
-              "linear_grouped": 1359065.465,
-              "linear_grouping": 141.10999999999996,
-              "linear_stage": 1044171.3989999999,
-              "linear_expert": 238810.82300000015,
-              "linear_cache": 51281.316000000006,
-              "linear_shared": 22911.28700000001,
-              "linear_combine": 7070.383
-            },
-            "scope": "Existing host wall-time phase counters; count fields retain original names, not hardware GPU timestamps"
-          }
-        }
-      ]
-    },
-    "scalar_started": "2026-11-10T14:10:58.760953-08:00",
-    "scalar_launch_gpu_percent": [
-      0,
-      12,
-      13
-    ],
-    "environment_observation": {
-      "observed": "2026-11-10T12:07:50.465222-08:00",
-      "memory_cleaner_version": "5.1",
-      "auto_cleaning_enabled": true,
-      "settings_changed": false,
-      "interpretation": "Plausible cache-eviction confound; setting alone does not prove active purging or causation. Retain exploratory cross-date comparison limitations."
     }
   }
 }

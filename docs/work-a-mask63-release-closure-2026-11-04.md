@@ -1,6 +1,6 @@
 # Workstream A: mask63 release closure — 2026-11-04
 
-Bounded closure reviewed November10. An early memory block remains historical; later continuation has a validated mask63 32K pair and scalar running. No promotion authorized. Production, arithmetic defaults, model files and existing profiles remain unchanged. PR #2 remains draft. Work A starts from verified remote experimental HEAD `66adf92e2ea950528917000d1b59b788e1687371`; intervening commits since `3df795af` change only documentation. Runtime repair remains `ac06b920dbb7e26b804480b36eea4dbe83b40d4e`.
+Current performance handback reviewed November10. Mask63 has a validated32K pair, scalar cold completes in an interrupted trial, and GPU admission blocks a new scalar-only pair. No promotion authorized. Production, arithmetic defaults, model files and existing profiles remain unchanged. PR #2 remains draft. Work A starts from verified remote experimental HEAD `66adf92e2ea950528917000d1b59b788e1687371`; intervening commits since `3df795af` change only documentation. Runtime repair remains `ac06b920dbb7e26b804480b36eea4dbe83b40d4e`.
 
 ## Isolation and integration
 
@@ -27,7 +27,7 @@ The complete repaired-build native 32K test entered inference at **14:36:49 PST*
 | --- | --- | --- |
 | A1 freeze / identity | PASS | Manifest, source/model metadata, isolated variants, synthetic identity and measured short preflight |
 | A2 repaired native 32K | PASS | 256 exact endpoints; state max 0, hidden max 4.76837158203125e-7, logits max 5.7220458984375e-6; all ten candidate GPU layers at 8192/8193/16384/16385/24576/32768 |
-| A3 intended-capacity performance | PARTIAL / BLOCKED | Complete n=1 cold/warm16K all paths and32K ordinary;32K mask63 cold request completes before driver pipe failure; Nov10 completion blocked before model launch at34% host availability |
+| A3 intended-capacity performance | PARTIAL / BLOCKED | Complete n=1 pairs for16K all paths and32K ordinary/mask63. Scalar32K cold completes, warm is interrupted at phase deadline. A new scalar-only pair is GPU-gated before launch |
 | A4 sustained decode / lifecycle | PASS (bounded) | Four 384-token paired responses, uninstrumented repeat, profile restart/mismatch rejection and prefill/decode RST recovery PASS |
 | A5 literal-change diagnosis | COMPLETE (bounded) | Actual scalar/candidate raw IDs/state and fresh CLI agree; original wrong reply persists, latest-only/distinct/explicit override work; official template matches exactly. No general intrinsic-model claim |
 | A6 release engineering | PARTIAL | Payload reproducibility and unchanged production verified; review-only deployment/rollback proposal; actual service provenance must be established before approval |
@@ -115,7 +115,7 @@ The summary now accepts --performance-prefix performance-resume-20261106 so inte
 
 The first three capture/restart traces were audited explicitly: natural EOS is the final completed token and the final effective-history token; session remains reusable, all observed KV lengths/finite-state checks pass, and later turns begin at the prior end. Capture end positions170/202/234 match restored runs exactly. Restart begins at the independently logged142-token warm-prefix position, not zero. Post-processing initially assumed a cold restart and failed that assertion; correcting the audit to require the actual restored-prefix length resolves it without a product or trace change. `tools/check_work_a_eos.py` exports only positions/component digests/file hashes. The source traces remain private.
 
-## Final bounded handback — November 10
+## Prior bounded handback — November 10 before continuation
 
 ### 1. Source and branch
 
@@ -269,3 +269,100 @@ Server started11:19:31.255, cold finished12:45:32.040, warm finished14:10:53.980
 Warm mask63 is about61.6% more time than the retained November6 ordinary warm observation; comparison is cross-date and confounded by staging/cache conditions, not a causal arithmetic overhead estimate. The new cold result is43.2% slower than its own earlier interrupted-request observation with the same binary. Read-only app preferences show Memory Cleaner5.1 AutoCleaning=true; plausible cache-eviction confound, causation unproven, no setting or app changed. No production change or runtime repair is justified by this result.
 
 Scalar admitted sequentially after mask63 stopped, with GPU0/12/13%; actual start14:10:58.761 PST. Scalar cold/warm and complete cohort disposition remain pending. No repeats or duplicate server are launched. The bounded post-processing and reserve supervision remain active.
+
+## Performance continuation handback — November 10, 17:35 PST
+
+This continuation starts at9759b0265b64b51320ffb07166ff00d2f9ee483a. Checkpoints cb64c447 add completion validation,091f4b54 preserve the staging diagnosis and reserve guard, and e8916033 record the complete32K mask63 pair. Final HEAD is the commit containing this handback. Source changes are confined to performance-evidence validation/aggregation, tests and documentation. The proposed M4/24GiB,tieredK8,default GPU-linear/chaining/prefetch,N128 mask63,lazy32K configuration continues to apply. Product arithmetic and checkpoint compatibility retain their frozen provenance.
+
+### Consolidated observed measurements
+
+| Context | Mode | Cold prefill s | Warm prefill s | Warm prefill tok/s | Warm TTFT s | Warm generation-wall tok/s | Complete process trials |
+| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| 16384 | ordinary | 1325.305 | 995.824 | 16.453 | 995.882 | 4.467 | 1 |
+| 16384 | mask63 | 1174.335 | 1180.462 | 13.879 | 1180.488 | 3.950 | 1 |
+| 16384 | scalar | 2123.869 | 2148.034 | 7.627 | 2148.090 | 3.987 | 1 |
+| 32768 | ordinary | 3098.961 | 3145.699 | 10.417 | 3145.816 | 1.180 | 1 |
+| 32768 | mask63 | 5128.867 | 5084.331 | 6.445 | 5084.491 | 0.853 | 1 |
+| 32768 | scalar, completed cold request in interrupted trial | 6741.074 | INCOMPLETE | UNMEASURED | UNMEASURED | UNMEASURED | 0 |
+
+The complete32K mask63 pair has cold/warm time costs of65.503%/61.628% relative to the retained November6 ordinary control. Its warm request is0.868% faster than its own cold request. The completed scalar cold request gives1.314x mask63/scalar cold throughput, with scalar warm comparison pending. At16K the corresponding warm results remain18.541% time cost and1.820x scalar throughput. Cold and warm are distinct conditions. n=1 and cross-date/cache conditions constrain interpretation. Ordinary remains a performance control. The earlier3580.765s interrupted mask63 cold observation is retained outside complete-trial counts.
+
+Every completed request consumes32768 logical/physical prompt tokens, cached0, and generates32. Scalar cold has visible TTFT6741.211s and generation-wall1.140tok/s. Its completed allocation observation reaches32800 in all10 layers. Complete mask63 routing covers GPU through32768 and CPU at32769 in all10 full-attention layers. Native numerical qualification remains the previously accepted256-endpoint32K evidence. Hardware-timestamp latency, per-expert hit counters and repeated-trial variance remain unmeasured.
+
+### Timing and process boundary
+
+The documented missing-case command ran11:19:29–17:19:28 PST. Mask63 completes cold12:45:32 and warm14:10:54, followed by expected server termination. Scalar starts14:10:58 and completes cold16:03:52, with prefill6741.074s and32 generated tokens. Its warm request reaches observed position22144 before interruption at the exact six-hour phase boundary. The old driver error path saves the stream-completion assertion but loses the watchdog return reason. Deadline classification is inferred from configured bounds and timestamps. No runtime defect is established by this transport truncation. The original attempt remains STOPPED and its scalar process trial remains incomplete.
+
+A scalar-only pair was started17:31:52 with the existing4-hour process and6-hour phase bounds. It stopped before model launch after GPU samples33/39/57/59/55/53/60/56/46/44%. A single bounded read-only settling window then sampled33/33/40/54/46/44/35/42/41/42/39/40%, without three consecutive readings below30%. Memory availability was52% before the attempt and50% during the blocked inspection. The scalar-only attempt is a resource-admission block. No completed model request came from that attempt. Its reserve monitor exits after the driver.
+
+All owned test processes, reserve monitors and post-processing supervisors have exited. PRs #2 and #3 are draft. Existing production provenance is retained.
+
+### Memory and phase evidence
+
+Mask63 complete-trial watchdog-observed RSS peak7,291,469,824 bytes (6.791GiB), charged lifetime peak3,524,718,904 bytes (3.283GiB), Metal5,357,207,552 bytes. Scalar completed-cold sampling covers6520 samples, peak sampled RSS2,582,347,776 bytes and sampled lifetime charged peak3,567,820,360 bytes. The mask63 independent sampler reaches7,296,237,568 bytes. Both RSS observations are sampled peaks, with true OS lifetime RSS high water unmeasured independently. The scalar values apply to samples during its completed cold request. The aborted process provides no persisted final watchdog RSS high-water record. These overlapping metrics cannot be summed as total unified memory.
+
+All31 model-free regressions pass, including acceptance of independently complete process trials across phases and rejection of incomplete/foreign scalar evidence. The complete mask63 row passes actual lifecycle, source/input/binary, cache counts, output counts and all10 backend checks. The six-GiB reserve monitor records final availability37% and normal driver exit. Its final record does not establish an instantaneous minimum over the entire run.
+
+Matched-prefix host counters and the Memory Cleaner AutoCleaning=true observation remain documented above. Expert staging is the major observed phase increase. Inherited host counters have overlapping scopes and cannot substitute for GPU timestamps or a controlled causal comparison. No additional repetitions are scheduled under the remaining quota.
+
+### Remaining gate and exact resumption
+
+A complete scalar32K cold/warm process trial remains required. Its completed cold observation cannot provide same-process warm state after process exit. A future scalar-only attempt must repeat cold to establish that state. The completed ordinary and mask63 pairs and numerical oracle can be reused.
+
+The validator and summary now support two independently complete process trials across phases. Original STOPPED report statuses and hashes remain in the combined proof. The accepted-scope flag describes the retained complete rows.
+
+```bash
+cd '/Users/knagel/.codex/worktrees/release-mask63-final-qualification/Flash-iOS'
+ROOT='/Users/knagel/Flash-iOS-Work-A/2026-11-04-mask63-release'
+MASKOUT="$ROOT/performance-missing-20261110-111928"
+STAMP=$(date +%Y%m%d-%H%M%S)
+SCALAROUT="$ROOT/performance-scalar-only-$STAMP"
+SCALARLOG="/Users/Shared/Main Hard Drive/AI Storage/Apps/Flash-iOS/benchmark-logs/work-a-scalar-only-$STAMP.log"
+nohup python3 -u tools/benchmark_work_a_long.py \
+  --control "$PWD/metal_infer/infer-work-a-control" \
+  --candidate "$PWD/metal_infer/infer-work-a-performance" \
+  --variants "$ROOT/build-variants.json" \
+  --render-input "$ROOT/long-32768-input.json" \
+  --render-output "$ROOT/long-32768-render.json" \
+  --probe "$ROOT/physical-probe" --count 32768 --repeats 1 --modes scalar \
+  --max-process-seconds 14400 --max-seconds 21600 \
+  --manifest "$ROOT/release-manifest.json" \
+  --native-gate "$ROOT/repaired-32768/result.json" --out "$SCALAROUT" \
+  > "$SCALARLOG" 2>&1 < /dev/null &
+SCALAR_PID=$!
+for CHECK in {1..30}; do
+  [[ -d "$SCALAROUT" ]] && break
+  sleep 1
+done
+if [[ ! -d "$SCALAROUT" ]]; then
+  kill -TERM "$SCALAR_PID" 2>/dev/null
+  wait "$SCALAR_PID"
+  exit 1
+fi
+nohup python3 "$MASKOUT/reserve-guard.py" "$SCALAROUT" "$SCALAR_PID" \
+  "$PWD/metal_infer" > "$SCALAROUT/reserve-guard.log" 2>&1 < /dev/null &
+wait "$SCALAR_PID"
+```
+
+Preserve the additional six-GiB reserve supervision described above. After an actually completed scalar-only pair, validate and aggregate the retained mask63 row and new scalar row with these commands. They fail if scalar lacks a complete pair.
+
+```bash
+MASKOUT="$ROOT/performance-missing-20261110-111928"
+MASKLOG='/Users/Shared/Main Hard Drive/AI Storage/Apps/Flash-iOS/benchmark-logs/work-a-missing-20261110-111928.log'
+python3 tools/validate_work_a_missing.py --root "$ROOT" \
+  --completion "$MASKOUT" --driver-log "$MASKLOG" \
+  --scalar-completion "$SCALAROUT" --scalar-driver-log "$SCALARLOG" \
+  --out "$SCALAROUT/validated-completion.json"
+python3 tools/summarize_work_a_performance.py --root "$ROOT" \
+  --completion "$MASKOUT" --scalar-completion "$SCALAROUT" \
+  --validation "$SCALAROUT/validated-completion.json" \
+  --out "$SCALAROUT/performance-closure.json"
+```
+
+The exact blocked scalar attempt and settling evidence are private in `performance-scalar-only-20261110-173152/` and `scalar-only-gpu-settling-20261110.json`. This attempt's model count is zero. The phase-limited earlier attempt and its masks/scalar-cold records remain in `performance-missing-20261110-111928/`, with small driver logs at root benchmark-logs. The report's sanitized JSON carries complete rows, partial requests, environment observations, interruption classification and both admission histories.
+
+Final integration review, actual production launcher/provenance, capacity enforcement and outstanding client qualification remain separate approval requirements. [Draft PR #3](https://github.com/KingdomDesignsConsulting/Flash-iOS/pull/3) carries the current gate status.
+
+Final read-only GPU observation at17:42:57 PST is38/38/38%. All owned model/monitor/supervisor processes and the test listener have exited.
+
+**BLOCKED — SAFE RESOURCE ADMISSION UNAVAILABLE**
