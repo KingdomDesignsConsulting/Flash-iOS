@@ -1,0 +1,64 @@
+{
+  "status": "PASS",
+  "scope": "Saved first three capture/restart turns; no new inference",
+  "stages": {
+    "capture": [
+      {
+        "initial_position": 0,
+        "end_position": 170,
+        "eos_committed": true,
+        "completed_tokens": 2,
+        "last_digest": "66dcb050733031e4a8fe1543f3ae408f497604844a5979c6a4dd267a43a9da6e",
+        "generated_sha256": "14df62418b62390c68941bab6867d93aff9a0141e5ce684ec63f7c5dc7612355",
+        "state_sha256": "27942eff6b9427720e9200918b189b2405afe24923a52ec161781dbf4386de88"
+      },
+      {
+        "initial_position": 170,
+        "end_position": 202,
+        "eos_committed": true,
+        "completed_tokens": 8,
+        "last_digest": "32ebb3eb5cf518ef5477da32c3e7bba4331eda04896ca080f5c4976fd33bd10e",
+        "generated_sha256": "2c9e4c7d4abf5ccdf6cefedb747a9185d529773d5df8f55b56e0565182c32a86",
+        "state_sha256": "8586f19d8396599145109a0584a5705f0429e33805d17227493780f798ce45ef"
+      },
+      {
+        "initial_position": 202,
+        "end_position": 234,
+        "eos_committed": true,
+        "completed_tokens": 8,
+        "last_digest": "93d9a10e76f27bfd3a29a22bc372fac3780b3fbbef4217d342c9fd9962c3af19",
+        "generated_sha256": "fd010822b7f06749a855f28dd9f570e7a5e88a4c019c6cd6954d6ddd45342e08",
+        "state_sha256": "302ab03e60d7775fa49021dd01a1b9fa0e0772b15b59fa86af880639a96a28b9"
+      }
+    ],
+    "restart": [
+      {
+        "initial_position": 142,
+        "end_position": 170,
+        "eos_committed": true,
+        "completed_tokens": 2,
+        "last_digest": "66dcb050733031e4a8fe1543f3ae408f497604844a5979c6a4dd267a43a9da6e",
+        "generated_sha256": "bb2634b90e177c35afdd168bb67a2626e5711491bff0615ba19cfcb1c027cd8c",
+        "state_sha256": "e17a0a45e08e5bd007a32544eb0314be499b1bd6b280dbab49fb05759a37a3b1"
+      },
+      {
+        "initial_position": 170,
+        "end_position": 202,
+        "eos_committed": true,
+        "completed_tokens": 8,
+        "last_digest": "32ebb3eb5cf518ef5477da32c3e7bba4331eda04896ca080f5c4976fd33bd10e",
+        "generated_sha256": "746082d72f7ccfe5e02db559a98bd08c1bb2e959b8ecf7c717dcadd83027bfa2",
+        "state_sha256": "4528836be1d98ac7f15ea5ee3a8bcfecf0f30afa67426a56ac30fea845f4f526"
+      },
+      {
+        "initial_position": 202,
+        "end_position": 234,
+        "eos_committed": true,
+        "completed_tokens": 8,
+        "last_digest": "93d9a10e76f27bfd3a29a22bc372fac3780b3fbbef4217d342c9fd9962c3af19",
+        "generated_sha256": "0a2590141abb401399ac84ff78231aaccac1f816a54eeed08fa011bec891b84e",
+        "state_sha256": "e003b59221b5338a757ad4af92b4027dfd99deae4949e73cd5bfaa9427626ed0"
+      }
+    ]
+  }
+}

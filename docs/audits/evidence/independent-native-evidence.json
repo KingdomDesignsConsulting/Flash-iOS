@@ -1,0 +1,97 @@
+{
+  "status": "PASS",
+  "scope": "Existing experimental evidence only; no inference rerun; no production access",
+  "candidate_commit": "21a073174fb1feb828f2d28762293d1803e66a9a",
+  "manifest_sha256": "86f5ffa6bd6ce42dcc81a934fdc82040a8f1059cf14ec53ec23e575957f56fce",
+  "binary_sha256": "5960178f4dbc677a4b7fa660b8a9fb46773ea3dadc495f5604b400cc7f194602",
+  "runtime_source_files": 45,
+  "endpoints": 256,
+  "components_per_endpoint": [
+    160
+  ],
+  "max_errors": {
+    "state": 0,
+    "hidden": 4.76837158203125e-07,
+    "logits": 5.7220458984375e-06
+  },
+  "gpu_routes": {
+    "8192": [
+      3,
+      7,
+      11,
+      15,
+      19,
+      23,
+      27,
+      31,
+      35,
+      39
+    ],
+    "8193": [
+      3,
+      7,
+      11,
+      15,
+      19,
+      23,
+      27,
+      31,
+      35,
+      39
+    ],
+    "16384": [
+      3,
+      7,
+      11,
+      15,
+      19,
+      23,
+      27,
+      31,
+      35,
+      39
+    ],
+    "16385": [
+      3,
+      7,
+      11,
+      15,
+      19,
+      23,
+      27,
+      31,
+      35,
+      39
+    ],
+    "24576": [
+      3,
+      7,
+      11,
+      15,
+      19,
+      23,
+      27,
+      31,
+      35,
+      39
+    ],
+    "32768": [
+      3,
+      7,
+      11,
+      15,
+      19,
+      23,
+      27,
+      31,
+      35,
+      39
+    ]
+  },
+  "artifact_sha256": {
+    "repaired-32768/native/nrow-oracle.json": "530f56a33ee0857858ff758ec7d19d2dff96c06cd3972caa208dedf9c6230548",
+    "repaired-32768/native/result.json": "5838389a15685c0adcf58c713d63ef889ba0259c9aa74814cf6cf9593c9e0a81",
+    "repaired-32768/result.json": "be87485b06149c7fe769273de50036c234df59343ea0be8ee0fe0ba0892d1653",
+    "performance-closure.json": "bff3146e5b637e9f9384b8c4859ab0a8e09035b031ca0a80f5b7324375a46762"
+  }
+}

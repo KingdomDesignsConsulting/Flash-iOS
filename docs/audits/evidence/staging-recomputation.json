@@ -1,0 +1,18 @@
+{
+  "status": "PASS",
+  "observations": {
+    "prior": {
+      "records": 128,
+      "linear_stage_seconds": 49.685588,
+      "full_rowwise_seconds": 52.196747,
+      "source_log_sha256": "e30b24f5c4e596a36e5932c88f86e42f35f628965d7865d2602f081824940209"
+    },
+    "current": {
+      "records": 128,
+      "linear_stage_seconds": 747.9284119999998,
+      "full_rowwise_seconds": 54.65556800000002,
+      "source_log_sha256": "c10d552e52051602a0ea0490855638004e4806480b44036b61b3732fb8345504"
+    }
+  },
+  "scope": "First 128 host profile records; overlapping counters; no causal attribution"
+}

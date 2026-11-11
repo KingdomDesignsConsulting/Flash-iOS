@@ -1,0 +1,62 @@
+{
+  "FUTURE_ENGINEERING_LEDGER.md": {
+    "commit": "21a073174fb1feb828f2d28762293d1803e66a9a",
+    "sha256": "36aba9f6c38f21dc4abed3a410d2ff39dc5be57997368fe94ce365a65621bbb8",
+    "bytes": 28596
+  },
+  "docs/work-a-mask63-release-closure-2026-11-04.md": {
+    "commit": "21a073174fb1feb828f2d28762293d1803e66a9a",
+    "sha256": "7caccec3289cf5e69174b8c6bf8630529a3f1ecb440d6c775f08adefa9a20043",
+    "bytes": 46468
+  },
+  "docs/work-a-mask63-release-procedure-2026-11-06.md": {
+    "commit": "21a073174fb1feb828f2d28762293d1803e66a9a",
+    "sha256": "6b56de95a8081fda5dcae8dc6cd67998087913d0fa78da42f3bcdc8c1480eed8",
+    "bytes": 8214
+  },
+  "docs/results/work-a-mask63-release-closure-2026-11-04.json": {
+    "commit": "21a073174fb1feb828f2d28762293d1803e66a9a",
+    "sha256": "383979568ada21a8bc5a59e2f88f4dc9e912c456a12535552cc40ba5388a04e7",
+    "bytes": 292782
+  },
+  "docs/mask63-production-readiness-2026-11-02.md": {
+    "commit": "21a073174fb1feb828f2d28762293d1803e66a9a",
+    "sha256": "ccd39edd2a4a3092b746c7ebe8a1058c1fef33d3d6d89df810abb7987592c50c",
+    "bytes": 31411
+  },
+  "docs/prefetch-n128-ownership-2026-11-02.md": {
+    "commit": "21a073174fb1feb828f2d28762293d1803e66a9a",
+    "sha256": "ad0cd502296a68039dcdb61631f1e4ce4d3c45e5d426491b3009757e7aa9eef2",
+    "bytes": 6222
+  },
+  "docs/fe027-moe-combine-alignment-2026-10-29.md": {
+    "commit": "21a073174fb1feb828f2d28762293d1803e66a9a",
+    "sha256": "2133b82a1cf049d78e68e2d7718b5805cbaffb35b32dad0d89dc585077461230",
+    "bytes": 19009
+  },
+  "docs/resident-release-gates-2026-10-28.md": {
+    "commit": "21a073174fb1feb828f2d28762293d1803e66a9a",
+    "sha256": "aa46f7e089185795bd3130121b84a5c3cf8f270c99107b7578dae1a1ab74be6f",
+    "bytes": 17669
+  },
+  "docs/agent-protocol-workstream-b-2026-11-04.md": {
+    "commit": "01ae9976f541c384dd83905fc006da196971bdb2",
+    "sha256": "f60fd24c14cebf87bb76375a707999070bd8c92f3514c574d50e94f0a4ccd343",
+    "bytes": 9301
+  },
+  "docs/agent-protocol-contract-2026-11-04.md": {
+    "commit": "01ae9976f541c384dd83905fc006da196971bdb2",
+    "sha256": "1e2b0f951d3af9bf0f341df54116bd97000c07fdab31f0ebb0c4087c52cbd9e1",
+    "bytes": 8562
+  },
+  "docs/results/agent-protocol-2026-11-04.json": {
+    "commit": "01ae9976f541c384dd83905fc006da196971bdb2",
+    "sha256": "0e14ae933b2e699246eb6749d49eecc1bedaaea2707d5fccf3458a9676b02a31",
+    "bytes": 1545
+  },
+  "docs/research-reconciliation-2026-11-04.md": {
+    "commit": "21a073174fb1feb828f2d28762293d1803e66a9a",
+    "sha256": "0f2c0d0d352339c63e9cc952b3c6b8f59843ec4d72bc74d5ca61e685afb719ad",
+    "bytes": 7758
+  }
+}

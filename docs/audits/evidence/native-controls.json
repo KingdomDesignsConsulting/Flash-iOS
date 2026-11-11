@@ -1,0 +1,561 @@
+{
+  "status": "PASS",
+  "cases": [
+    {
+      "request": {
+        "stream": false,
+        "enable_thinking": false
+      },
+      "budget": -1,
+      "explicit": false,
+      "thinking": false
+    },
+    {
+      "request": {
+        "stream": false,
+        "enable_thinking": false,
+        "reasoning_effort": "off"
+      },
+      "budget": -1,
+      "explicit": true,
+      "thinking": false
+    },
+    {
+      "request": {
+        "stream": false,
+        "enable_thinking": false,
+        "reasoning_effort": "none"
+      },
+      "budget": -1,
+      "explicit": false,
+      "thinking": false
+    },
+    {
+      "request": {
+        "stream": false,
+        "enable_thinking": false,
+        "reasoning_effort": "low"
+      },
+      "budget": -1,
+      "explicit": false,
+      "thinking": false
+    },
+    {
+      "request": {
+        "stream": false,
+        "enable_thinking": false,
+        "reasoning_effort": "medium"
+      },
+      "budget": -1,
+      "explicit": false,
+      "thinking": false
+    },
+    {
+      "request": {
+        "stream": false,
+        "enable_thinking": false,
+        "reasoning_effort": "high"
+      },
+      "budget": -1,
+      "explicit": false,
+      "thinking": false
+    },
+    {
+      "request": {
+        "stream": false,
+        "enable_thinking": false,
+        "thinking_token_budget": 0
+      },
+      "budget": 0,
+      "explicit": true,
+      "thinking": true
+    },
+    {
+      "request": {
+        "stream": false,
+        "enable_thinking": false,
+        "thinking_token_budget": 0,
+        "reasoning_effort": "off"
+      },
+      "budget": -1,
+      "explicit": true,
+      "thinking": false
+    },
+    {
+      "request": {
+        "stream": false,
+        "enable_thinking": false,
+        "thinking_token_budget": 0,
+        "reasoning_effort": "none"
+      },
+      "budget": 0,
+      "explicit": true,
+      "thinking": true
+    },
+    {
+      "request": {
+        "stream": false,
+        "enable_thinking": false,
+        "thinking_token_budget": 0,
+        "reasoning_effort": "low"
+      },
+      "budget": 0,
+      "explicit": true,
+      "thinking": true
+    },
+    {
+      "request": {
+        "stream": false,
+        "enable_thinking": false,
+        "thinking_token_budget": 0,
+        "reasoning_effort": "medium"
+      },
+      "budget": 0,
+      "explicit": true,
+      "thinking": true
+    },
+    {
+      "request": {
+        "stream": false,
+        "enable_thinking": false,
+        "thinking_token_budget": 0,
+        "reasoning_effort": "high"
+      },
+      "budget": 0,
+      "explicit": true,
+      "thinking": true
+    },
+    {
+      "request": {
+        "stream": false,
+        "enable_thinking": false,
+        "thinking_token_budget": 1
+      },
+      "budget": 1,
+      "explicit": true,
+      "thinking": true
+    },
+    {
+      "request": {
+        "stream": false,
+        "enable_thinking": false,
+        "thinking_token_budget": 1,
+        "reasoning_effort": "off"
+      },
+      "budget": -1,
+      "explicit": true,
+      "thinking": false
+    },
+    {
+      "request": {
+        "stream": false,
+        "enable_thinking": false,
+        "thinking_token_budget": 1,
+        "reasoning_effort": "none"
+      },
+      "budget": 1,
+      "explicit": true,
+      "thinking": true
+    },
+    {
+      "request": {
+        "stream": false,
+        "enable_thinking": false,
+        "thinking_token_budget": 1,
+        "reasoning_effort": "low"
+      },
+      "budget": 1,
+      "explicit": true,
+      "thinking": true
+    },
+    {
+      "request": {
+        "stream": false,
+        "enable_thinking": false,
+        "thinking_token_budget": 1,
+        "reasoning_effort": "medium"
+      },
+      "budget": 1,
+      "explicit": true,
+      "thinking": true
+    },
+    {
+      "request": {
+        "stream": false,
+        "enable_thinking": false,
+        "thinking_token_budget": 1,
+        "reasoning_effort": "high"
+      },
+      "budget": 1,
+      "explicit": true,
+      "thinking": true
+    },
+    {
+      "request": {
+        "stream": false,
+        "enable_thinking": false,
+        "thinking_token_budget": 999
+      },
+      "budget": 64,
+      "explicit": true,
+      "thinking": true
+    },
+    {
+      "request": {
+        "stream": false,
+        "enable_thinking": false,
+        "thinking_token_budget": 999,
+        "reasoning_effort": "off"
+      },
+      "budget": -1,
+      "explicit": true,
+      "thinking": false
+    },
+    {
+      "request": {
+        "stream": false,
+        "enable_thinking": false,
+        "thinking_token_budget": 999,
+        "reasoning_effort": "none"
+      },
+      "budget": 64,
+      "explicit": true,
+      "thinking": true
+    },
+    {
+      "request": {
+        "stream": false,
+        "enable_thinking": false,
+        "thinking_token_budget": 999,
+        "reasoning_effort": "low"
+      },
+      "budget": 64,
+      "explicit": true,
+      "thinking": true
+    },
+    {
+      "request": {
+        "stream": false,
+        "enable_thinking": false,
+        "thinking_token_budget": 999,
+        "reasoning_effort": "medium"
+      },
+      "budget": 64,
+      "explicit": true,
+      "thinking": true
+    },
+    {
+      "request": {
+        "stream": false,
+        "enable_thinking": false,
+        "thinking_token_budget": 999,
+        "reasoning_effort": "high"
+      },
+      "budget": 64,
+      "explicit": true,
+      "thinking": true
+    },
+    {
+      "request": {
+        "stream": true,
+        "enable_thinking": false
+      },
+      "budget": -1,
+      "explicit": false,
+      "thinking": false
+    },
+    {
+      "request": {
+        "stream": true,
+        "enable_thinking": false,
+        "reasoning_effort": "off"
+      },
+      "budget": -1,
+      "explicit": true,
+      "thinking": false
+    },
+    {
+      "request": {
+        "stream": true,
+        "enable_thinking": false,
+        "reasoning_effort": "none"
+      },
+      "budget": -1,
+      "explicit": false,
+      "thinking": false
+    },
+    {
+      "request": {
+        "stream": true,
+        "enable_thinking": false,
+        "reasoning_effort": "low"
+      },
+      "budget": -1,
+      "explicit": false,
+      "thinking": false
+    },
+    {
+      "request": {
+        "stream": true,
+        "enable_thinking": false,
+        "reasoning_effort": "medium"
+      },
+      "budget": -1,
+      "explicit": false,
+      "thinking": false
+    },
+    {
+      "request": {
+        "stream": true,
+        "enable_thinking": false,
+        "reasoning_effort": "high"
+      },
+      "budget": -1,
+      "explicit": false,
+      "thinking": false
+    },
+    {
+      "request": {
+        "stream": true,
+        "enable_thinking": false,
+        "thinking_token_budget": 0
+      },
+      "budget": 0,
+      "explicit": true,
+      "thinking": true
+    },
+    {
+      "request": {
+        "stream": true,
+        "enable_thinking": false,
+        "thinking_token_budget": 0,
+        "reasoning_effort": "off"
+      },
+      "budget": -1,
+      "explicit": true,
+      "thinking": false
+    },
+    {
+      "request": {
+        "stream": true,
+        "enable_thinking": false,
+        "thinking_token_budget": 0,
+        "reasoning_effort": "none"
+      },
+      "budget": 0,
+      "explicit": true,
+      "thinking": true
+    },
+    {
+      "request": {
+        "stream": true,
+        "enable_thinking": false,
+        "thinking_token_budget": 0,
+        "reasoning_effort": "low"
+      },
+      "budget": 0,
+      "explicit": true,
+      "thinking": true
+    },
+    {
+      "request": {
+        "stream": true,
+        "enable_thinking": false,
+        "thinking_token_budget": 0,
+        "reasoning_effort": "medium"
+      },
+      "budget": 0,
+      "explicit": true,
+      "thinking": true
+    },
+    {
+      "request": {
+        "stream": true,
+        "enable_thinking": false,
+        "thinking_token_budget": 0,
+        "reasoning_effort": "high"
+      },
+      "budget": 0,
+      "explicit": true,
+      "thinking": true
+    },
+    {
+      "request": {
+        "stream": true,
+        "enable_thinking": false,
+        "thinking_token_budget": 1
+      },
+      "budget": 1,
+      "explicit": true,
+      "thinking": true
+    },
+    {
+      "request": {
+        "stream": true,
+        "enable_thinking": false,
+        "thinking_token_budget": 1,
+        "reasoning_effort": "off"
+      },
+      "budget": -1,
+      "explicit": true,
+      "thinking": false
+    },
+    {
+      "request": {
+        "stream": true,
+        "enable_thinking": false,
+        "thinking_token_budget": 1,
+        "reasoning_effort": "none"
+      },
+      "budget": 1,
+      "explicit": true,
+      "thinking": true
+    },
+    {
+      "request": {
+        "stream": true,
+        "enable_thinking": false,
+        "thinking_token_budget": 1,
+        "reasoning_effort": "low"
+      },
+      "budget": 1,
+      "explicit": true,
+      "thinking": true
+    },
+    {
+      "request": {
+        "stream": true,
+        "enable_thinking": false,
+        "thinking_token_budget": 1,
+        "reasoning_effort": "medium"
+      },
+      "budget": 1,
+      "explicit": true,
+      "thinking": true
+    },
+    {
+      "request": {
+        "stream": true,
+        "enable_thinking": false,
+        "thinking_token_budget": 1,
+        "reasoning_effort": "high"
+      },
+      "budget": 1,
+      "explicit": true,
+      "thinking": true
+    },
+    {
+      "request": {
+        "stream": true,
+        "enable_thinking": false,
+        "thinking_token_budget": 999
+      },
+      "budget": 64,
+      "explicit": true,
+      "thinking": true
+    },
+    {
+      "request": {
+        "stream": true,
+        "enable_thinking": false,
+        "thinking_token_budget": 999,
+        "reasoning_effort": "off"
+      },
+      "budget": -1,
+      "explicit": true,
+      "thinking": false
+    },
+    {
+      "request": {
+        "stream": true,
+        "enable_thinking": false,
+        "thinking_token_budget": 999,
+        "reasoning_effort": "none"
+      },
+      "budget": 64,
+      "explicit": true,
+      "thinking": true
+    },
+    {
+      "request": {
+        "stream": true,
+        "enable_thinking": false,
+        "thinking_token_budget": 999,
+        "reasoning_effort": "low"
+      },
+      "budget": 64,
+      "explicit": true,
+      "thinking": true
+    },
+    {
+      "request": {
+        "stream": true,
+        "enable_thinking": false,
+        "thinking_token_budget": 999,
+        "reasoning_effort": "medium"
+      },
+      "budget": 64,
+      "explicit": true,
+      "thinking": true
+    },
+    {
+      "request": {
+        "stream": true,
+        "enable_thinking": false,
+        "thinking_token_budget": 999,
+        "reasoning_effort": "high"
+      },
+      "budget": 64,
+      "explicit": true,
+      "thinking": true
+    },
+    {
+      "request": {
+        "reasoning_budget_tokens": 2
+      },
+      "budget": 2,
+      "explicit": true,
+      "thinking": true
+    },
+    {
+      "request": {
+        "thinking_token_budget": null,
+        "reasoning_budget_tokens": 3
+      },
+      "budget": 3,
+      "explicit": true,
+      "thinking": true
+    },
+    {
+      "request": {
+        "thinking_token_budget": 1,
+        "reasoning_budget_tokens": 3
+      },
+      "budget": 1,
+      "explicit": true,
+      "thinking": true
+    },
+    {
+      "request": {
+        "thinking_token_budget": -1
+      },
+      "budget": 0,
+      "explicit": true,
+      "thinking": true
+    },
+    {
+      "request": {
+        "enable_thinking": true
+      },
+      "budget": -1,
+      "explicit": false,
+      "thinking": false
+    }
+  ],
+  "source_sha256": "b21ce65dd1f9cec3459a0ff80b98dcac8018d7fdf76da055cc6d5d24f03112c8",
+  "scope": "Actual source extracted and compiled; not live HTTP, profile restore, or prompt tokenization",
+  "unsupported_controls_silently_ignored": [
+    "enable_thinking",
+    "reasoning_effort none/low/medium/high"
+  ]
+}

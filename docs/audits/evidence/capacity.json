@@ -1,0 +1,62 @@
+{
+  "status": "PASS",
+  "cases": [
+    {
+      "capacity": 65536,
+      "position": 0,
+      "input": 32768,
+      "generation": 1,
+      "accepted": true
+    },
+    {
+      "capacity": 65536,
+      "position": 32768,
+      "input": 1,
+      "generation": 1,
+      "accepted": true
+    },
+    {
+      "capacity": 65536,
+      "position": 0,
+      "input": 65535,
+      "generation": 1,
+      "accepted": true
+    },
+    {
+      "capacity": 65536,
+      "position": 0,
+      "input": 65536,
+      "generation": 1,
+      "accepted": false
+    },
+    {
+      "capacity": 65536,
+      "position": 2147483647,
+      "input": 2147483647,
+      "generation": 2147483647,
+      "accepted": false
+    },
+    {
+      "capacity": 65536,
+      "position": -1,
+      "input": 1,
+      "generation": 1,
+      "accepted": false
+    },
+    {
+      "capacity": 32768,
+      "position": 0,
+      "input": 32767,
+      "generation": 1,
+      "accepted": true
+    },
+    {
+      "capacity": 32768,
+      "position": 0,
+      "input": 32768,
+      "generation": 1,
+      "accepted": false
+    }
+  ],
+  "conclusion": "Native allocation admission is enforced; 32769 is accepted under service default 65536. This is not a buffer overflow; it exceeds the qualified GPU-only release envelope."
+}

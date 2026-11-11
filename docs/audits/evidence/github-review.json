@@ -1,0 +1,416 @@
+{
+  "observed": "2026-11-11",
+  "entries": [
+    {
+      "kind": "pr2",
+      "data": {
+        "url": "https://github.com/KingdomDesignsConsulting/Flash-iOS/pull/2",
+        "number": 2,
+        "state": "open",
+        "merged": false,
+        "mergeable": true,
+        "draft": true,
+        "body": "## Experimental resident-session protocol and client hardening\n\nLatest FE-027 implementation: `4fa23a66a12ed9cb92eb400be9b651825a3ac284`; final qualification evidence: `eda0e73fd2eca1c8d48caebf9d4d124232eb0d0f` (mask 63 passes all prior counterexamples, 4K twice and 8K; explicit opt-in, production unchanged). Previous release-gate handback: `ba11bd38a818c494634b06092215afe971f99ac1`; verified tooling: `120e993eead03fdae7ad5efbac9fe1583c250e7c`; N128/scalar cache identity fix: `0b49e08bb5948897a2b43774971213cdba0eec8a`; startup repair: `dc77d12c7691958750ff7cbbf8f635d7e29a262a`. Prior client evidence remains below. Production remains unchanged. **Keep this PR in draft; do not merge yet.**\n\n- Existing strict create/continue/invalidation server contract retained; prior live matrices 7/7 and restart 5/5 retained without repeating expensive qualification.\n- Native chat: structured HTTP/SSE JSON, bounded reads/timeouts, complete finish/DONE and Content-Length checks, no ambiguous or partial-output retries, atomic anchored/locked JSONL exchange commits, and durable pending legacy tool output with idempotent replay/manual retry.\n- LM Studio 0.2.0 source/package under `clients/lmstudio-documents`: strict raw SSE, full document/history preservation, deferred validated tool completion, cancellation, and a separately tested scoped resident adapter. SDK 1.4.0 lacks verified stable chat identity, so the shipped SDK entry point deliberately forwards full history statelessly.\n\n## Executed evidence\n\n- Native client builds warning-free; **20 deterministic native transcript/fault tests PASS**, including actual tool pipeline with a compile-time no-shell stub.\n- **19 generator/transport/protocol tests PASS**; TypeScript build PASS.\n- Real LM Studio 0.4.26 build 4 document service + actual SDK Chat forwarding PASS (prediction controller/capture endpoint mocked; not GUI qualification).\n- Updated native client live create/continue/forced-eviction/replay/quit/resume PASS on isolated port 11243: exactly 8 persisted turns, 1 automatic replay, correct ORBIT-73941 recall, no shell tools.\n- Two short paired rounds and two 7,692-token document pairs PASS. Document follow-up: 25 newly prefetched tokens vs 7,702 stateless; median end-to-end 3.69s vs 308.80s. Exploratory/contended timings, not an uncontended throughput claim.\n- Fresh short explicit full-history recovery median 2.80s; resident follow-up median 1.72s. Exact output match in tested cases.\n\n## Remaining release gates\n\n- LM Studio GUI Regenerate was inspected and is unavailable in the installed UI; this is CLOSED as an unavailable operation, not a failed or pending regeneration test. New-package GUI install/cancellation/attachment presentation are not inferred from the SDK/mock-controller tests.\n- Do not enable SDK resident reuse without verified conversation identity.\n- **BLOCKER: N128 accumulation FAILS at completed position 1920** under unchanged criteria. Short bounded results remain accepted only within scope. Named-profile HTTP restart, additional bounded fault contracts and selected short mode references now pass; larger contexts, all mode cross-products and real hardware-fault behavior remain unqualified. Canonical/resident histories retain their intentional empty-wrapper distinction.\n- New-client independent near-limit 8K/long-context checks and actual approved shell-executor interruption remain untested; no production rollout recommendation.\n\nReport: [engineering and exact commands](https://github.com/KingdomDesignsConsulting/Flash-iOS/blob/727def41819bc6dede52321cd2f020831a16f72b/docs/session-continuity-engineering-2026-10-25.md). Machine-readable evidence: `docs/results/session-continuity-2026-10-25.json`.\n\nNo production branch/binary, model weights or Qwen template changed. FE-027 now adds opt-in arithmetic alignment; default arithmetic remains unchanged. Selective execution compatibility version advances 2 → 3 for corrected lifecycle state; executable hashing remains disabled. No requests sent to 11241. Owned experimental server and continuous controls are stopped.\n\n## Resident-state equivalence repair — 2026-10-27\n\nStartup copied inactive CPU recurrent/conv shadows over the authoritative GPU prefix. Matched-token control localized the first divergence at position 13 across all 30 GPU linear layers. Targeted layer-0 GDN localization: 509,952/524,288 floats differ, max_abs 13.947830200195312, RMS 0.1325950803352789; actual tensor was zero. Removed the destructive upload and retained selective cache compatibility.\n\nSeven bounded native matched-token cases pass exact component SHA256 comparisons: implicit 73 tokens, explicit 71, tools 415, thinking-budget 77 (15 substitutions), length-limited continuation 66, dynamic tool-prefix restore 415 (355 cached tokens), canonical/recreated history 69. All ten full-attention layer lengths match positions; no nonfinite state observed. Six model-free collector/history regressions pass. Hidden/logit scratch and allocation padding are excluded; instrumented timings are not performance evidence.\n\nCanonical/recreated tokens and answers match exactly. Resident history contains the empty four-token thinking wrapper absent from canonical visible-history reconstruction; both paths match uninterrupted execution of their own token IDs. No template normalization.\n\n[Full state-equivalence report](https://github.com/KingdomDesignsConsulting/Flash-iOS/blob/c35dc78be19bc9e4ba141252fe2cc300b8d30d40/docs/resident-state-equivalence-2026-10-27.md). Raw tokens and float dumps remain private in Drive. Keep draft; no production promotion.\n\n\n## Bounded N128 and lifecycle qualification\n\nFive short HTTP cases pass: scalar fallback at the batch threshold, minimum slab, slab + scalar tail/EOS/continuation, two consecutive slabs, and explicit system prefix from zero. Completed positions reach 304. Intermediate batch full-model states are not observed or claimed. Four numerical-oracle runs exactly reproduce EVERY observed HTTP candidate fingerprint, while scalar reference fingerprints match independent replay.\n\nN128 is **numerically qualified, not bit-exact to scalar**, under the unchanged existing limits (state <1e-3; hidden <=1e-3; logits <=1e-2; greedy identity, finite values, exact KV lengths/mirrors). Across the matrix: max state 2.60353088e-4, hidden 2.28881836e-5, logits 9.48905945e-5. All ten full-attention and 30 linear layers checked.\n\nReal client RST after partial N128 advancement and after a completed decode step invalidates the session, produces HTTP 409 on continuation, and permits exact fresh recovery. Measured diagnostic cancellation completion: 222.34 / 74.80 ms; health after invalidation: 0.65 / 0.47 ms. This is invalidation/recreation, not preservation of the interrupted conversation.\n\nNative selected Zstd warm-state save/process-exit/load/restore passes exact fingerprints at prefix 141 and 64 subsequent positions through 205. Checkpoint 67,374,473 bytes; opposite mode and wrong prefix reject without altering valid state. Named-profile HTTP startup/restart integration remains separate.\n\nThe selective state identity now includes the N128 runtime switch. No executable hashing, kernel/template changes, format bump or production modifications. Existing prefix capture generally stays scalar; this safeguard does not imply observed production profile corruption.\n\n[Full report and exact Mac reproduction commands](https://github.com/KingdomDesignsConsulting/Flash-iOS/blob/b3cc330124f6e574be940fbf67f049a1a61bfd65/docs/n128-resident-state-qualification-2026-10-27.md). [Sanitized metrics](https://github.com/KingdomDesignsConsulting/Flash-iOS/blob/b3cc330124f6e574be940fbf67f049a1a61bfd65/docs/results/n128-resident-state-2026-10-27.json). Raw token histories, floats and checkpoint remain private in Drive. All owned model processes stopped; production 11241 untouched. Keep draft pending architectural review.\n\n\n## Architect decision and next qualification gates — 2026-10-28\nArchitect accepts **bounded** short scalar exact component-fingerprint qualification and N128 numerical qualification at unchanged source-defined thresholds; N128 and scalar are **not bit-exact**. Native persistent checkpoint restart and TCP-reset invalidation/fresh recovery are verified within their tested scope. **Production remains NO-GO; keep PR draft.**\n\nNext experimental work is delegated in priority order: (1) long-context/many-slab N128 numerical accumulation and boundary testing; (2) real named-profile HTTP process restart/restore; (3) additional cancellation, transport, error-injection and disk-fault rollback; (4) other supported execution modes and selective-identity safeguards. Qualify by observed matched effective-token positions, finite state, KV consistency, greedy identity and established tolerances; do not change the Qwen template or weaken criteria.\n\n[Architect disposition and detailed engineering gates](https://github.com/KingdomDesignsConsulting/Flash-iOS/blob/032eb94b4401ced1639aa83fcea3fc6be44d6fc7/docs/architect-release-gates-2026-10-28.md). Raw artifacts remain private. No production merge authorization.\n\n\n## Four-gate engineering handback — 2026-10-28\n\n**Production NO-GO. Do not merge; keep draft.**\n\n| Gate | Actual result |\n| --- | --- |\n| Long/many-slab N128 | **FAIL**: first failing observed endpoint 1920; last passing endpoint 1792. 4K+ not launched after failure. |\n| Named-profile HTTP restart | PASS: capture/save, process restart, exact shared observable state and behavior, stale session 409, prefix/version/compatibility/mode rejection and safe recovery in isolated storage. |\n| Additional faults | PASS for actual half-close/client timeout, checked-forward prefill/decode injection and partial-write EIO preservation. Real hardware/OOM/Metal faults NOT ESTABLISHED; external tool execution is outside infer HTTP. |\n| Other modes | Short within-mode exact state PASS for CPU-linear, legacy KV, unchained, nonresident MoE, o-proj V3 off, tiny-fast off and bypass ablation. CPU named-profile restart PASS. Ablation recall fails as expected; normal-model quality NOT APPLICABLE there. |\n\nError growth: state 2.39133835e-4 at 1792 → 0.967838436 at 1920; hidden 0.006615520 and logits 0.042357683 at failure. Greedy still agrees, KV lengths/mirrors remain exact and all state is finite; these do NOT override numerical FAIL. Limits unchanged.\n\nRouting localization within the failing slab/layers 0–11: first observed expert-set change at layer 9, input position 1829. Scalar cutoff margin 9.53674316e-7 becomes a tie under N128; router max difference 3.33786011e-6. Executing only the last slab scalarly still fails. A diagnostic exact-scalar-anchor intervention reduces final slab state error to 1.08718872e-4, supporting upstream drift crossing a hard MoE routing boundary. This intervention is NOT a fix or qualification PASS. No kernel/routing/template math or serving policy was changed.\n\nConfirmed tooling corrections: cached-prefix comparison respects actual observation coverage (0–39 capture versus 11–39 restored), strict missing/mismatched-point tests, bounded mirror/snapshot checks before reads, isolated caches and reproducible probes. Three coverage + six collector model-free regressions PASS; both isolated builds warning-free; mode identity and partial-write preservation tests PASS.\n\nA different executable SHA restored the same compatible CPU test checkpoint exactly with no rebuild. Full-binary invalidation remains disabled; no compatibility/format version changes in this handback. Production and existing user profiles/checkpoints untouched. All owned model processes stopped; no requests sent to 11241.\n\n[Consolidated handback and exact Mac commands](https://github.com/KingdomDesignsConsulting/Flash-iOS/blob/ba11bd38a818c494634b06092215afe971f99ac1/docs/resident-release-gates-2026-10-28.md), [sanitized matrix](https://github.com/KingdomDesignsConsulting/Flash-iOS/blob/ba11bd38a818c494634b06092215afe971f99ac1/docs/results/resident-release-gates-2026-10-28.json), [error curve](https://github.com/KingdomDesignsConsulting/Flash-iOS/blob/ba11bd38a818c494634b06092215afe971f99ac1/docs/results/n128-accumulation-error-curve-2026-10-28.csv). Raw tokens, routes, checkpoint data and log payloads remain private in Drive.\n\n\n## Future Engineering Ledger (living backlog)\n[FUTURE_ENGINEERING_LEDGER.md](https://github.com/KingdomDesignsConsulting/Flash-iOS/blob/experiment/http-resident-prefix-reuse-20261023/FUTURE_ENGINEERING_LEDGER.md) tracks active FE-001–004 release gates, bounded-qualified work, and research-derived candidate experiments with IDs, owners, statuses, dependencies and evidence. It is a planning record, not production approval. Update it as experiments advance; PR remains draft.\n\n\n## Long N128 release gate — confirmed FAIL (2026-10-28)\n**Production NO-GO.** Matched-token native reference/candidate first failed at completed position **1920**, after passing through 1792. Maximum state error **0.967838436** (<1e-3 required), hidden **0.006615520** (<=1e-3), logits **0.042357683** (<=1e-2). Greedy tokens and KV lengths/mirrors matched, but do not satisfy numerical correctness. Localized near-tied MoE expert-set difference at layer 9, input position 1829; exact scalar state anchor at 1792 prevents spike in diagnostic counterfactual. No production fix validated.\n\nOther delegated gates: named-profile HTTP restart PASS in tested scope; real half-close, client timeout, synthetic forward failure and partial-write checkpoint preservation PASS; seven short within-mode comparisons PASS. Real hardware errors and long other-mode cross-products not established. [Handback](https://github.com/KingdomDesignsConsulting/Flash-iOS/blob/ba11bd38a818c494634b06092215afe971f99ac1/docs/resident-release-gates-2026-10-28.md). [Future Engineering Ledger](https://github.com/KingdomDesignsConsulting/Flash-iOS/blob/experiment/http-resident-prefix-reuse-20261023/FUTURE_ENGINEERING_LEDGER.md): FE-001 BLOCKED, FE-027 explicitly delegated Work numerical investigation; latest unresolved findings below. Keep draft/unmerged, scalar reference unchanged, no routing/template/threshold relaxation.\n\n\n## FE-027 autonomous numerical investigation — 2026-10-28\n\nCommit: `f6d2cf82727ea0a451bb961551080061e12e6882`. **MORE INVESTIGATION REQUIRED — no production promotion. Keep draft and unmerged.**\n\nMeasured identical-input inconsistencies: CPU versus scalar-GPU RMSNorm and shared SwiGLU; Q4 scalar V3 evaluates `fma(q, scale*x, bias*x)`, whereas grouped Q4 used `(q*scale+bias)*x`. The isolated mask-15 prototype aligns these operations with existing normalization/activation kernels and private grouped Q4 kernels, preserving batching geometry and routing policy. At the targeted first row, all expert gate/up/activation/down vectors, shared output and layer-0 output become byte-exact; first-token router inputs through layers 0–2 also match. This is local exactness, not general equivalence.\n\n| Qualification | Result |\n| --- | --- |\n| Preserved ordinary-N128 reproduction | FAIL at 1920, unchanged |\n| Opt-in alignment, original 2057-token fixture | PASS: state max 5.06043434e-4, hidden 2.71797180e-5, logits 9.05990601e-5 |\n| Attempted 4K fixture | FAIL at 2304 after pass through 2176: state 0.568868160, hidden 0.007261276, logits 0.014543116 |\n| Prior short two-slab resident history | FAIL at 303 during scalar continuation: state 0.363003731, hidden 0.093498230, logits 0.453935146 |\n| Short threshold / minimum slab / slab-tail-EOS-follow-up | PASS; final explicit-zero HTTP case NOT RUN after regression |\n| Native Zstd checkpoint restart | Exact fingerprints at all 65 observed positions, 141–205; wrong prefix/runtime mode/arithmetic mask reject; valid file preserved |\n| Disabled experiment | Exact ordinary-N128 candidate fingerprints at positions 128 and 129; old compatibility identity preserved |\n| Build / model-free checks | Four isolated builds warning-free; 14 focused model-free tests PASS |\n\nAll-layer localization distinguishes two mechanisms: layer 21/input 2237 crossing survives exact scalar rebase at 2176 (remaining within-slab arithmetic is sufficient); layer 33/input 302 crossing disappears completely when that scalar step starts from exact scalar state (inherited N128 drift). Counterfactuals are diagnostic only. Greedy tokens, finiteness and KV geometry/mirrors still pass at the failures and do not override numerical FAIL. Thresholds, Qwen template, top-K/tie policy and serving protocol unchanged. No reference-state-reset workaround.\n\nThree alternating fresh-process non-diagnostic prefill trials per build: control median 34.289s (33.928–36.568), prototype 35.100s (33.493–36.246), 1024 measured prefill tokens of a 1025-token input. Observed +2.37% median time with overlapping ranges is exploratory, not evidence of a meaningful causal regression or benefit.\n\nSelective compatibility retains the old identity for mask zero; enabled masks hash an explicit experiment version/mask and selected Q4 Metal text. Full-binary invalidation remains disabled; no ordinary format/execution-version bump or production changes. FE-001 remains BLOCKED and FE-027 ACTIVE. No 8K escalation after failure. All owned inference processes and isolated servers stopped; 11241 untouched.\n\n[Detailed report, changed files, exact commands and remaining options](https://github.com/KingdomDesignsConsulting/Flash-iOS/blob/f6d2cf82727ea0a451bb961551080061e12e6882/docs/fe027-n128-arithmetic-investigation-2026-10-28.md). [Sanitized results](https://github.com/KingdomDesignsConsulting/Flash-iOS/blob/f6d2cf82727ea0a451bb961551080061e12e6882/docs/results/fe027-arithmetic-2026-10-28.json). [Error curves](https://github.com/KingdomDesignsConsulting/Flash-iOS/blob/f6d2cf82727ea0a451bb961551080061e12e6882/docs/results/fe027-error-curves-2026-10-28.csv). Raw histories, routing scores, float probes, checkpoint and timing logs remain private in Drive.\n\n\n## FE-027 actual full-attention follow-up — 2026-10-29\n\nCommit: `d1b8265f2edf85b49f2f844056f96abbaabd4f54`. **MORE INVESTIGATION REQUIRED. Production NO-GO; keep draft and unmerged.**\n\nActual layer-3 tensors at rows 0/1/7/30/31/32/63/127 distinguish inherited input drift from intrinsic preparation, attention/reduction and sigmoid-gating arithmetic. Identical-input Q/K/V projections and o-projection/residual replays are exact at sampled rows. CPU/GPU preparation max 1.90734863e-6; reference versus online attention max 2.08616257e-7. Every replay-to-live validation passes, and private replay preserves active state. Fused unavailable intermediates are explicitly unobservable.\n\nOpt-in bit 16 (mask 31 with prior alignment) reuses scalar-compatible preparation/attention, preserves batched QKV/MoE and leaves scalar reference, routing, template and limits unchanged. Default remains off.\n\n| Test | Actual result |\n| --- | --- |\n| Original 2057-token fixture | PASS: state max 0.000131726265 |\n| Saved two-slab history through 304 | PASS including former failure 303; saved IDs only, not new HTTP qualification |\n| Extended fixture through 2305 | PASS including former failure 2304; position 1920 also passes |\n| Attempted 4096 | **FAIL at 3456**, last pass 3328: layer-23 KV K 0.001438140869140625, V 0.0010395050048828125 |\n| Last-slab localization | 5120 route observations/bank, no expert-set changes; three order changes. Diagnostic exact anchor at 3328 reduces state error to 9.91821289e-5; FAIL retained, never serving policy |\n| Preceding layer 2, row 0 | Exact mid/post inputs, weights, eight expert outputs and shared output; CPU/GPU combine and actual output differ in 780 values, max 1.49011612e-8, matching incoming layer-3 signature |\n| Native checkpoint/default identity | Mask-31 restart exact at 65 positions; wrong prefix/mode/mask reject and preserve file; old mask-15 checkpoint exact with new binary; disabled baseline exact; all 32 identities distinct |\n| Builds/model-free tests | Isolated builds PASS; seven fail-closed summary tests and eight source contracts/synthetic check PASS |\n| Performance | NOT RUN following state FAIL. Additional combine-score/CPU-to-candidate proof GPU-gated NOT RUN at 100% utilization; unexecuted extension reverted |\n\nNext bounded experiment: validate shared-score/CPU replay and align preceding expert-combine arithmetic across rows, then rerun mandatory cases and 3456. Do not stabilize routing or reset state periodically. All actual inference processes started by this task have exited; no new HTTP server or request to 11241. Selective compatibility preserves masks 0–15 and adds explicit bit-16 operator version; no full-binary invalidation. Raw tensors/tokens/checkpoints remain private in Drive.\n\n[Detailed report and exact commands](https://github.com/KingdomDesignsConsulting/Flash-iOS/blob/d1b8265f2edf85b49f2f844056f96abbaabd4f54/docs/fe027-full-attention-localization-2026-10-29.md). [Sanitized matrix](https://github.com/KingdomDesignsConsulting/Flash-iOS/blob/d1b8265f2edf85b49f2f844056f96abbaabd4f54/docs/results/fe027-full-attention-2026-10-29.json). Historical failures above remain valid for their original controls/masks.\n\n\n## FE-027 Phase 4 — implementation and 4K engineering checkpoint\n\nCommit: `4fa23a66a12ed9cb92eb400be9b651825a3ac284`. **Production remains NO-GO; keep draft and unmerged.** Expanded 8K and conditional performance tests are still in progress; neither is claimed qualified at this checkpoint.\n\nActual shared-gate-score identity, expert operands and both live-path replays are now authenticated at layer 2/row0. Across 48 observations/24 expert configurations, rounded weighted products and routed accumulations agree; the first real difference is CPU versus GPU shared sigmoid. The initial staged trace's apparent final-add mismatch failed authentication and was corrected as a diagnostic artifact, not a runtime defect.\n\nNew opt-in bit 32/mask 63 reuses the unchanged scalar GPU combine and preserves final-layer CPU eligibility. It retains grouping, eight-expert ordering, default/scalar behavior and selective cache identity. Masks 0/15/31 stay compatible; all 64 identities are distinct. No routing bands, template changes or serving-state resets.\n\nAll mandatory histories through 129/304/2057/2305/3456/4096 PASS. Persistent fingerprints are exact at every observed endpoint; worst hidden 1.90734863e-6 and logits 3.81469727e-6, so not universal whole-model bitwise equivalence. Independent full 4K repeat reproduces both banks' fingerprints exactly. Five fresh HTTP/EOS/resident-continuation cases and four native oracles PASS; mask-63 65-position restart, old-mask-15/31 restores, zero-mode baseline and wrong-mode rejection PASS. 8K is gated and RSS-bounded, not yet qualified. No performance results yet.\n\n[Phase-4 report and exact commands](https://github.com/KingdomDesignsConsulting/Flash-iOS/blob/4fa23a66a12ed9cb92eb400be9b651825a3ac284/docs/fe027-moe-combine-alignment-2026-10-29.md), [sanitized matrix](https://github.com/KingdomDesignsConsulting/Flash-iOS/blob/4fa23a66a12ed9cb92eb400be9b651825a3ac284/docs/results/fe027-combine-2026-10-29.json). Older mask-31 failure at 3456 remains a valid historical control. Production port 11241 was not used.\n\n\n## FE-027 Phase 4 final handback — 2026-10-29\n\nImplementation `4fa23a66a12ed9cb92eb400be9b651825a3ac284`; final evidence `eda0e73fd2eca1c8d48caebf9d4d124232eb0d0f`. **READY FOR ARCHITECT REVIEW within the documented scope. Keep PR draft and unmerged; production/default remains unchanged.**\n\n- All prior 303/1920/2304/3456 counterexamples PASS with zero persistent-state error. Full 4096 passes twice with identical fingerprints; full 8192 passes all 64 observed slab endpoints with exact active persistent-state fingerprints. Hidden/logit maxima 1.90734863e-6 / 3.81469727e-6; not universal whole-model bitwise equivalence. No intermediate whole-model batch states inferred.\n- Actual shared-gate-score and operand identity authenticated. CPU/GPU sigmoid is the first real sampled discrepancy; corrected combine uses the unchanged scalar GPU pipeline and preserves final-layer CPU eligibility, expert ordering, weights, template, thresholds and default behavior. No state-rebase workaround.\n- Five fresh HTTP/EOS/resident histories and four native oracles PASS. Mask-63 save/restart matches 65 positions; old-mask-15/31 restores, wrong prefix/mode/mask rejection, zero baseline and all 64 identities PASS. Full-binary invalidation remains disabled.\n- 8K peak child RSS 10,274,308,096 bytes (~9.57 GiB); 16-GiB watchdog did not trip. Three resource-budget CPU tests plus seven fail-closed diagnostic tests PASS. Isolated builds warning-free.\n- Nine non-diagnostic timings (3/path), fixed IDs/greedy seed, balanced order, every launch gated below 30%: median prefill 29.345s ordinary N128, 31.434s corrected, 49.001s scalar for 1024 processed tokens. Corrected is **+7.12% time versus ordinary**, **1.559x scalar throughput**, setup-inclusive and exploratory. All reported generated IDs and N128 cache counters match; no claim of global uncontended operation or steady-state continuation speed. The measured combine subset accounts for ~148ms, not the full 2.089s gap.\n\nLongest native context qualified in this phase: 8192 on supplied fixture. Long independent-document diversity, 16K/32K numerical convergence, other execution-mode cross-products and broader serving-fault coverage are not inferred. Retain explicit opt-in pending Lead Architect acceptance; optimize dispatch overhead only with exact arithmetic and requalification. All owned inference processes exited and test port 11243 is free; 11241 was never used.\n\n[Final report and exact reproduction commands](https://github.com/KingdomDesignsConsulting/Flash-iOS/blob/eda0e73fd2eca1c8d48caebf9d4d124232eb0d0f/docs/fe027-moe-combine-alignment-2026-10-29.md), [sanitized final matrix](https://github.com/KingdomDesignsConsulting/Flash-iOS/blob/eda0e73fd2eca1c8d48caebf9d4d124232eb0d0f/docs/results/fe027-combine-2026-10-29.json), [endpoint curves](https://github.com/KingdomDesignsConsulting/Flash-iOS/blob/eda0e73fd2eca1c8d48caebf9d4d124232eb0d0f/docs/results/fe027-combine-error-curve-2026-10-29.csv). Raw artifacts remain private in Drive. Starting HEAD was `d1b8265f2edf85b49f2f844056f96abbaabd4f54`. Earlier controls/failures remain valid for their original modes.\n\n\n## Overnight promotion qualification checkpoint — 2026-11-02\n\nCommit `bcf431b5d8c2555dc55b462101b80f44fbe024ea`. **In progress; no release disposition or promotion. Keep draft/unmerged.** Six complete independent histories pass 455 observed endpoints with exact persistent fingerprints (state max 0, hidden 1.90734863e-6, logits 3.81469727e-6). Complete 16K passes all 128 slabs, including GPU routing in all ten full-attention layers at 16384. Observed RSS peak 9,559,293,952 bytes is not total unified memory. Short profile/restart/mode/protocol/error cases pass within the report’s explicit scope. Independent 32K remains running; final allocation/tool-fault, long HTTP and performance gates are not claimed complete.\n\n[Working report and reproduction](https://github.com/KingdomDesignsConsulting/Flash-iOS/blob/bcf431b5d8c2555dc55b462101b80f44fbe024ea/docs/mask63-production-readiness-2026-11-02.md). Diagnostic-only changes preserve inference math, template, production defaults and selective cache identity; full executable hashing remains disabled. Historical negative evidence above remains valid for its original modes. Private tokens/checkpoints are not published.\n\n\n### 2026-11-02 resumed qualification checkpoint (not a release decision)\n\n`24d6cc4cef2c8b852b63f4d3af3dcf55b30090c6` records full independent 32K/256-slab PASS (exact persistent fingerprints, zero state error; hidden/logit maxima 4.76837158e-7 / 5.72204590e-6), completed partial-tool and controlled allocation/write-fault recovery, and exact cross-build selective-identity persistent restore. Native RSS observed 10,177,478,656 bytes; charged-footprint peak 9,376,072,264, not additive. Full binary hashing stays disabled. No runtime source/default/production edits in this checkpoint.\n\nLong 16K HTTP resident/scalar replay is still running. Actual SDK/adapter smoke and balanced performance trials are sequentially gated behind it. Installed LM Studio GUI is not claimed qualified. Working report: `docs/mask63-production-readiness-2026-11-02.md`; sanitized evidence: `docs/results/mask63-production-readiness-2026-11-02.json`. Preserve all historical negative evidence above and keep this PR draft; no merge/promotion.\n\n\n## FE-039 — confirmed orphan-prefetch state defect and short repair (2026-11-02)\n\nRepair commit `ac06b920dbb7e26b804480b36eea4dbe83b40d4e`. **Keep draft; release gates remain open.** Actual SDK multi-request testing exposed a second stateless N128 prefill with exact state through 128, then active-state error **18.87463927268982 at 129**. Authenticated layer-0 capture shows six omitted experts/zero weights; first-request and fresh scalar states match. The existing no-prefetch option isolates the cause.\n\nDecode-prefetch flags leaked into N128 capture, which can return without consuming its short async read. The repair drains old writes/resets decode-only flags before request prefill and prevents capture-only prefetch launches. Default decode prefetch remains on. All captured active tensors/eight expert/combine vectors are now byte-exact, max error 0. Three stateless turns and three resident turns through 476 pass independent scalar replay. No routing/template/tolerance changes or state rebasing.\n\nEligible GPU N128 adds selective `nrow-prefetch-ownership-v2` compatibility; old prefetch on/off aliases invalidate once. Scalar/CPU identities, global execution v3, format/layout and disabled executable hashing remain unchanged. Unrelated future rebuilds remain compatible.\n\n[Repair, negative/positive evidence and focused commands](https://github.com/KingdomDesignsConsulting/Flash-iOS/blob/ac06b920dbb7e26b804480b36eea4dbe83b40d4e/docs/prefetch-n128-ownership-2026-11-02.md). Earlier 16K/32K independent single-history passes and pre-repair long HTTP 150-position PASS remain valid for their executed scope; they did not establish this multi-request safety. Post-repair serving/cache/performance are still pending. The original literal-change instruction also fails on scalar; preserved model behavior is not treated as a numerical PASS. No production change or merge authorization.\n\n\n## Final overnight release handoff — reviewed 2026-11-03\n\nEvidence commit: `3df795af9fde0d04cbabd3c24eb2a67f80c270fd`; runtime ownership repair: `ac06b920dbb7e26b804480b36eea4dbe83b40d4e`. **NO-GO — BLOCKERS REMAIN. Keep draft/unmerged; production/defaults remain unchanged.** Historical negative controls above remain valid for their original source/modes.\n\n- Six independent histories / 455 observations and archived native 16K/32K (128/256 slabs) PASS exact active-state fingerprints; state max 0, overall hidden/logit maxima 1.9073486328125e-6 / 5.7220458984375e-6. All ten GPU attention layers through 32768. Native long runs use archived B3; not a new full 32K repeat on repaired B8.\n- Repaired default-prefetch three-turn stateless/resident tests PASS. Repaired long HTTP: 16406/16438/16470, all 150 observed fingerprints match authenticated independent scalar history, without reference-state rebasing. Repaired cache epoch rejection, cross-build restore, named-profile restart, controlled stream/worker/write faults and real RST recovery PASS. Post-repair suite completed Nov 2 14:23:04 PST.\n- Actual SDK Chat/generator/Flash protocol, native IDs and state PASS with a mock UI controller. New-literal behavior remains FAIL on both scalar and candidate. No GUI/documents/tool execution qualification is inferred.\n- Three balanced process trials/path: 1K prefill medians ordinary/mask63/scalar 32.073/34.679/51.532s; 4K 157.471/180.699/257.957s. Mask63 costs +8.13%/+14.75% versus ordinary, ~1.486x/~1.428x scalar throughput. Exploratory GPU-gated, not globally uncontended. HTTP completed only two tokens/request, so no sustained decode claim. Matched 16K/32K performance NOT RUN.\n- 32K observed RSS 10,177,478,656 bytes, charged-footprint peak 9,376,072,264; overlapping values, not unified-memory total. Performance observer label precedence corrected in derived evidence; raw log unchanged. Final test server stopped Nov 2 15:47:50 PST, measurements ended 15:47:53; no owned process/test listener remains.\n- Selective ownership epoch only; scalar/CPU policy/global v3/format unchanged, full executable hashing remains disabled. No production port requests or deployment.\n\n[Final matrix, exact scope, provenance, measurements and commands](https://github.com/KingdomDesignsConsulting/Flash-iOS/blob/3df795af9fde0d04cbabd3c24eb2a67f80c270fd/docs/mask63-production-readiness-2026-11-02.md). [Sanitized results](https://github.com/KingdomDesignsConsulting/Flash-iOS/blob/3df795af9fde0d04cbabd3c24eb2a67f80c270fd/docs/results/mask63-production-readiness-2026-11-02.json). Raw tokens/tensors/checkpoints remain private in Drive. Remaining release gates: intended-capacity performance, sustained HTTP decode and separate client behavioral review. No promotion authorization.\n",
+        "title": "Experiment: HTTP resident-session prefill reuse versus full-history replay",
+        "base": "flash-moe-production",
+        "base_sha": "8312a1d0fbf4fa09a14621a51cfe676be98c29b3",
+        "head": "experiment/http-resident-prefix-reuse-20261023",
+        "head_sha": "66adf92e2ea950528917000d1b59b788e1687371",
+        "head_repo_id": 1405542623,
+        "head_repo_full_name": "KingdomDesignsConsulting/Flash-iOS",
+        "merge_commit_sha": "d4e7258e115b99b8337fbf2a237c3691dd367990",
+        "user": {
+          "login": "KingdomDesignsConsulting",
+          "name": "KingdomDesignsConsulting",
+          "email": null,
+          "avatar_url": "https://avatars.githubusercontent.com/u/95175704?v=4",
+          "id": 95175704
+        },
+        "requested_reviewers": null,
+        "requested_team_reviewers": null,
+        "diff": null,
+        "comments": null,
+        "created_at": "2026-10-23T23:33:47Z",
+        "updated_at": "2026-11-04T22:23:42Z",
+        "closed_at": null,
+        "merged_at": null,
+        "commits": 59,
+        "changed_files": 125,
+        "additions": 45709,
+        "deletions": 257,
+        "display_url": "https://github.com/KingdomDesignsConsulting/Flash-iOS/pull/2",
+        "display_title": "Experiment: HTTP resident-session prefill reuse versus full-history replay"
+      }
+    },
+    {
+      "kind": "pr3",
+      "data": {
+        "url": "https://github.com/KingdomDesignsConsulting/Flash-iOS/pull/3",
+        "number": 3,
+        "state": "open",
+        "merged": false,
+        "mergeable": true,
+        "draft": true,
+        "body": "## Work A performance continuation handback\n\nStarted from9759b0265b64b51320ffb07166ff00d2f9ee483a. Final commit21a073174fb1feb828f2d28762293d1803e66a9a records the measured partial outcome. Checkpoints cb64c447/091f4b54/e8916033 preserve admission, staging diagnosis and the complete mask63 pair. Changes are confined to evidence validation/aggregation, regression tests, ledger and documentation. Frozen runtime/model/binary/fixture bindings were verified before launches. The existing repaired native32K/256-endpoint numerical PASS is reused.\n\n### Measured prefill seconds\n\n| Context | Mode | Cold | Warm | Warm tok/s | Complete process trials |\n|---|---|---:|---:|---:|---:|\n|16K|ordinary N128|1325.305|995.824|16.453|1|\n|16K|mask63|1174.335|1180.462|13.879|1|\n|16K|scalar|2123.869|2148.034|7.627|1|\n|32K|ordinary N128, retained Nov6|3098.961|3145.699|10.417|1|\n|32K|mask63, complete Nov10 pair|5128.867|5084.331|6.445|1|\n|32K|scalar, completed cold request in interrupted trial|6741.074|INCOMPLETE|UNMEASURED|0|\n\nWarm mask63 time cost versus ordinary is18.541% at16K and61.628% at32K. At16K warm throughput is1.820x scalar. At32K the cold-request ratio is1.314x scalar; scalar warm comparison is pending. Comparisons are exploratory n=1 and cross-date/cache confounded. Ordinary is a performance control. The earlier3580.765s interrupted mask63 cold observation remains outside complete-trial counts.\n\n### Actual process outcome\n\nThe missing-case command ran11:19:29–17:19:28 PST. Mask63 starts11:19:31, completes cold12:45:32 and warm14:10:54, then exits through owned termination. Its accepted pair processes32768 prompt tokens, cached0,32 generated, with all10 KV lengths32800. GPU routing in all10 layers at32768 and CPU at32769 passes. Launch GPU6/19/15%, host47%, post14/12/14%; no guard event in this accepted process trial.\n\nScalar starts14:10:58 (GPU0/12/13%), completes cold16:03:52 and is interrupted during warm at observed position22144. The stop coincides with the configured six-hour phase deadline. The old exception path lost the watchdog return reason, so deadline attribution is based on bounds and timestamps. Original report remains STOPPED. Its completed cold SSE/usage/allocation evidence is retained separately.\n\nA fresh scalar-only attempt starts17:31:52 under the existing4-hour process/6-hour phase limits and is rejected before model launch by GPU samples33–60%. A bounded settling window remains33–54%; final17:42:57 readings38/38/38%. This is a safe resource-admission block. All owned model/guard/supervisor processes and the test listener have exited.\n\n### Environment and memory\n\nMatched16384-token prefix host counters show linear staging49.686s→747.928s, with substantially smaller attention/projection changes. Memory Cleaner5.1 AutoCleaning=true was observed read-only. This supports cache/I/O conditions as a confound; causation is unproven. Phase counters overlap and are host-wall measurements. Hardware GPU timestamp latency and per-expert cache hits remain unmeasured.\n\nComplete mask63 watchdog-observed RSS peak7,291,469,824 bytes, independent sampled RSS peak7,296,237,568, charged lifetime peak3,524,718,904, Metal5,357,207,552. Completed scalar-cold samples show peak RSS2,582,347,776 and lifetime charged peak3,567,820,360. Sampled peaks are distinct from unmeasured true lifetime RSS high water. These memory metrics overlap. Six-GiB reserve supervision supplements the existing admission/watchdog controls.\n\n31 focused model-free tests PASS. The full validator requires both complete process pairs; split-phase support retains original STOPPED statuses and validates only independently complete rows. Cold must be repeated to establish same-process scalar warm state after exit. Exact scalar-only launch, reserve-guard and split-phase validation commands are in the report. No additional repetitions are scheduled under the quota constraint.\n\n### Disposition\n\n**BLOCKED — SAFE RESOURCE ADMISSION UNAVAILABLE**\n\nA complete scalar32K cold/warm process trial remains the performance gate. The proposed envelope is M4/24GiB, tieredK8, opt-in mask63, default GPU-linear/chaining/prefetch/N128 and lazy32K. Production launcher verification, capacity enforcement, final integration and client reviews are separate approval requirements. PR #3 is draft. No merge/deployment actions are included in this work.\n\n[Current handback and exact resumption commands](https://github.com/KingdomDesignsConsulting/Flash-iOS/blob/21a073174fb1feb828f2d28762293d1803e66a9a/docs/work-a-mask63-release-closure-2026-11-04.md)\n\n[Sanitized results](https://github.com/KingdomDesignsConsulting/Flash-iOS/blob/21a073174fb1feb828f2d28762293d1803e66a9a/docs/results/work-a-mask63-release-closure-2026-11-04.json)\n\n[Review-only release procedure](https://github.com/KingdomDesignsConsulting/Flash-iOS/blob/21a073174fb1feb828f2d28762293d1803e66a9a/docs/work-a-mask63-release-procedure-2026-11-06.md)\n\nHistorical failed/interrupted results, admission blocks and numerical controls remain in the reports and Git history. Raw prompts/tokens/checkpoints and large records are private under /Users/knagel/Flash-iOS-Work-A/2026-11-04-mask63-release. Small driver logs use root benchmark-logs.",
+        "title": "Work A: repaired mask63 release closure qualification",
+        "base": "experiment/http-resident-prefix-reuse-20261023",
+        "base_sha": "66adf92e2ea950528917000d1b59b788e1687371",
+        "head": "work/release-mask63-final-qualification",
+        "head_sha": "21a073174fb1feb828f2d28762293d1803e66a9a",
+        "head_repo_id": 1405542623,
+        "head_repo_full_name": "KingdomDesignsConsulting/Flash-iOS",
+        "merge_commit_sha": "97705ae719f2e30405817a149205a4ec73efae15",
+        "user": {
+          "login": "KingdomDesignsConsulting",
+          "name": "KingdomDesignsConsulting",
+          "email": null,
+          "avatar_url": "https://avatars.githubusercontent.com/u/95175704?v=4",
+          "id": 95175704
+        },
+        "requested_reviewers": null,
+        "requested_team_reviewers": null,
+        "diff": null,
+        "comments": null,
+        "created_at": "2026-11-04T22:59:42Z",
+        "updated_at": "2026-11-11T01:46:08Z",
+        "closed_at": null,
+        "merged_at": null,
+        "commits": 10,
+        "changed_files": 27,
+        "additions": 11146,
+        "deletions": 11,
+        "display_url": "https://github.com/KingdomDesignsConsulting/Flash-iOS/pull/3",
+        "display_title": "Work A: repaired mask63 release closure qualification"
+      }
+    },
+    {
+      "kind": "pr2_comments",
+      "data": {
+        "comments": [
+          {
+            "url": "https://github.com/KingdomDesignsConsulting/Flash-iOS/pull/2#issuecomment-6376989710",
+            "body": "**Eviction test result (2026-10-23): confirmed silent context loss.** Initial session knew `AXIOM-8FF85FE6AA73`; replacement request evicted it; stale `session_id` returned HTTP 200 + `UNKNOWN`, with `session_reused=0` and no invalidation signal. Full replay returned the exact code. Implemented opt-in `flash_require_session_resume` in `infer.m` on this draft branch: only the explicitly strict thin-continuation call is rejected (HTTP 409 JSON or SSE invalidation) if the resident ID is absent/mismatched. Updated eviction test to send the strict flag. **Needs compilation and isolated regression on M4; production untouched.** Do not enable LM Studio continuation until tested and the client safely handles invalidation/replay.",
+            "user": {
+              "login": "KingdomDesignsConsulting",
+              "name": "KingdomDesignsConsulting",
+              "email": null,
+              "avatar_url": "https://avatars.githubusercontent.com/u/95175704?v=4",
+              "id": 95175704
+            },
+            "id": 6376989710,
+            "pull_request_review_id": null,
+            "in_reply_to_id": null,
+            "created_at": "2026-10-23T23:44:59Z",
+            "updated_at": "2026-10-23T23:44:59Z",
+            "review": null,
+            "side": null,
+            "line": null,
+            "start_line": null,
+            "path": null,
+            "body_html": "<p dir=\"auto\"><strong>Eviction test result (2026-10-23): confirmed silent context loss.</strong> Initial session knew <code class=\"notranslate\">AXIOM-8FF85FE6AA73</code>; replacement request evicted it; stale <code class=\"notranslate\">session_id</code> returned HTTP 200 + <code class=\"notranslate\">UNKNOWN</code>, with <code class=\"notranslate\">session_reused=0</code> and no invalidation signal. Full replay returned the exact code. Implemented opt-in <code class=\"notranslate\">flash_require_session_resume</code> in <code class=\"notranslate\">infer.m</code> on this draft branch: only the explicitly strict thin-continuation call is rejected (HTTP 409 JSON or SSE invalidation) if the resident ID is absent/mismatched. Updated eviction test to send the strict flag. <strong>Needs compilation and isolated regression on M4; production untouched.</strong> Do not enable LM Studio continuation until tested and the client safely handles invalidation/replay.</p>"
+          },
+          {
+            "url": "https://github.com/KingdomDesignsConsulting/Flash-iOS/pull/2#issuecomment-6394718831",
+            "body": "Live hardened server test (2026-10-24): PASS for nonstreaming resident-session eviction. Session A creation HTTP 200; session B replacement HTTP 200; stale A continuation HTTP 409 in ~1 ms with `session_invalidated:true` and `resend_full_history:true`; stateless full-history control recovered `AXIOM-167CA515F8DA`; `unsafe_silent_loss_observed:false`. Nonstreaming safety regression addressed in this scenario. Further live qualification required for active continuation, SSE invalidation and client replay. Added `tools/experiment_http_live_session_matrix.py` (commit `8d07b09`) for these cases. Do not merge yet.",
+            "user": {
+              "login": "KingdomDesignsConsulting",
+              "name": "KingdomDesignsConsulting",
+              "email": null,
+              "avatar_url": "https://avatars.githubusercontent.com/u/95175704?v=4",
+              "id": 95175704
+            },
+            "id": 6394718831,
+            "pull_request_review_id": null,
+            "in_reply_to_id": null,
+            "created_at": "2026-10-25T07:08:56Z",
+            "updated_at": "2026-10-25T07:08:56Z",
+            "review": null,
+            "side": null,
+            "line": null,
+            "start_line": null,
+            "path": null,
+            "body_html": "<p dir=\"auto\">Live hardened server test (2026-10-24): PASS for nonstreaming resident-session eviction. Session A creation HTTP 200; session B replacement HTTP 200; stale A continuation HTTP 409 in ~1 ms with <code class=\"notranslate\">session_invalidated:true</code> and <code class=\"notranslate\">resend_full_history:true</code>; stateless full-history control recovered <code class=\"notranslate\">AXIOM-167CA515F8DA</code>; <code class=\"notranslate\">unsafe_silent_loss_observed:false</code>. Nonstreaming safety regression addressed in this scenario. Further live qualification required for active continuation, SSE invalidation and client replay. Added <code class=\"notranslate\">tools/experiment_http_live_session_matrix.py</code> (commit <code class=\"notranslate\">8d07b09</code>) for these cases. Do not merge yet.</p>"
+          },
+          {
+            "url": "https://github.com/KingdomDesignsConsulting/Flash-iOS/pull/2#issuecomment-6395335572",
+            "body": "Live streaming invalidation regression discovered: `http.client.BadStatusLine: data: {...}` during stale-session SSE request. The early rejection path emitted SSE event bytes before any HTTP status line/headers, while the late-failure helper intentionally emits only event data after headers. Patched `metal_infer/infer.m` at commit `f6ccd9c`: send `SSE_HEADERS` before calling `send_session_invalidated_error` in the early stale/unknown session branch. Requires rebuilding the hardened candidate; prior live server binary is unaffected until rebuild/restart. Streaming matrix must be rerun. Production untouched.",
+            "user": {
+              "login": "KingdomDesignsConsulting",
+              "name": "KingdomDesignsConsulting",
+              "email": null,
+              "avatar_url": "https://avatars.githubusercontent.com/u/95175704?v=4",
+              "id": 95175704
+            },
+            "id": 6395335572,
+            "pull_request_review_id": null,
+            "in_reply_to_id": null,
+            "created_at": "2026-10-25T08:20:36Z",
+            "updated_at": "2026-10-25T08:20:36Z",
+            "review": null,
+            "side": null,
+            "line": null,
+            "start_line": null,
+            "path": null,
+            "body_html": "<p dir=\"auto\">Live streaming invalidation regression discovered: <code class=\"notranslate\">http.client.BadStatusLine: data: {...}</code> during stale-session SSE request. The early rejection path emitted SSE event bytes before any HTTP status line/headers, while the late-failure helper intentionally emits only event data after headers. Patched <code class=\"notranslate\">metal_infer/infer.m</code> at commit <code class=\"notranslate\">f6ccd9c</code>: send <code class=\"notranslate\">SSE_HEADERS</code> before calling <code class=\"notranslate\">send_session_invalidated_error</code> in the early stale/unknown session branch. Requires rebuilding the hardened candidate; prior live server binary is unaffected until rebuild/restart. Streaming matrix must be rerun. Production untouched.</p>"
+          },
+          {
+            "url": "https://github.com/KingdomDesignsConsulting/Flash-iOS/pull/2#issuecomment-6400347199",
+            "body": "2026-10-25 LIVE RESTART TEST PASS (user's Mac mini M4, hardened isolated test server): `experiment_http_restart_recovery.py` five checks true: `initial_created`, `prior_session_reused`, `prior_context_retained`, `stale_after_restart_rejected`, `new_session_replay_recovers_code`. Original resident continuation: 70 cached prefix tokens, 26 new prefill tokens, 2981 ms; after server restart old ID rejected HTTP 409 with `session_invalidated:true, resend_full_history:true`; client full-history replay under fresh ID recovered exact sentinel `RESTART-82E103CE2403` with 79 new prefill tokens / 10121 ms. Earlier live matrix 7/7 also passed, including SSE rejection after header fix. **Do not merge yet:** `metal_infer/chat.m` currently streams only latest user turn, lacks `flash_session_create` and error/SSE invalidation handling, and `--resume` loads transcript for display but not replay. Native terminal client and LM Studio generator integration still pending.",
+            "user": {
+              "login": "KingdomDesignsConsulting",
+              "name": "KingdomDesignsConsulting",
+              "email": null,
+              "avatar_url": "https://avatars.githubusercontent.com/u/95175704?v=4",
+              "id": 95175704
+            },
+            "id": 6400347199,
+            "pull_request_review_id": null,
+            "in_reply_to_id": null,
+            "created_at": "2026-10-25T16:44:43Z",
+            "updated_at": "2026-10-25T16:44:43Z",
+            "review": null,
+            "side": null,
+            "line": null,
+            "start_line": null,
+            "path": null,
+            "body_html": "<p dir=\"auto\">2026-10-25 LIVE RESTART TEST PASS (user's Mac mini M4, hardened isolated test server): <code class=\"notranslate\">experiment_http_restart_recovery.py</code> five checks true: <code class=\"notranslate\">initial_created</code>, <code class=\"notranslate\">prior_session_reused</code>, <code class=\"notranslate\">prior_context_retained</code>, <code class=\"notranslate\">stale_after_restart_rejected</code>, <code class=\"notranslate\">new_session_replay_recovers_code</code>. Original resident continuation: 70 cached prefix tokens, 26 new prefill tokens, 2981 ms; after server restart old ID rejected HTTP 409 with <code class=\"notranslate\">session_invalidated:true, resend_full_history:true</code>; client full-history replay under fresh ID recovered exact sentinel <code class=\"notranslate\">RESTART-82E103CE2403</code> with 79 new prefill tokens / 10121 ms. Earlier live matrix 7/7 also passed, including SSE rejection after header fix. <strong>Do not merge yet:</strong> <code class=\"notranslate\">metal_infer/chat.m</code> currently streams only latest user turn, lacks <code class=\"notranslate\">flash_session_create</code> and error/SSE invalidation handling, and <code class=\"notranslate\">--resume</code> loads transcript for display but not replay. Native terminal client and LM Studio generator integration still pending.</p>"
+          },
+          {
+            "url": "https://github.com/KingdomDesignsConsulting/Flash-iOS/pull/2#issuecomment-6403827346",
+            "body": "Implemented experimental terminal client `metal_infer/chat.m` on this branch: explicit `flash_session_create` for fresh remote ID, bounded replay of complete validated JSONL transcript on HTTP/SSE invalidation, safe `--resume` history reconstruction, and commit of pending turns only after completed stream. Source commits `68ee63b`, `23a6172`; documentation update `fb746cb`. **NOT YET Mac-compiled/live-qualified.** Must test build, initial, subsequent, resume/restart, session eviction and tool response handling on isolated server before merging. LM Studio generator still pending.",
+            "user": {
+              "login": "KingdomDesignsConsulting",
+              "name": "KingdomDesignsConsulting",
+              "email": null,
+              "avatar_url": "https://avatars.githubusercontent.com/u/95175704?v=4",
+              "id": 95175704
+            },
+            "id": 6403827346,
+            "pull_request_review_id": null,
+            "in_reply_to_id": null,
+            "created_at": "2026-10-25T21:52:08Z",
+            "updated_at": "2026-10-25T21:52:08Z",
+            "review": null,
+            "side": null,
+            "line": null,
+            "start_line": null,
+            "path": null,
+            "body_html": "<p dir=\"auto\">Implemented experimental terminal client <code class=\"notranslate\">metal_infer/chat.m</code> on this branch: explicit <code class=\"notranslate\">flash_session_create</code> for fresh remote ID, bounded replay of complete validated JSONL transcript on HTTP/SSE invalidation, safe <code class=\"notranslate\">--resume</code> history reconstruction, and commit of pending turns only after completed stream. Source commits <code class=\"notranslate\">68ee63b</code>, <code class=\"notranslate\">23a6172</code>; documentation update <code class=\"notranslate\">fb746cb</code>. <strong>NOT YET Mac-compiled/live-qualified.</strong> Must test build, initial, subsequent, resume/restart, session eviction and tool response handling on isolated server before merging. LM Studio generator still pending.</p>"
+          },
+          {
+            "url": "https://github.com/KingdomDesignsConsulting/Flash-iOS/pull/2#issuecomment-6403950723",
+            "body": "Mac M4 isolated `chat.m` build from `fb746cb`: SUCCESS; 3 nonfatal Clang warnings (legacy MdState initializer twice, unused TTFT variable). Fixed initializer and TTFT expression in commit `dead7a9`; documented build/fix in `f8235ba`. The post-fix client build and end-to-end `--resume`/eviction replay tests remain pending. No merge.",
+            "user": {
+              "login": "KingdomDesignsConsulting",
+              "name": "KingdomDesignsConsulting",
+              "email": null,
+              "avatar_url": "https://avatars.githubusercontent.com/u/95175704?v=4",
+              "id": 95175704
+            },
+            "id": 6403950723,
+            "pull_request_review_id": null,
+            "in_reply_to_id": null,
+            "created_at": "2026-10-25T22:02:22Z",
+            "updated_at": "2026-10-25T22:02:22Z",
+            "review": null,
+            "side": null,
+            "line": null,
+            "start_line": null,
+            "path": null,
+            "body_html": "<p dir=\"auto\">Mac M4 isolated <code class=\"notranslate\">chat.m</code> build from <code class=\"notranslate\">fb746cb</code>: SUCCESS; 3 nonfatal Clang warnings (legacy MdState initializer twice, unused TTFT variable). Fixed initializer and TTFT expression in commit <code class=\"notranslate\">dead7a9</code>; documented build/fix in <code class=\"notranslate\">f8235ba</code>. The post-fix client build and end-to-end <code class=\"notranslate\">--resume</code>/eviction replay tests remain pending. No merge.</p>"
+          },
+          {
+            "url": "https://github.com/KingdomDesignsConsulting/Flash-iOS/pull/2#issuecomment-6404325188",
+            "body": "2026-10-25 Mac M4 live client qualification: PASS. `chat.m` active continuation retained ORBIT-73941; `--resume chat-66251-1792966230716937` loaded 4 turns and recovered ORBIT-73941 (TTFT 10.5s); separate POST with `flash_session_create:true`, session `forced-eviction-test-20261025`, returned HTTP200 and `session_reused:0`, evicting chat's resident state; next live chat query printed `[chat] Session invalidated; replaying full local history.` and recovered exact ORBIT-73941 (23 tokens, 13.7 tok/s, TTFT 11.7s). Server and terminal-client basic continuity/recovery qualified, but no production merge yet; interruption, transport faults, exact state parity, LM Studio generator, and transcript duplication audit remain.",
+            "user": {
+              "login": "KingdomDesignsConsulting",
+              "name": "KingdomDesignsConsulting",
+              "email": null,
+              "avatar_url": "https://avatars.githubusercontent.com/u/95175704?v=4",
+              "id": 95175704
+            },
+            "id": 6404325188,
+            "pull_request_review_id": null,
+            "in_reply_to_id": null,
+            "created_at": "2026-10-25T22:32:54Z",
+            "updated_at": "2026-10-25T22:32:54Z",
+            "review": null,
+            "side": null,
+            "line": null,
+            "start_line": null,
+            "path": null,
+            "body_html": "<p dir=\"auto\">2026-10-25 Mac M4 live client qualification: PASS. <code class=\"notranslate\">chat.m</code> active continuation retained ORBIT-73941; <code class=\"notranslate\">--resume chat-66251-1792966230716937</code> loaded 4 turns and recovered ORBIT-73941 (TTFT 10.5s); separate POST with <code class=\"notranslate\">flash_session_create:true</code>, session <code class=\"notranslate\">forced-eviction-test-20261025</code>, returned HTTP200 and <code class=\"notranslate\">session_reused:0</code>, evicting chat's resident state; next live chat query printed <code class=\"notranslate\">[chat] Session invalidated; replaying full local history.</code> and recovered exact ORBIT-73941 (23 tokens, 13.7 tok/s, TTFT 11.7s). Server and terminal-client basic continuity/recovery qualified, but no production merge yet; interruption, transport faults, exact state parity, LM Studio generator, and transcript duplication audit remain.</p>"
+          },
+          {
+            "url": "https://github.com/KingdomDesignsConsulting/Flash-iOS/pull/2#issuecomment-6410789513",
+            "body": "2026-10-26 Mac mini M4 LM Studio plugin 0.2.0 installation qualification: `npm run build` (`tsc -p tsconfig.json`) PASS; `npm test` PASS 19/19, fail 0, duration 270.205ms; `lms dev --install --yes` returned `Successfully installed flash-ios/openai-compat-documents.` This closes the native local package build/test/install gate, but does NOT establish GUI attachment presentation, cancellation, regeneration, or resident identity. Keep PR draft and production untouched.",
+            "user": {
+              "login": "KingdomDesignsConsulting",
+              "name": "KingdomDesignsConsulting",
+              "email": null,
+              "avatar_url": "https://avatars.githubusercontent.com/u/95175704?v=4",
+              "id": 95175704
+            },
+            "id": 6410789513,
+            "pull_request_review_id": null,
+            "in_reply_to_id": null,
+            "created_at": "2026-10-26T07:40:42Z",
+            "updated_at": "2026-10-26T07:40:42Z",
+            "review": null,
+            "side": null,
+            "line": null,
+            "start_line": null,
+            "path": null,
+            "body_html": "<p dir=\"auto\">2026-10-26 Mac mini M4 LM Studio plugin 0.2.0 installation qualification: <code class=\"notranslate\">npm run build</code> (<code class=\"notranslate\">tsc -p tsconfig.json</code>) PASS; <code class=\"notranslate\">npm test</code> PASS 19/19, fail 0, duration 270.205ms; <code class=\"notranslate\">lms dev --install --yes</code> returned <code class=\"notranslate\">Successfully installed flash-ios/openai-compat-documents.</code> This closes the native local package build/test/install gate, but does NOT establish GUI attachment presentation, cancellation, regeneration, or resident identity. Keep PR draft and production untouched.</p>"
+          },
+          {
+            "url": "https://github.com/KingdomDesignsConsulting/Flash-iOS/pull/2#issuecomment-6411712433",
+            "body": "2026-10-26 user live LM Studio GUI report on installed generator `flash-ios/openai-compat-documents`: attached synthetic text recognized; exact identifier DOC-73941 and recovery phrase 'Violet satellites orbit quietly.' recovered initially and again after several unrelated prompts without reattaching. A planet explanation was followed by 'lets try that again', and the GUI produced a new explanation, though the actual Regenerate control was not explicitly demonstrated. Live experimental server log for one stateless completion showed 1,406 prefetched tokens / 73,070ms (19.2 tok/s) and 469 generated tokens / 58,487ms (8.02 tok/s). GUI displayed long thinking traces (~27s, ~30s, ~57s) on some prompts: investigate configurable reasoning display/effort and cancellation. **Do not mark GUI Stop/cancellation or Regenerate button passed yet**; user has not supplied explicit control tests. Generator stateless entry point remains intentionally safe. Keep PR draft.",
+            "user": {
+              "login": "KingdomDesignsConsulting",
+              "name": "KingdomDesignsConsulting",
+              "email": null,
+              "avatar_url": "https://avatars.githubusercontent.com/u/95175704?v=4",
+              "id": 95175704
+            },
+            "id": 6411712433,
+            "pull_request_review_id": null,
+            "in_reply_to_id": null,
+            "created_at": "2026-10-26T08:36:11Z",
+            "updated_at": "2026-10-26T08:36:11Z",
+            "review": null,
+            "side": null,
+            "line": null,
+            "start_line": null,
+            "path": null,
+            "body_html": "<p dir=\"auto\">2026-10-26 user live LM Studio GUI report on installed generator <code class=\"notranslate\">flash-ios/openai-compat-documents</code>: attached synthetic text recognized; exact identifier DOC-73941 and recovery phrase 'Violet satellites orbit quietly.' recovered initially and again after several unrelated prompts without reattaching. A planet explanation was followed by 'lets try that again', and the GUI produced a new explanation, though the actual Regenerate control was not explicitly demonstrated. Live experimental server log for one stateless completion showed 1,406 prefetched tokens / 73,070ms (19.2 tok/s) and 469 generated tokens / 58,487ms (8.02 tok/s). GUI displayed long thinking traces (~27s, ~30s, ~57s) on some prompts: investigate configurable reasoning display/effort and cancellation. <strong>Do not mark GUI Stop/cancellation or Regenerate button passed yet</strong>; user has not supplied explicit control tests. Generator stateless entry point remains intentionally safe. Keep PR draft.</p>"
+          },
+          {
+            "url": "https://github.com/KingdomDesignsConsulting/Flash-iOS/pull/2#issuecomment-6411867718",
+            "body": "Correction to prior GUI note (2026-10-26): User confirms they deliberately pressed Stop while the 'Why do planets orbit the sun?' answer was thinking; the following prompt generated a valid answer. Thus live GUI cancellation + subsequent prompt recovery PASS. Prior speculation about an anomalous/incomplete planetary response is withdrawn. Typed 'lets try that again' is not a test of LM Studio's actual Regenerate control, which user has not located; GUI regenerate remains NOT TESTED. No code change required on this evidence.",
+            "user": {
+              "login": "KingdomDesignsConsulting",
+              "name": "KingdomDesignsConsulting",
+              "email": null,
+              "avatar_url": "https://avatars.githubusercontent.com/u/95175704?v=4",
+              "id": 95175704
+            },
+            "id": 6411867718,
+            "pull_request_review_id": null,
+            "in_reply_to_id": null,
+            "created_at": "2026-10-26T08:44:45Z",
+            "updated_at": "2026-10-26T08:44:45Z",
+            "review": null,
+            "side": null,
+            "line": null,
+            "start_line": null,
+            "path": null,
+            "body_html": "<p dir=\"auto\">Correction to prior GUI note (2026-10-26): User confirms they deliberately pressed Stop while the 'Why do planets orbit the sun?' answer was thinking; the following prompt generated a valid answer. Thus live GUI cancellation + subsequent prompt recovery PASS. Prior speculation about an anomalous/incomplete planetary response is withdrawn. Typed 'lets try that again' is not a test of LM Studio's actual Regenerate control, which user has not located; GUI regenerate remains NOT TESTED. No code change required on this evidence.</p>"
+          },
+          {
+            "url": "https://github.com/KingdomDesignsConsulting/Flash-iOS/pull/2#issuecomment-6412074849",
+            "body": "2026-10-26 LM Studio GUI clarification: user checked both user and assistant message controls; both show Branch/Copy/Edit/Delete, no Regenerate action in installed build. Mark direct GUI regeneration NOT AVAILABLE IN INSPECTED UI, rather than FAIL. GUI Stop during thinking followed by valid next response confirmed PASS. Prior document multi-turn recall PASS. Remaining higher-priority research: 4-token canonical-vs-resident rendered history discrepancy; derive comparable token/state contract before KV/GDN/convolution equivalence assertions. Keep production NO-GO and PR draft.",
+            "user": {
+              "login": "KingdomDesignsConsulting",
+              "name": "KingdomDesignsConsulting",
+              "email": null,
+              "avatar_url": "https://avatars.githubusercontent.com/u/95175704?v=4",
+              "id": 95175704
+            },
+            "id": 6412074849,
+            "pull_request_review_id": null,
+            "in_reply_to_id": null,
+            "created_at": "2026-10-26T08:56:32Z",
+            "updated_at": "2026-10-26T08:56:32Z",
+            "review": null,
+            "side": null,
+            "line": null,
+            "start_line": null,
+            "path": null,
+            "body_html": "<p dir=\"auto\">2026-10-26 LM Studio GUI clarification: user checked both user and assistant message controls; both show Branch/Copy/Edit/Delete, no Regenerate action in installed build. Mark direct GUI regeneration NOT AVAILABLE IN INSPECTED UI, rather than FAIL. GUI Stop during thinking followed by valid next response confirmed PASS. Prior document multi-turn recall PASS. Remaining higher-priority research: 4-token canonical-vs-resident rendered history discrepancy; derive comparable token/state contract before KV/GDN/convolution equivalence assertions. Keep production NO-GO and PR draft.</p>"
+          },
+          {
+            "url": "https://github.com/KingdomDesignsConsulting/Flash-iOS/pull/2#issuecomment-6412228103",
+            "body": "2026-10-26 token-history diagnostic implemented on experimental branch, NOT YET MAC-COMPILED OR RUN. Source commits `69d1b83` / `289f43b` introduce opt-in `FLASH_SESSION_TOKEN_TRACE_DIR` JSON capturing actual prefill token IDs after HTTP prompt rendering/automatic thinking-policy adjustment, without changing inference math. Script commit `2be9c9e` adds four-path `tools/experiment_session_token_exact.py` (resident create/delta, stateless canonical, fresh explicit replay); compare exact canonical/replay token IDs and suffix relation for delta; docs commit `97198b7`. Results must be verified on isolated 11243. This is a stage-one prompt-token probe only: generated token IDs and KV/GDN/convolution checkpoint parity remain NOT ESTABLISHED. Trace data sensitive; keep private, do not upload publicly. Production untouched; PR stays draft.",
+            "user": {
+              "login": "KingdomDesignsConsulting",
+              "name": "KingdomDesignsConsulting",
+              "email": null,
+              "avatar_url": "https://avatars.githubusercontent.com/u/95175704?v=4",
+              "id": 95175704
+            },
+            "id": 6412228103,
+            "pull_request_review_id": null,
+            "in_reply_to_id": null,
+            "created_at": "2026-10-26T09:05:21Z",
+            "updated_at": "2026-10-26T09:05:21Z",
+            "review": null,
+            "side": null,
+            "line": null,
+            "start_line": null,
+            "path": null,
+            "body_html": "<p dir=\"auto\">2026-10-26 token-history diagnostic implemented on experimental branch, NOT YET MAC-COMPILED OR RUN. Source commits <code class=\"notranslate\">69d1b83</code> / <code class=\"notranslate\">289f43b</code> introduce opt-in <code class=\"notranslate\">FLASH_SESSION_TOKEN_TRACE_DIR</code> JSON capturing actual prefill token IDs after HTTP prompt rendering/automatic thinking-policy adjustment, without changing inference math. Script commit <code class=\"notranslate\">2be9c9e</code> adds four-path <code class=\"notranslate\">tools/experiment_session_token_exact.py</code> (resident create/delta, stateless canonical, fresh explicit replay); compare exact canonical/replay token IDs and suffix relation for delta; docs commit <code class=\"notranslate\">97198b7</code>. Results must be verified on isolated 11243. This is a stage-one prompt-token probe only: generated token IDs and KV/GDN/convolution checkpoint parity remain NOT ESTABLISHED. Trace data sensitive; keep private, do not upload publicly. Production untouched; PR stays draft.</p>"
+          },
+          {
+            "url": "https://github.com/KingdomDesignsConsulting/Flash-iOS/pull/2#issuecomment-6412876699",
+            "body": "2026-10-26 token-history diagnostic added on experimental branch: opt-in `FLASH_SESSION_TOKEN_TRACE_DIR` exact request-prefill token-ID files (`metal_infer/infer.m`), `tools/experiment_session_token_exact.py` four-path create/continuation/stateless/explicit replay harness, documentation updated; latest verified trace fix commit `289f43bb14870570b51ed7cf13726463cf0e1fb0`. **Not yet built or run on the user's Mac.** The harness compares requested token IDs and functional recall; it DOES NOT capture generated-token history or KV/GDN/convolution snapshots and must not be represented as proving internal-state parity. Next: isolated Mac compile and test on 11243, capture private trace files and JSON, leave production unchanged and PR draft.",
+            "user": {
+              "login": "KingdomDesignsConsulting",
+              "name": "KingdomDesignsConsulting",
+              "email": null,
+              "avatar_url": "https://avatars.githubusercontent.com/u/95175704?v=4",
+              "id": 95175704
+            },
+            "id": 6412876699,
+            "pull_request_review_id": null,
+            "in_reply_to_id": null,
+            "created_at": "2026-10-26T09:40:23Z",
+            "updated_at": "2026-10-26T09:40:23Z",
+            "review": null,
+            "side": null,
+            "line": null,
+            "start_line": null,
+            "path": null,
+            "body_html": "<p dir=\"auto\">2026-10-26 token-history diagnostic added on experimental branch: opt-in <code class=\"notranslate\">FLASH_SESSION_TOKEN_TRACE_DIR</code> exact request-prefill token-ID files (<code class=\"notranslate\">metal_infer/infer.m</code>), <code class=\"notranslate\">tools/experiment_session_token_exact.py</code> four-path create/continuation/stateless/explicit replay harness, documentation updated; latest verified trace fix commit <code class=\"notranslate\">289f43bb14870570b51ed7cf13726463cf0e1fb0</code>. <strong>Not yet built or run on the user's Mac.</strong> The harness compares requested token IDs and functional recall; it DOES NOT capture generated-token history or KV/GDN/convolution snapshots and must not be represented as proving internal-state parity. Next: isolated Mac compile and test on 11243, capture private trace files and JSON, leave production unchanged and PR draft.</p>"
+          },
+          {
+            "url": "https://github.com/KingdomDesignsConsulting/Flash-iOS/pull/2#issuecomment-6425764129",
+            "body": "2026-10-26 token-exact harness LIVE PASS on Mac mini M4, port 11243: 5/5 functional checks true; canonical and explicit-replay prompt token IDs identical; resident incremental token sequence matches canonical full-history suffix. Full canonical prefill sample 72 tokens / 4304ms and explicit replay 72 tokens / 3374ms. **Does NOT establish generated-history or KV/GDN/convolution state equality.** Recorded findings in docs commit `53b1cb3`. Next-stage experimental opt-in generated-token + EOS/end-position trace committed `16c0f6c`, harness metadata update `32ff71b`, docs `99b30b1`; source NOT YET Mac-compiled/tested. Keep trace files private, PR draft, production untouched.",
+            "user": {
+              "login": "KingdomDesignsConsulting",
+              "name": "KingdomDesignsConsulting",
+              "email": null,
+              "avatar_url": "https://avatars.githubusercontent.com/u/95175704?v=4",
+              "id": 95175704
+            },
+            "id": 6425764129,
+            "pull_request_review_id": null,
+            "in_reply_to_id": null,
+            "created_at": "2026-10-26T19:48:42Z",
+            "updated_at": "2026-10-26T19:48:42Z",
+            "review": null,
+            "side": null,
+            "line": null,
+            "start_line": null,
+            "path": null,
+            "body_html": "<p dir=\"auto\">2026-10-26 token-exact harness LIVE PASS on Mac mini M4, port 11243: 5/5 functional checks true; canonical and explicit-replay prompt token IDs identical; resident incremental token sequence matches canonical full-history suffix. Full canonical prefill sample 72 tokens / 4304ms and explicit replay 72 tokens / 3374ms. <strong>Does NOT establish generated-history or KV/GDN/convolution state equality.</strong> Recorded findings in docs commit <code class=\"notranslate\">53b1cb3</code>. Next-stage experimental opt-in generated-token + EOS/end-position trace committed <code class=\"notranslate\">16c0f6c</code>, harness metadata update <code class=\"notranslate\">32ff71b</code>, docs <code class=\"notranslate\">99b30b1</code>; source NOT YET Mac-compiled/tested. Keep trace files private, PR draft, production untouched.</p>"
+          }
+        ],
+        "url": "https://github.com/KingdomDesignsConsulting/Flash-iOS/pull/2",
+        "title": "KingdomDesignsConsulting/Flash-iOS PR #2 comments",
+        "display_url": "https://github.com/KingdomDesignsConsulting/Flash-iOS/pull/2",
+        "display_title": "KingdomDesignsConsulting/Flash-iOS PR #2 comments"
+      }
+    },
+    {
+      "kind": "pr3_comments",
+      "data": {
+        "comments": [],
+        "url": "https://github.com/KingdomDesignsConsulting/Flash-iOS/pull/3",
+        "title": "KingdomDesignsConsulting/Flash-iOS PR #3 comments",
+        "display_url": "https://github.com/KingdomDesignsConsulting/Flash-iOS/pull/3",
+        "display_title": "KingdomDesignsConsulting/Flash-iOS PR #3 comments"
+      }
+    }
+  ]
+}
