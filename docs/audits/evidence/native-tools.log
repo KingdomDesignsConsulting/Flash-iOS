@@ -1,0 +1,45 @@
+[tool-self-test] unknown tool: PASS
+[tool-self-test] missing required argument: PASS
+[tool-self-test] wrong declared type: PASS
+[tool-self-test] malformed object argument: PASS
+[tool-self-test] malformed array argument: PASS
+[tool-self-test] junk outside function: PASS
+[tool-self-test] multiple functions in one call: PASS
+[tool-self-test] unclosed extra parameter: PASS
+[tool-self-test] nullable null preserved: PASS
+[tool-self-test] anyOf rejected: PASS
+[tool-self-test] general multi-type rejected: PASS
+[tool-self-test] non-object root rejected: PASS
+[tool-self-test] omitted parameters normalized empty: PASS
+[tool-self-test] omitted parameters reject arguments: PASS
+[tool-self-test] orphan tool result rejected: PASS
+[tool-self-test] wrong tool_call_id rejected: PASS
+[tool-self-test] out-of-order tool results rejected: PASS
+[tool-self-test] complete ordered tool history accepted: PASS
+[tool-self-test] invalid session_id type rejected: PASS
+[tool-self-test] empty session_id rejected: PASS
+[tool-self-test] repeated content guard: PASS
+[tool-self-test] historical wire names validated: PASS
+[tool-self-test] schema-driven parameter choices: PASS
+[tool-self-test] dynamic parameters select free-form fallback: PASS
+[tool-self-test] parameter closes with LF: PASS
+[tool-self-test] parameter closes with CRLF: PASS
+[tool-self-test] exact read path and schema name: PASS
+[tool-self-test] unnamed exact read left to model: PASS
+[tool-self-test] copied path validates unchanged: PASS
+[tool-self-test] inline literal with spaces copied: PASS
+[tool-self-test] explicit tool disambiguates read_image: PASS
+[tool-self-test] ambiguous paths left to model: PASS
+[tool-self-test] unambiguous absolute file literals: PASS
+[tool-self-test] ordinary request unaffected: PASS
+[tool-self-test] alphabetical tool ordering: PASS
+[tool-self-test] tool-set directory follows executable across cwd: PASS
+[tool-self-test] file identity ignores tool mode: PASS
+[tool-self-test] unseen set preserves full warm-loadable JSON: PASS
+[tool-self-test] repeated set is not rewritten: PASS
+[tool-self-test] distinct set gets distinct file: PASS
+[tool-self-test] saved names follow existing order semantics: PASS
+[tool-self-test] concurrent create and temp cleanup: PASS
+[tool-self-test] no-tools request creates nothing: PASS
+[tool-self-test] bounded learned schema eviction: PASS
+[tool-self-test] RESULT: PASS

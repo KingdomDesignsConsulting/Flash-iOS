@@ -1,0 +1,87 @@
+[tool-decode] removed speculative Write escalation fields
+[tool-decode] removed speculative Write escalation fields
+ERROR: tensor layout model.norm.weight: expected BF16 [2048,0,0] ndim=1 bytes=4096; got F32 [2048,0,0] ndim=1 bytes=8192
+ERROR: tensor layout model.norm.weight: expected BF16 [2048,0,0] ndim=1 bytes=4096; got BF16 [1024,0,0] ndim=1 bytes=2048
+ERROR: tensor model.norm.weight declared size disagrees with dtype/shape
+ERROR: tensor layout model.norm.weight: expected BF16 [2048,0,0] ndim=1 bytes=4096; got BF16 [1024,0,0] ndim=1 bytes=2048
+ERROR: manifest root must be an object: wrong JSON type
+ERROR: 'tensors' must be an object in manifest
+[config] ERROR: manifest config must be an object
+ERROR: manifest.config.hidden_size must be a non-negative integer <= INT_MAX
+[config] ERROR: text_config must be an object
+[config] ERROR: rope parameters must be an object
+ERROR: config.hidden_size must be a non-negative integer <= INT_MAX
+ERROR: config.rope.rope_theta must be a number
+ERROR: GGUF full-attn manifest root must be an object: /tmp/flash-gguf-json.hLwZBR
+ERROR: GGUF full-attn manifest entries must be an array: /tmp/flash-gguf-json.hLwZBR
+ERROR: GGUF full-attn manifest entry 0 has invalid types or shape: /tmp/flash-gguf-json.hLwZBR
+ERROR: GGUF full-attn manifest entry 0 has invalid types or shape: /tmp/flash-gguf-json.hLwZBR
+ERROR: GGUF full-attn manifest entry 0 has invalid types or shape: /tmp/flash-gguf-json.hLwZBR
+ERROR: GGUF full-attn manifest entry 0 has invalid types or shape: /tmp/flash-gguf-json.hLwZBR
+ERROR: GGUF full-attn manifest entry 0 has invalid types or shape: /tmp/flash-gguf-json.hLwZBR
+ERROR: GGUF full-attn manifest entry 0 has invalid types or shape: /tmp/flash-gguf-json.hLwZBR
+ERROR: GGUF full-attn manifest entry 0 has invalid types or shape: /tmp/flash-gguf-json.hLwZBR
+ERROR: GGUF full-attn manifest entry 0 has invalid types or shape: /tmp/flash-gguf-json.hLwZBR
+ERROR: GGUF qkv manifest root must be an object: /tmp/flash-gguf-json.hLwZBR
+ERROR: GGUF qkv manifest entries must be an array: /tmp/flash-gguf-json.hLwZBR
+ERROR: GGUF qkv manifest entry 0 has invalid types or shape: /tmp/flash-gguf-json.hLwZBR
+ERROR: GGUF qkv manifest entry 0 has invalid types or shape: /tmp/flash-gguf-json.hLwZBR
+ERROR: GGUF qkv manifest entry 0 has invalid types or shape: /tmp/flash-gguf-json.hLwZBR
+ERROR: GGUF qkv manifest entry 0 has invalid types or shape: /tmp/flash-gguf-json.hLwZBR
+ERROR: GGUF qkv manifest entry 0 has invalid types or shape: /tmp/flash-gguf-json.hLwZBR
+ERROR: GGUF qkv manifest entry 0 has invalid types or shape: /tmp/flash-gguf-json.hLwZBR
+ERROR: GGUF qkv manifest entry 0 has invalid types or shape: /tmp/flash-gguf-json.hLwZBR
+ERROR: GGUF linear manifest root must be an object: /tmp/flash-gguf-json.hLwZBR
+ERROR: GGUF linear manifest entries must be an array: /tmp/flash-gguf-json.hLwZBR
+ERROR: GGUF linear manifest entry 0 has invalid types or shape: /tmp/flash-gguf-json.hLwZBR
+ERROR: GGUF linear manifest entry 0 has invalid types or shape: /tmp/flash-gguf-json.hLwZBR
+ERROR: GGUF linear manifest entry 0 has invalid types or shape: /tmp/flash-gguf-json.hLwZBR
+ERROR: GGUF linear manifest entry 0 has invalid types or shape: /tmp/flash-gguf-json.hLwZBR
+ERROR: GGUF linear manifest entry 0 has invalid types or shape: /tmp/flash-gguf-json.hLwZBR
+ERROR: GGUF linear manifest entry 0 has invalid types or shape: /tmp/flash-gguf-json.hLwZBR
+ERROR: GGUF linear manifest entry 0 has invalid types or shape: /tmp/flash-gguf-json.hLwZBR
+ERROR: GGUF linear manifest entry 0 has invalid types or shape: /tmp/flash-gguf-json.hLwZBR
+ERROR: GGUF shared manifest root must be an object: /tmp/flash-gguf-json.hLwZBR
+ERROR: GGUF shared manifest entries must be an array: /tmp/flash-gguf-json.hLwZBR
+ERROR: GGUF shared manifest entry 0 has invalid types or shape: /tmp/flash-gguf-json.hLwZBR
+ERROR: GGUF shared manifest entry 0 has invalid types or shape: /tmp/flash-gguf-json.hLwZBR
+ERROR: GGUF shared manifest entry 0 has invalid types or shape: /tmp/flash-gguf-json.hLwZBR
+ERROR: GGUF shared manifest entry 0 has invalid types or shape: /tmp/flash-gguf-json.hLwZBR
+ERROR: GGUF shared manifest entry 0 has invalid types or shape: /tmp/flash-gguf-json.hLwZBR
+ERROR: GGUF shared manifest entry 0 has invalid types or shape: /tmp/flash-gguf-json.hLwZBR
+ERROR: GGUF shared manifest entry 0 has invalid types or shape: /tmp/flash-gguf-json.hLwZBR
+ERROR: GGUF shared manifest entry 0 has invalid types or shape: /tmp/flash-gguf-json.hLwZBR
+[tiered] ERROR: num_layers and num_experts must be integers
+[tiered] ERROR: num_layers and num_experts must be integers
+[tiered] ERROR: layer 0 expert 0 has invalid numeric metadata
+[tiered] ERROR: layer 0 expert 0 has invalid numeric metadata
+[tiered] ERROR: layer 0 expert 0 has invalid numeric metadata
+[api-self-test] logical and non-stream usage: PASS
+[api-self-test] stream_options.include_usage selection: PASS
+[api-self-test] final stream usage before DONE: PASS
+[api-self-test] stream usage omitted by default: PASS
+[api-self-test] streaming session reset notice: PASS
+[api-self-test] SSE inference failure resets session: PASS
+[api-self-test] HTTP inference failure resets session: PASS
+[api-self-test] half-close is not a response disconnect: PASS
+[api-self-test] malformed compatibility recovery resets session: PASS
+[api-self-test] Write literal and no speculative escalation: PASS
+[api-self-test] DSH Write keys constrained until sandbox denial: PASS
+[api-self-test] exact Write filename extraction: PASS
+[api-self-test] tool result clears literal path forcing: PASS
+[api-self-test] source paths are not forced into Write: PASS
+[api-self-test] invalid escalation retry removes both fields: PASS
+[api-self-test] real sandbox denial retains escalation: PASS
+[api-self-test] Write sanitizer limited to DSH: PASS
+[api-self-test] boolean and null historical round-trip: PASS
+[api-self-test] repeated executor failure guard: PASS
+[api-self-test] retry guard profile defaults and overrides: PASS
+[api-self-test] malformed recovery profile defaults and overrides: PASS
+[api-self-test] pinned cache and byte-budget LRU: PASS
+[api-self-test] GPU recurrent-state mode gate: PASS
+[api-self-test] RESULT: PASS
+[tensor-layout-self-test] dtype/dimension/size/in-bounds geometry: PASS
+[manifest-test] bounded lookup and capacity: PASS
+[manifest-test] JSON root and tensor container types: PASS
+[gguf-json-test] four loaders reject malformed containers/scalars: PASS
+[tiered-json-test] malformed scalar fields: PASS

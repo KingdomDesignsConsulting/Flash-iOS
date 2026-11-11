@@ -1,0 +1,283 @@
+
+> flash-ios-openai-compat-documents@0.2.0 test
+> node --test test/*.test.cjs
+
+TAP version 13
+# Subtest: SDK cancellation terminates upstream without successful tool acknowledgement
+ok 1 - SDK cancellation terminates upstream without successful tool acknowledgement
+  ---
+  duration_ms: 59.007125
+  type: 'test'
+  ...
+# Subtest: oversized UTF-8 document is rejected before contacting the endpoint
+ok 2 - oversized UTF-8 document is rejected before contacting the endpoint
+  ---
+  duration_ms: 1.452292
+  type: 'test'
+  ...
+# Subtest: No attachment unchanged
+ok 3 - No attachment unchanged
+  ---
+  duration_ms: 1.496416
+  type: 'test'
+  ...
+# Subtest: Multiple UTF8 + JSON filenames retained and not duplicated
+ok 4 - Multiple UTF8 + JSON filenames retained and not duplicated
+  ---
+  duration_ms: 1.173958
+  type: 'test'
+  ...
+# Subtest: PDF content is forwarded when the SDK parser supports it
+ok 5 - PDF content is forwarded when the SDK parser supports it
+  ---
+  duration_ms: 0.673792
+  type: 'test'
+  ...
+# Subtest: Parser failure retains attachment
+ok 6 - Parser failure retains attachment
+  ---
+  duration_ms: 0.568958
+  type: 'test'
+  ...
+# Subtest: Oversize file fails visibly
+ok 7 - Oversize file fails visibly
+  ---
+  duration_ms: 0.117834
+  type: 'test'
+  ...
+# Subtest: independent MCP endpoints advertise duplicate identity and different schemas
+ok 8 - independent MCP endpoints advertise duplicate identity and different schemas
+  ---
+  duration_ms: 73.160042
+  type: 'test'
+  ...
+# Subtest: MCP fixtures expose cycle, duplicate, empty page and later error without dispatch
+ok 9 - MCP fixtures expose cycle, duplicate, empty page and later error without dispatch
+  ---
+  duration_ms: 32.758291
+  type: 'test'
+  ...
+# Subtest: atomic tool rejection: unknown name
+ok 10 - atomic tool rejection: unknown name
+  ---
+  duration_ms: 46.610666
+  type: 'test'
+  ...
+# Subtest: atomic tool rejection: duplicate IDs
+ok 11 - atomic tool rejection: duplicate IDs
+  ---
+  duration_ms: 8.996708
+  type: 'test'
+  ...
+# Subtest: atomic tool rejection: missing arguments
+ok 12 - atomic tool rejection: missing arguments
+  ---
+  duration_ms: 4.757334
+  type: 'test'
+  ...
+# Subtest: atomic tool rejection: missing nested required
+ok 13 - atomic tool rejection: missing nested required
+  ---
+  duration_ms: 4.962042
+  type: 'test'
+  ...
+# Subtest: atomic tool rejection: wrong nested type
+ok 14 - atomic tool rejection: wrong nested type
+  ---
+  duration_ms: 5.991959
+  type: 'test'
+  ...
+# Subtest: atomic tool rejection: extra property
+ok 15 - atomic tool rejection: extra property
+  ---
+  duration_ms: 6.567625
+  type: 'test'
+  ...
+# Subtest: atomic tool rejection: valid then malformed
+ok 16 - atomic tool rejection: valid then malformed
+  ---
+  duration_ms: 3.655209
+  type: 'test'
+  ...
+# Subtest: atomic tool rejection: truncated at length
+ok 17 - atomic tool rejection: truncated at length
+  ---
+  duration_ms: 5.817333
+  type: 'test'
+  ...
+# Subtest: atomic tool rejection: array arguments
+ok 18 - atomic tool rejection: array arguments
+  ---
+  duration_ms: 8.11
+  type: 'test'
+  ...
+# Subtest: atomic tool rejection: duplicate index
+ok 19 - atomic tool rejection: duplicate index
+  ---
+  duration_ms: 3.847916
+  type: 'test'
+  ...
+# Subtest: atomic tool rejection: non-string arguments
+ok 20 - atomic tool rejection: non-string arguments
+  ---
+  duration_ms: 2.263291
+  type: 'test'
+  ...
+# Subtest: atomic tool rejection: empty tool finish
+ok 21 - atomic tool rejection: empty tool finish
+  ---
+  duration_ms: 2.56025
+  type: 'test'
+  ...
+# Subtest: reasoning/content/parallel calls preserve literal markers and nested JSON
+ok 22 - reasoning/content/parallel calls preserve literal markers and nested JSON
+  ---
+  duration_ms: 1.947333
+  type: 'test'
+  ...
+# Subtest: invalid terminal sequence: content after finish
+ok 23 - invalid terminal sequence: content after finish
+  ---
+  duration_ms: 1.208583
+  type: 'test'
+  ...
+# Subtest: invalid terminal sequence: duplicate finish
+ok 24 - invalid terminal sequence: duplicate finish
+  ---
+  duration_ms: 1.022209
+  type: 'test'
+  ...
+# Subtest: invalid terminal sequence: multiple choices
+ok 25 - invalid terminal sequence: multiple choices
+  ---
+  duration_ms: 2.713833
+  type: 'test'
+  ...
+# Subtest: every UTF8 byte split preserves channel fields and markers
+ok 26 - every UTF8 byte split preserves channel fields and markers
+  ---
+  duration_ms: 214.330083
+  type: 'test'
+  ...
+# Subtest: tool name and argument fragments assemble at every character boundary
+ok 27 - tool name and argument fragments assemble at every character boundary
+  ---
+  duration_ms: 92.699958
+  type: 'test'
+  ...
+# Subtest: valid call then later invalid call publishes neither
+ok 28 - valid call then later invalid call publishes neither
+  ---
+  duration_ms: 2.042125
+  type: 'test'
+  ...
+# Subtest: usage-only event after finish remains supported
+ok 29 - usage-only event after finish remains supported
+  ---
+  duration_ms: 1.666792
+  type: 'test'
+  ...
+# Subtest: inconsistent usage rejected {"prompt_tokens":2,"completion_tokens":1,"total_tokens":2}
+ok 30 - inconsistent usage rejected {"prompt_tokens":2,"completion_tokens":1,"total_tokens":2}
+  ---
+  duration_ms: 1.8475
+  type: 'test'
+  ...
+# Subtest: inconsistent usage rejected {"prompt_tokens":2,"completion_tokens":1,"total_tokens":3,"prompt_tokens_details":{"cached_tokens":3}}
+ok 31 - inconsistent usage rejected {"prompt_tokens":2,"completion_tokens":1,"total_tokens":3,"prompt_tokens_details":{"cached_tokens":3}}
+  ---
+  duration_ms: 2.221875
+  type: 'test'
+  ...
+# Subtest: inconsistent usage rejected {"prompt_tokens":-1,"completion_tokens":1,"total_tokens":0}
+ok 32 - inconsistent usage rejected {"prompt_tokens":-1,"completion_tokens":1,"total_tokens":0}
+  ---
+  duration_ms: 2.073084
+  type: 'test'
+  ...
+# Subtest: raw SSE validates DONE, finish, UTF8 and framing
+ok 33 - raw SSE validates DONE, finish, UTF8 and framing
+  ---
+  duration_ms: 44.465583
+  type: 'test'
+  ...
+# Subtest: disconnect, partial event, malformed JSON, missing finish or DONE all fail
+ok 34 - disconnect, partial event, malformed JSON, missing finish or DONE all fail
+  ---
+  duration_ms: 32.368458
+  type: 'test'
+  ...
+# Subtest: HTTP and SSE invalidation explicit; partial output forbids replay
+ok 35 - HTTP and SSE invalidation explicit; partial output forbids replay
+  ---
+  duration_ms: 10.588625
+  type: 'test'
+  ...
+# Subtest: ordinary HTTP error never claims invalidation
+ok 36 - ordinary HTTP error never claims invalidation
+  ---
+  duration_ms: 5.04225
+  type: 'test'
+  ...
+# Subtest: prefill/generation idle timeout and cancellation
+ok 37 - prefill/generation idle timeout and cancellation
+  ---
+  duration_ms: 137.868833
+  type: 'test'
+  ...
+# Subtest: event size bounded
+ok 38 - event size bounded
+  ---
+  duration_ms: 10.36675
+  type: 'test'
+  ...
+# Subtest: scope adapter create, compact continuation, exact full replay and document bytes
+ok 39 - scope adapter create, compact continuation, exact full replay and document bytes
+  ---
+  duration_ms: 1.134208
+  type: 'test'
+  ...
+# Subtest: scope adapter changes/config/users/regeneration/stateless isolation
+ok 40 - scope adapter changes/config/users/regeneration/stateless isolation
+  ---
+  duration_ms: 0.128875
+  type: 'test'
+  ...
+# Subtest: scope tool result replay preserves order and call IDs without execution
+ok 41 - scope tool result replay preserves order and call IDs without execution
+  ---
+  duration_ms: 0.361417
+  type: 'test'
+  ...
+# Subtest: ambiguous and partial errors never retry; repeated invalidation bounded
+ok 42 - ambiguous and partial errors never retry; repeated invalidation bounded
+  ---
+  duration_ms: 0.641083
+  type: 'test'
+  ...
+# Subtest: actual SDK Chat full document history forwarded stateless without guessed IDs
+ok 43 - actual SDK Chat full document history forwarded stateless without guessed IDs
+  ---
+  duration_ms: 5.585917
+  type: 'test'
+  ...
+# Subtest: tool fragments not published until complete stream and JSON validation
+ok 44 - tool fragments not published until complete stream and JSON validation
+  ---
+  duration_ms: 5.63125
+  type: 'test'
+  ...
+1..44
+# tests 44
+# suites 0
+# pass 44
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 579.384542
+npm notice
+npm notice New minor version of npm available! 11.19.1 -> 11.21.2
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v11.21.2
+npm notice To update run: npm install -g npm@11.21.2
+npm notice

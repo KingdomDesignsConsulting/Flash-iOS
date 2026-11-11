@@ -1,0 +1,105 @@
+[warm-state-test] directory: /private/tmp/flash-ios-audit-warm-synthetic-20261111
+[warm-state] temporary checkpoint: /private/tmp/flash-ios-audit-warm-synthetic-20261111/snapshot.state.tmp.p6QCxK
+[warm-state] rename /private/tmp/flash-ios-audit-warm-synthetic-20261111/snapshot.state.tmp.p6QCxK -> /private/tmp/flash-ios-audit-warm-synthetic-20261111/snapshot.state
+[warm-state] saved atomically: format=raw bytes=2195456 stored=2195456 elapsed=3ms path=/private/tmp/flash-ios-audit-warm-synthetic-20261111/snapshot.state
+[warm-state] valid snapshot: format=raw tokens=3 bytes=2195456; loaded in 5ms; read=0ms decompress=0ms validate=2ms copy=2ms; pinned slot=0
+[warm-state] temporary checkpoint: /private/tmp/flash-ios-audit-warm-synthetic-20261111/snapshot.state.tmp.3rkrtV
+[warm-state] WARNING: checkpoint save failed: Input/output error
+[warm-state-test] checkpoint file size: 2195824 bytes
+[warm-state] temporary checkpoint: /private/tmp/flash-ios-audit-warm-synthetic-20261111/snapshot-zstd.state.tmp.e9OCxx
+[warm-state] rename /private/tmp/flash-ios-audit-warm-synthetic-20261111/snapshot-zstd.state.tmp.e9OCxx -> /private/tmp/flash-ios-audit-warm-synthetic-20261111/snapshot-zstd.state
+[warm-state] saved atomically: format=zstd1 bytes=2195456 stored=91 elapsed=0ms path=/private/tmp/flash-ios-audit-warm-synthetic-20261111/snapshot-zstd.state
+[warm-state] valid snapshot: format=zstd1 tokens=3 bytes=2195456; loaded in 3ms; read=0ms decompress=0ms validate=2ms copy=0ms; pinned slot=0
+[warm-state] cache invalid: compressed section exceeds Zstd bound
+[warm-state] cache invalid: header, identity, layout or size mismatch
+[warm-state] diagnostic: version=2/1 header=384/368 layout=2/2 compatibility=000000000000000b/000000000000000b source=000000000000000c/000000000000000c profile=000000000000000d/000000000000000d layers=40/40 kv_dim=512/512 conv=98304/98304 ssm=2097152/2097152 gpu_layers=0/0 payload=2195456/2195456 geometry=yes file=2204417/2195840 tool=0000000000000065/0000000000000065 token=bf04a32e0df7847a/bf04a32e0df7847a count=3/3
+[warm-state] cache invalid: truncated payload or checksum mismatch
+[warm-state] temporary checkpoint: /private/tmp/flash-ios-audit-warm-synthetic-20261111/id2-flash-test-0000000000000001.state.tmp.zjvwf4
+[warm-state] rename /private/tmp/flash-ios-audit-warm-synthetic-20261111/id2-flash-test-0000000000000001.state.tmp.zjvwf4 -> /private/tmp/flash-ios-audit-warm-synthetic-20261111/id2-flash-test-0000000000000001.state
+[warm-state] saved atomically: format=raw bytes=2195456 stored=2195456 elapsed=4ms path=/private/tmp/flash-ios-audit-warm-synthetic-20261111/id2-flash-test-0000000000000001.state
+[warm-state] temporary checkpoint: /private/tmp/flash-ios-audit-warm-synthetic-20261111/zstd-id2-flash-test-0000000000000001.state.tmp.JqLX7h
+[warm-state] rename /private/tmp/flash-ios-audit-warm-synthetic-20261111/zstd-id2-flash-test-0000000000000001.state.tmp.JqLX7h -> /private/tmp/flash-ios-audit-warm-synthetic-20261111/zstd-id2-flash-test-0000000000000001.state
+[warm-state] saved atomically: format=zstd1 bytes=2195456 stored=91 elapsed=0ms path=/private/tmp/flash-ios-audit-warm-synthetic-20261111/zstd-id2-flash-test-0000000000000001.state
+[warm-state] cache invalid: truncated payload or checksum mismatch
+[warm-state] valid snapshot: format=raw tokens=3 bytes=2195456; loaded in 5ms; read=0ms decompress=0ms validate=2ms copy=2ms; pinned slot=0
+[warm-state] temporary checkpoint: /private/tmp/flash-ios-audit-warm-synthetic-20261111/zstd-id2-flash-test-0000000000000001.state.tmp.qGA1N0
+[warm-state] rename /private/tmp/flash-ios-audit-warm-synthetic-20261111/zstd-id2-flash-test-0000000000000001.state.tmp.qGA1N0 -> /private/tmp/flash-ios-audit-warm-synthetic-20261111/zstd-id2-flash-test-0000000000000001.state
+[warm-state] saved atomically: format=zstd1 bytes=2195456 stored=91 elapsed=0ms path=/private/tmp/flash-ios-audit-warm-synthetic-20261111/zstd-id2-flash-test-0000000000000001.state
+[warm-state] valid snapshot: format=zstd1 tokens=3 bytes=2195456; loaded in 2ms; read=0ms decompress=0ms validate=2ms copy=0ms; pinned slot=0
+[warm-state] cache invalid: header, identity, layout or size mismatch
+[warm-state] diagnostic: version=1/1 header=368/368 layout=2/2 compatibility=000000000000000b/000000000000000b source=000000000000000c/000000000000000c profile=000000000000000d/000000000000000d layers=40/40 kv_dim=512/512 conv=98304/98304 ssm=2097152/2097152 gpu_layers=0/0 payload=2195456/2195456 geometry=yes file=2195824/2195824 tool=0000000000000065/0000000000000065 token=bf04a32e0df7847a/bf04a32e0df7847a count=3/3
+[warm-state] cache invalid: header, identity, layout or size mismatch
+[warm-state] diagnostic: version=2/1 header=368/368 layout=2/2 compatibility=000000000000000b/000000000000000b source=000000000000000c/000000000000000c profile=000000000000000d/000000000000000d layers=40/40 kv_dim=512/512 conv=98304/98304 ssm=2097152/2097152 gpu_layers=0/0 payload=2195456/2195456 geometry=yes file=2195824/2195824 tool=0000000000000065/0000000000000065 token=bf04a32e0df7847a/bf04a32e0df7847a count=3/3
+[warm-state] cache invalid: header, identity, layout or size mismatch
+[warm-state] diagnostic: version=1/1 header=368/368 layout=1/2 compatibility=000000000000000b/000000000000000b source=000000000000000c/000000000000000c profile=000000000000000d/000000000000000d layers=40/40 kv_dim=512/512 conv=98304/98304 ssm=2097152/2097152 gpu_layers=0/0 payload=2195456/2195456 geometry=yes file=2195824/2195824 tool=0000000000000065/0000000000000065 token=bf04a32e0df7847a/bf04a32e0df7847a count=3/3
+[warm-state] cache invalid: header, identity, layout or size mismatch
+[warm-state] diagnostic: version=1/1 header=368/368 layout=2/2 compatibility=000000000000000b/000000000000000b source=000000000000000c/000000000000000c profile=000000000000000d/000000000000000d layers=40/40 kv_dim=512/512 conv=98304/98304 ssm=2097152/2097152 gpu_layers=0/0 payload=2195456/2195456 geometry=yes file=2195824/2195824 tool=0000000000000065/0000000000000065 token=bf04a32e0df7847a/bf04a32e0df7847a count=8193/3
+[warm-state] cache invalid: header, identity, layout or size mismatch
+[warm-state] diagnostic: version=1/1 header=368/368 layout=2/2 compatibility=000000000000000b/000000000000000b source=000000000000000c/000000000000000c profile=000000000000000d/000000000000000d layers=40/40 kv_dim=512/512 conv=98304/98304 ssm=2097152/2097152 gpu_layers=0/0 payload=2195457/2195456 geometry=yes file=2195824/2195825 tool=0000000000000065/0000000000000065 token=bf04a32e0df7847a/bf04a32e0df7847a count=3/3
+[warm-state] cache invalid: header, identity, layout or size mismatch
+[warm-state] diagnostic: version=1/1 header=368/368 layout=2/2 compatibility=000000000000000b/000000000000000b source=000000000000000c/000000000000000c profile=000000000000000d/000000000000000d layers=40/40 kv_dim=512/512 conv=98305/98304 ssm=2097152/2097152 gpu_layers=0/0 payload=2195456/2195457 geometry=yes file=2195824/2195824 tool=0000000000000065/0000000000000065 token=bf04a32e0df7847a/bf04a32e0df7847a count=3/3
+[warm-state] cache invalid: truncated payload or checksum mismatch
+[warm-state] cache invalid: header, identity, layout or size mismatch
+[warm-state] diagnostic: version=1/1 header=368/368 layout=2/2 compatibility=000000000000000b/000000000000000b source=000000000000000c/000000000000000c profile=000000000000000d/000000000000000d layers=40/40 kv_dim=512/512 conv=98304/98304 ssm=2097152/2097152 gpu_layers=0/0 payload=2195456/2195456 geometry=yes file=2195823/2195824 tool=0000000000000065/0000000000000065 token=bf04a32e0df7847a/bf04a32e0df7847a count=3/3
+[warm-state] cache invalid: header, identity, layout or size mismatch
+[warm-state] diagnostic: version=1/1 header=368/368 layout=2/2 compatibility=000000000000000b/000000000000000b source=000000000000000c/000000000000000c profile=000000000000000d/000000000000000d layers=40/40 kv_dim=512/512 conv=98304/98304 ssm=2097152/2097152 gpu_layers=0/0 payload=2195456/2195456 geometry=yes file=2195825/2195824 tool=0000000000000065/0000000000000065 token=bf04a32e0df7847a/bf04a32e0df7847a count=3/3
+[warm-state] cache invalid: truncated payload or checksum mismatch
+[warm-state] cache invalid: header, identity, layout or size mismatch
+[warm-state] diagnostic: version=1/1 header=368/368 layout=2/2 compatibility=000000000000000b/000000000000000b source=000000000000000c/000000000000000c profile=000000000000000d/000000000000000d layers=40/40 kv_dim=512/512 conv=98304/98304 ssm=2097152/2097152 gpu_layers=0/0 payload=2195456/2195456 geometry=yes file=2195824/2195824 tool=0000000000000065/0000000000000065 token=bf04a32e0df7847a/bf04a32e0df7847a count=3/3
+[warm-state] cache invalid: header, identity, layout or size mismatch
+[warm-state] diagnostic: version=1/1 header=368/368 layout=2/2 compatibility=000000000000000b/000000000000000b source=000000000000000c/000000000000000c profile=000000000000000d/000000000000000d layers=40/40 kv_dim=512/512 conv=98304/98304 ssm=2097152/2097152 gpu_layers=0/0 payload=2195456/2195456 geometry=yes file=2195824/2195824 tool=0000000000000065/0000000000000065 token=0000000000000000/bf04a32e0df7847a count=3/3
+[warm-state] cache invalid: header, identity, layout or size mismatch
+[warm-state] diagnostic: version=1/1 header=368/368 layout=2/2 compatibility=000000000000000b/000000000000000e source=000000000000000c/000000000000000c profile=000000000000000d/000000000000000d layers=40/40 kv_dim=512/512 conv=98304/98304 ssm=2097152/2097152 gpu_layers=0/0 payload=2195456/2195456 geometry=yes file=2195824/2195824 tool=0000000000000065/0000000000000065 token=bf04a32e0df7847a/bf04a32e0df7847a count=3/3
+[warm-state] cache invalid: header, identity, layout or size mismatch
+[warm-state] diagnostic: version=1/1 header=368/368 layout=2/2 compatibility=000000000000000b/000000000000000b source=000000000000000c/000000000000000e profile=000000000000000d/000000000000000d layers=40/40 kv_dim=512/512 conv=98304/98304 ssm=2097152/2097152 gpu_layers=0/0 payload=2195456/2195456 geometry=yes file=2195824/2195824 tool=0000000000000065/0000000000000065 token=bf04a32e0df7847a/bf04a32e0df7847a count=3/3
+[warm-state] cache invalid: header, identity, layout or size mismatch
+[warm-state] diagnostic: version=1/1 header=368/368 layout=2/2 compatibility=000000000000000b/000000000000000b source=000000000000000c/000000000000000c profile=000000000000000d/000000000000000e layers=40/40 kv_dim=512/512 conv=98304/98304 ssm=2097152/2097152 gpu_layers=0/0 payload=2195456/2195456 geometry=yes file=2195824/2195824 tool=0000000000000065/0000000000000065 token=bf04a32e0df7847a/bf04a32e0df7847a count=3/3
+[warm-state] cache invalid: header, identity, layout or size mismatch
+[warm-state] diagnostic: version=1/1 header=368/368 layout=2/2 compatibility=000000000000000b/000000000000000b source=000000000000000c/000000000000000c profile=000000000000000d/000000000000000d layers=40/40 kv_dim=512/512 conv=98304/98304 ssm=2097152/2097152 gpu_layers=0/0 payload=2195456/2195456 geometry=yes file=2195824/2195824 tool=0000000000000065/0000000000000065 token=bf04a32e0df7847a/dfff3435af73b37b count=3/3
+[warm-state-test] interrupted temp path: /private/tmp/flash-ios-audit-warm-synthetic-20261111/snapshot.state.tmp.interrupted
+[warm-state] valid snapshot: format=raw tokens=3 bytes=2195456; loaded in 5ms; read=0ms decompress=0ms validate=2ms copy=2ms; pinned slot=0
+[warm-state] cache invalid: header, identity, layout or size mismatch
+[warm-state] diagnostic: version=0/1 header=0/368 layout=0/2 compatibility=0000000000000000/000000000000000b source=0000000000000000/000000000000000c profile=0000000000000000/000000000000000d layers=0/40 kv_dim=0/512 conv=0/98304 ssm=0/2097152 gpu_layers=0/0 payload=0/0 geometry=yes file=3/0 tool=0000000000000000/0000000000000065 token=0000000000000000/bf04a32e0df7847a count=0/3
+[warm-state] temporary checkpoint: /private/tmp/flash-ios-audit-warm-synthetic-20261111/snapshot.state.tmp.thgY7x
+[warm-state] rename /private/tmp/flash-ios-audit-warm-synthetic-20261111/snapshot.state.tmp.thgY7x -> /private/tmp/flash-ios-audit-warm-synthetic-20261111/snapshot.state
+[warm-state] saved atomically: format=raw bytes=2195456 stored=2195456 elapsed=3ms path=/private/tmp/flash-ios-audit-warm-synthetic-20261111/snapshot.state
+[warm-state] valid snapshot: format=raw tokens=3 bytes=2195456; loaded in 5ms; read=0ms decompress=0ms validate=2ms copy=2ms; pinned slot=0
+[warm-state] removed stale temporary checkpoint: /private/tmp/flash-ios-audit-warm-synthetic-20261111/dsh-test-0000000000000002.state.tmp.ABCDEF
+[warm-state] removed older profile checkpoint: /private/tmp/flash-ios-audit-warm-synthetic-20261111/dsh-test-0000000000000001.state
+[warm-state-test] default Zstd-1 policy: PASS
+[warm-state-test] separate identity and zstd namespaces: PASS
+[warm-state-test] GPU 32-head raw/memory payload (4194304 bytes): PASS
+[warm-state-test] GPU 64-head raw/memory payload (4194304 bytes): PASS
+[warm-state-test] FE027 disabled identity unchanged / enabled masks distinct: PASS
+[warm-state-test] N128 ownership epoch / unaffected identity preserved: PASS
+[warm-state-test] linear/full chain modes change identity: PASS
+[warm-state-test] N128/scalar mode changes identity: PASS
+[warm-state-test] numerical mode changes identity: PASS
+[warm-state-test] valid restore: PASS
+[warm-state-test] injected partial-write EIO preserves final: PASS
+[warm-state-test] zstd1 round trip: PASS
+[warm-state-test] oversized Zstd section rejected before allocation: PASS
+[warm-state-test] compressed corruption rejected, raw preserved: PASS
+[warm-state-test] explicit raw save format: PASS
+[warm-state-test] default Zstd-1 save format: PASS
+[warm-state-test] damaged zstd fallback and repair: PASS
+[warm-state-test] wrong magic: PASS
+[warm-state-test] wrong format: PASS
+[warm-state-test] wrong layout: PASS
+[warm-state-test] oversized token count: PASS
+[warm-state-test] altered payload length: PASS
+[warm-state-test] altered dimensions: PASS
+[warm-state-test] payload checksum: PASS
+[warm-state-test] truncated file: PASS
+[warm-state-test] extra payload: PASS
+[warm-state-test] wrong payload checksum: PASS
+[warm-state-test] wrong token position: PASS
+[warm-state-test] missing token signature: PASS
+[warm-state-test] changed identity/source/profile: PASS
+[warm-state-test] valid checkpoint, different system-prefix tokens: PASS
+[warm-state-test] interrupted write leaves final valid: PASS
+[warm-state-test] corrupt file rebuild: PASS
+[warm-state-test] metadata content changes identity: PASS
+[warm-state-test] device ID excluded only from new identity: PASS
+[warm-state-test] profile and stale-temp cleanup: PASS
+[warm-state-test] RESULT: PASS
