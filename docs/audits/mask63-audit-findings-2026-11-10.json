@@ -1,0 +1,312 @@
+{
+  "schema_version": 1,
+  "audit_id": "flash-ios-mask63-workstream-c-2026-11-10",
+  "started": "2026-11-10",
+  "completed": "2026-11-10",
+  "recommendation": "AUDIT CONDITIONAL PASS — SPECIFIC REMEDIATIONS REQUIRED",
+  "grade": "conditional_pass",
+  "p0_confirmed": 0,
+  "scope": "experimental candidate and prospective integration only; installed production excluded",
+  "source": {
+    "repo": "KingdomDesignsConsulting/Flash-iOS",
+    "work_a_sha": "21a073174fb1feb828f2d28762293d1803e66a9a",
+    "work_b_sha": "01ae9976f541c384dd83905fc006da196971bdb2",
+    "work_a_runtime_repair_sha": "ac06b920dbb7e26b804480b36eea4dbe83b40d4e",
+    "work_a_runtime_lineage_sha": "66adf92e2ea950528917000d1b59b788e1687371",
+    "observed_checkout_reference_sha": "5c26430f2790b84516b7384915eb0500abc5392f",
+    "production_branch_observed_sha": "8312a1d0fbf4fa09a14621a51cfe676be98c29b3",
+    "audit_branch": "audit/mask63-preproduction-readiness-20261110",
+    "pr2": "draft;unmerged",
+    "pr3": "draft;unmerged"
+  },
+  "reported_provenance": {
+    "release_manifest_sha256": "86f5ffa6bd6ce42dcc81a934fdc82040a8f1059cf14ec53ec23e575957f56fce",
+    "candidate_binary_sha256": "5960178f4dbc677a4b7fa660b8a9fb46773ea3dadc495f5604b400cc7f194602",
+    "source_tree": "22260f90486cec991414db362b89d295865c9ca6",
+    "independently_rehashed_original_binary": false,
+    "independently_read_raw_private_oracle": false
+  },
+  "independently_checked_sanitized_gate": {
+    "status": "PASS_STATIC",
+    "endpoint_count": 256,
+    "positions": "128..32768 inclusive step 128",
+    "all_pass": true,
+    "all_persistent_fingerprints_match": true,
+    "all_greedy_equal": true,
+    "greedy_json_representation": 1,
+    "all_finite": true,
+    "all_kv_mirrors": true,
+    "state_max_abs": 0,
+    "hidden_max_abs": 4.76837158203125e-7,
+    "logits_max_abs": 0.0000057220458984375,
+    "gpu_boundaries": [
+      8192,
+      8193,
+      16384,
+      16385,
+      24576,
+      32768
+    ],
+    "layers": [
+      3,
+      7,
+      11,
+      15,
+      19,
+      23,
+      27,
+      31,
+      35,
+      39
+    ],
+    "same_reported_manifest_and_binary_identifiers": true
+  },
+  "performance": {
+    "unit": "seconds of prefill",
+    "exploratory": true,
+    "n_per_complete_path": 1,
+    "cross_date_confound": true,
+    "contexts": {
+      "16384": {
+        "ordinary": {
+          "cold": 1325.305,
+          "warm": 995.824
+        },
+        "mask63": {
+          "cold": 1174.335,
+          "warm": 1180.462
+        },
+        "scalar": {
+          "cold": 2123.869,
+          "warm": 2148.034
+        },
+        "mask63_warm_cost_percent_vs_ordinary": 18.541
+      },
+      "32768": {
+        "ordinary": {
+          "cold": 3098.961,
+          "warm": 3145.699
+        },
+        "mask63": {
+          "cold": 5128.867,
+          "warm": 5084.331
+        },
+        "scalar": {
+          "cold": 6741.074,
+          "warm": null,
+          "complete_process_trial": false
+        },
+        "mask63_warm_cost_percent_vs_ordinary": 61.628
+      }
+    },
+    "staging_matched_16384_seconds": {
+      "early_linear_stage": 49.686,
+      "late_linear_stage": 747.928,
+      "early_attention_rowwise": 52.197,
+      "late_attention_rowwise": 54.656
+    },
+    "ordinary_n128_is_numerically_unqualified": true
+  },
+  "tests_executed_in_this_audit": [
+    "GitHub SHA/branch/PR/compare inspection",
+    "candidate source path and compiler flag static inspection",
+    "sanitized 256-row independent logical validation",
+    "sanitized manifest/binary identifier consistency",
+    "Source oracle/manifest validator review",
+    "Work B transport/generator/resident source inspection",
+    "llama.cpp PR31688 mechanism comparison"
+  ],
+  "tests_not_executed": [
+    "Apple M4 build",
+    "heavyweight model inference",
+    "raw original executable/manifest/fixture rehash",
+    "32K scalar cold+warm rerun",
+    "installed LM Studio GUI",
+    "real MCP Gateway",
+    "production service inventory or probes",
+    "intentional OOM"
+  ],
+  "production_modified": false,
+  "product_runtime_files_modified": false,
+  "work_a_modified": false,
+  "work_b_modified": false,
+  "full_executable_hashing_recommended": false,
+  "findings": [
+    {
+      "id": "C-01",
+      "severity": "P1",
+      "status": "CONFIRMED",
+      "owner": [
+        "Work A",
+        "Architect"
+      ],
+      "category": "context_and_resource_admission",
+      "source": [
+        "metal_infer/infer.m:454-477",
+        "metal_infer/infer.m:21202-21217",
+        "docs/work-a-mask63-release-procedure-2026-11-06.md"
+      ],
+      "mechanism": "Native HTTP context preflight protects 65536 CPU KV tokens, not proposed 32768 GPU-only release envelope; resource admission thresholds are in benchmark controllers, not enforced in generic HTTP serving.",
+      "impact": "Unsupported long CPU fallback and unbounded release-facing memory/performance promises can pass request admission.",
+      "static_check": "Inspect CPU g_kv_seq_len, compiled GPU_KV_SEQ, HTTP context_preflight and external runner admission; compare 32768/32769 policy.",
+      "runtime_test": "NOT RUN: isolated release binary request with logical prompt+max output 32768 then 32769; assert explicitly configured GPU-only policy.",
+      "fix": "Introduce approved configurable GPU-only 32768 context+reserved-output policy and measurable service-level memory/admission/overload guard; preserve optional CPU fallback for other modes."
+    },
+    {
+      "id": "C-02",
+      "severity": "P1",
+      "status": "EVIDENCE_GAP",
+      "owner": [
+        "Architect",
+        "Work A"
+      ],
+      "category": "intended_capacity_performance",
+      "source": [
+        "docs/work-a-mask63-release-closure-2026-11-04.md",
+        "docs/results/work-a-mask63-release-closure-2026-11-04.json",
+        "tools/validate_work_a_missing.py"
+      ],
+      "mechanism": "32K scalar warm process is incomplete and a fresh retry was blocked by safe GPU admission. Mask63 32K complete n=1 warm 5084.331s versus 3145.699s ordinary N128; timing control is not numerical release alternative.",
+      "impact": "No qualified release-time latency/SLO under matched environment. Difference is 61.628% on exploratory n=1 samples, confounded by host and expert staging.",
+      "static_check": "Inspect completed_trials, interrupted original status, split-phase exclusion and performance_review latest_admission; do not relabel partial scalar cold as full process.",
+      "runtime_test": "NOT RUN: optional same-process 32768 scalar cold+warm subject to existing GPU/host guards and explicit authorization.",
+      "fix": "Architect set minimum acceptable latency for restricted release; either collect bounded missing cohort if necessary or explicitly retain uncertainty for separately authorized conditional canary."
+    },
+    {
+      "id": "C-03",
+      "severity": "P1",
+      "status": "CONFIRMED_PREREQUISITE",
+      "owner": [
+        "Architect",
+        "Future operator"
+      ],
+      "category": "production_provenance_rollback",
+      "source": [
+        "docs/work-a-mask63-release-procedure-2026-11-06.md",
+        "docs/work-a-mask63-release-closure-2026-11-04.md"
+      ],
+      "mechanism": "Observed checkout/source and previously recorded binary/shader hashes are not authenticated current installed-service source or process-manager identity. Release plan cannot name safe stop/start/restore procedures.",
+      "impact": "Unsafe deployment/rollback unless launch ownership, binary and shader provenance, entire cache and environment are established later.",
+      "static_check": "Compare release procedure's explicit unknown-PID/service-manager statements with handoff and candidate data.",
+      "runtime_test": "NOT RUN BY DESIGN: production service inspection forbidden in audit.",
+      "fix": "Future operator verify actual executable/PID/service ownership, launcher argv/env, source/shader hashes, cache/backups and complete reversible runbook under distinct approval."
+    },
+    {
+      "id": "C-04",
+      "severity": "P1_if_supported_else_P2",
+      "status": "CONFIRMED",
+      "owner": [
+        "Work A",
+        "Work B",
+        "Architect"
+      ],
+      "category": "thinking_controls",
+      "source": [
+        "metal_infer/infer.m:20470-20489",
+        "docs/agent-protocol-contract-2026-11-04.md",
+        "tools/qualify_agent_controls.py"
+      ],
+      "mechanism": "Native handler recognizes budget fields and reasoning_effort=off but ignores enable_thinking and none/low/medium/high. Numeric budget 0 means unlimited.",
+      "impact": "Requested client controls may silently alter prompt rendering and incompatible expectations; not automatically mask63 math corruption.",
+      "static_check": "Read request-resolution source and characterized 53 cases; real compiled source characterization is reported by Work B.",
+      "runtime_test": "NOT RUN: explicit conflicting controls over isolated HTTP with identity/state checks.",
+      "fix": "Define contract and reject or normalize unsupported controls; gate the feature if promised."
+    },
+    {
+      "id": "C-05",
+      "severity": "P1_if_supported_else_P2",
+      "status": "NOT_QUALIFIED",
+      "owner": [
+        "Work B",
+        "Gateway owner"
+      ],
+      "category": "external_integration",
+      "source": [
+        "clients/lmstudio-documents/src/generator.ts",
+        "clients/lmstudio-documents/src/transport.ts",
+        "docs/agent-protocol-workstream-b-2026-11-04.md",
+        "docs/results/agent-protocol-2026-11-04.json"
+      ],
+      "mechanism": "44/44 adapter tests and wire fixtures passed, but actual LM Studio service/GUI and MCP Gateway registry, pagination and dispatch were not validated on this qualified branch. Responses API is not implemented.",
+      "impact": "Cannot claim deployed GUI/Gateway/Responses compatibility as part of release.",
+      "static_check": "Compare Work B reported installed_lmstudio_service=unreachable, GUI=NOT RUN, MCP fixtures only, model_inference=false against source contract.",
+      "runtime_test": "NOT RUN: isolated real LM Studio GUI and authorized actual Gateway scenarios.",
+      "fix": "Exclude absent optional integrations from release or test actual services with verified endpoint/schema identity."
+    },
+    {
+      "id": "C-06",
+      "severity": "P2",
+      "status": "EVIDENCE_LIMIT",
+      "owner": [
+        "Work A",
+        "Independent reviewer"
+      ],
+      "category": "raw_evidence_authentication",
+      "source": [
+        "tools/work_a_manifest.py",
+        "metal_infer/session_nrow_oracle.inc",
+        "docs/results/work-a-mask63-release-closure-2026-11-04.json"
+      ],
+      "mechanism": "Sanitized summary self-consistent and source verifier strict, but original private binary, manifests/fixtures/raw logs were not independently read or hashed by auditor.",
+      "impact": "Release authorization should not misrepresent this review as full original-execution attestation.",
+      "static_check": "Independently checked 256 exact ordered endpoints, all state/hidden/logit/greedy/digest/KV/finite criteria, candidate GPU routing at six boundaries, manifest and binary identifier equality.",
+      "runtime_test": "NOT RUN: original private raw provenance rehash.",
+      "fix": "Independent read-only artifact verification at authorization, preserving private data off public GitHub."
+    },
+    {
+      "id": "C-07",
+      "severity": "P2",
+      "status": "CONFIRMED_LIMITATION",
+      "owner": [
+        "Work A",
+        "Work B"
+      ],
+      "category": "tool_output_semantics",
+      "source": [
+        "metal_infer/infer.m:21719-21758",
+        "docs/agent-protocol-contract-2026-11-04.md"
+      ],
+      "mechanism": "Nonwhitespace text following first native tool call invalidates/recover model output; answer->tool->answer is not supported as seamless structured result.",
+      "impact": "Optional unsupported output ordering; cannot claim full general-purpose agent tool composability.",
+      "static_check": "Native tool_suffix_nonspace and recovery branch behavior.",
+      "runtime_test": "NOT RUN: forced output token sequence testing.",
+      "fix": "Document limited ordering or independently qualify a richer tool protocol."
+    },
+    {
+      "id": "C-08",
+      "severity": "P2_FUTURE_GUARD",
+      "status": "CURRENT_CONFIGURATION_SAFE",
+      "owner": [
+        "Architect"
+      ],
+      "category": "checkpoint_identity",
+      "source": [
+        "metal_infer/warm_state_cache.inc:108-166",
+        "metal_infer/infer.m:8614-8616"
+      ],
+      "mechanism": "Selective mode hash omits compile-time GPU_KV_SEQ, but currently persisted profile prefix cap=8192 <= every supported GPU attention window.",
+      "impact": "Not a present defect; possible unsafe alias under future prefix-cap or backend changes.",
+      "static_check": "Compare hash inputs, compiled GPU 8192/16384/32768 and native 8192 prefix cap.",
+      "runtime_test": "NOT RUN; future-change gate.",
+      "fix": "Add selective backend/window identity when supported persisted states can cross backend boundary; avoid whole-executable hashing."
+    },
+    {
+      "id": "C-09",
+      "severity": "P3",
+      "status": "HYPOTHESIS",
+      "owner": [
+        "Future engineering"
+      ],
+      "category": "expert_staging_anomaly",
+      "source": [
+        "docs/work-a-mask63-release-closure-2026-11-04.md",
+        "docs/results/work-a-mask63-release-closure-2026-11-04.json"
+      ],
+      "mechanism": "At matched 16384 prefix, linear expert staging changed 49.686s to 747.928s while rowwise attention was 52.197s vs 54.656s; cache/page/memory/other load are possible causes, not proven.",
+      "impact": "Confounds release latency estimates; no demonstrated kernel numerical defect.",
+      "static_check": "Compare phase counters and environmental observations; note host-wall measurements overlap.",
+      "runtime_test": "NOT RUN: low-impact I/O/cache residency profiling after release blockers.",
+      "fix": "Separate page-cache, SSD read, memory pressure and scheduler attribution without altering unrelated applications."
+    }
+  ]
+}
