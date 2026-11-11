@@ -28,6 +28,8 @@ GitHub heads were checked before inspection and again before publication; both n
 
 All 12 mandatory documents are versioned in [document-versions.json](evidence/document-versions.json), including SHA256 and exact commit. Work B documents are read from B's commit, where they actually exist, not presumed present on A. Older reports retain their historical failures; later evidence supersedes only their specifically repeated gates. The shared ledger was not edited.
 
+Publication encountered an existing November10 audit at `e5aa43e`, based on the same pinned engineering revisions. That report and its findings are preserved verbatim in [history/2026-11-10](history/2026-11-10/). Its private-evidence access limitation is now resolved by actual artifact rehash and raw numerical/staging checks. November11 findings use a distinct **C11-xx** namespace: original C-01→C11-01, C-02→C11-05, C-03→C11-02; original thinking/integration/tool-order C-04/C-05/C-07 are addressed in C11-04 and the supported-contract sections. Original C-06 (raw authentication gap) is resolved; C-08 remains a future-change guard; C-09 retains unproven causal hypotheses despite independently verified phase totals. New C11-03/C11-06/C11-07 add deadline/assertion/durability findings. Original IDs are not reassigned. Prior reports remain historical, not current raw-evidence limitations.
+
 Against historical source5c26430, the candidate changes13 `metal_infer` files (+909/-40). Against remote PR2 base8312a1d, it changes18 runtime/client files and includes earlier transport/session work. The comparisons are not interchangeable minimal patches. Work A's ten commits after66adf92 add harnesses/evidence/docs; the 45 runtime inputs remain identical to the frozen manifest. Work B's delta from the common experimental ancestor affects the adapter/tests/docs/tools, not native inference. No branches were combined.
 
 The installed executable's build provenance cannot be inferred from any of these Git references. Previously recorded production binary/shader hashes were considered only as historical documentation. Current production was expressly outside this audit.
@@ -66,7 +68,7 @@ Lazy KV allocation uses page-aligned anonymous mappings and Metal no-copy views 
 
 Snapshots (`infer.m:8640–8950`) capture completed GPU state, active KV lengths, CPU recurrent shadows and authoritative GPU GDN/convolution state. Partial allocation frees the partial snapshot. Restore fences independently of a pre-existing forward-error latch and validates extents/pointers before copying. Failure/cancellation invalidates the resident identity; discarded partial arrays need not be physically zeroed to satisfy this contract. New requests reset/restore before reuse. Streaming failed-state responses do not publish executable partial tool calls; strict and compatibility recovery notify session invalidation (`22000–22285`).
 
-At32K, reviewed size calculations use `size_t`/widened accounting; bounded KV/view sizes are representable on arm64. No confirmed overflow, premature no-copy unmap, double release or active-cache eviction defect was found in the examined supported path. Actual OOM, device reset, concurrent inference and every flag cross-product remain unqualified. **C-01** addresses admission policy, not a demonstrated memory corruption.
+At32K, reviewed size calculations use `size_t`/widened accounting; bounded KV/view sizes are representable on arm64. No confirmed overflow, premature no-copy unmap, double release or active-cache eviction defect was found in the examined supported path. Actual OOM, device reset, concurrent inference and every flag cross-product remain unqualified. **C11-01** addresses admission policy, not a demonstrated memory corruption.
 
 ## 5. Checkpoint identity and restore safety
 
@@ -78,7 +80,7 @@ Selective identity is appropriate for the intended design. `warm_state_cache.inc
 
 Serving static-prefix snapshots are capped at8192 tokens (`infer.m:8616`,20129,20951); supported GPU windows are at least8192. Therefore changing only an8K/16K/32K GPU window does not change the backend used while producing a currently persisted prefix, provided all other hashed modes/artifacts remain the same. This is valid for the present envelope. Increasing the prefix cap, shrinking the window below it, or changing backend eligibility/arithmetic invalidates that proof and must change an identity input/operator version plus regression tests. This is a **future-change guard**, not an existing stale-cache finding.
 
-Header/storage validation checks format/layout/model geometry, exact prefix/profile/compatibility, bounded payload/stored lengths, complete file length/no trailing bytes and raw/compressed checksums before publication. Compressed decode is bounded. Partial transfer failure frees the staged snapshot; resident restore is a separate fenced step (`warm_state_cache.inc:315–609`). Raw1/Zstd2 storage and layout2/execution3 are unchanged. Atomic temp creation, checked writes/file fsync/close and rename preserve the final file on pre-rename errors. **C-07** notes unchecked directory durability after rename. Checksums detect accidental corruption; these local files are not an authenticated hostile-input format.
+Header/storage validation checks format/layout/model geometry, exact prefix/profile/compatibility, bounded payload/stored lengths, complete file length/no trailing bytes and raw/compressed checksums before publication. Compressed decode is bounded. Partial transfer failure frees the staged snapshot; resident restore is a separate fenced step (`warm_state_cache.inc:315–609`). Raw1/Zstd2 storage and layout2/execution3 are unchanged. Atomic temp creation, checked writes/file fsync/close and rename preserve the final file on pre-rename errors. **C11-07** notes unchecked directory durability after rename. Checksums detect accidental corruption; these local files are not an authenticated hostile-input format.
 
 The five static slots, pinned exclusion,768MiB dynamic snapshot budget and8192 cap remain. Source files are limited to128 profiles/64MiB (protected entries can prevent full eviction); state disk cleanup targets4GiB and protects current/fallback files. These are cache policies, not host physical-memory admission. Rebuild on incompatible/missing checkpoint is intentional; caches must be backed up before a separately approved migration.
 
@@ -102,7 +104,7 @@ Executed the independent [verify_mask63_evidence.py](verify_mask63_evidence.py),
 
 Inspected the oracle producer (`session_nrow_oracle.inc`): scalar and candidate evolve separate snapshot banks from the same token history; comparisons use synchronized active extents. Counterfactual rebasing is a separate diagnostic after failure, not a qualification repair. Existing tolerances remain state<1e-3, hidden<=1e-3, logits<=1e-2 plus greedy/finite/length/mirror checks; this actual run additionally has exact persistent fingerprints. It does **not** prove bitwise identity of hidden/logits or unobservable intermediate whole-model states inside an N128 slab.
 
-Historical failures at1920,2304,3456 and stale experts at129 remain valid evidence for their builds/modes. No expensive numerical requalification was warranted by an evidence-integrity defect in the authenticated repaired result. The controller has an optimization-mode hardening issue (**C-06**), but actual recorded ordinary Python invocations and independent verification do not exhibit that bypass.
+Historical failures at1920,2304,3456 and stale experts at129 remain valid evidence for their builds/modes. No expensive numerical requalification was warranted by an evidence-integrity defect in the authenticated repaired result. The controller has an optimization-mode hardening issue (**C11-06**), but actual recorded ordinary Python invocations and independent verification do not exhibit that bypass.
 
 Read-only EOS reanalysis of saved capture/restart traces also passes: end positions170/202/234, final EOS is completed and in effective history, all observed KV lengths/finite flags valid, continuation begins at prior end, restarted first turn begins at the logged restored prefix142. Capture/restart final digests match. [Result](evidence/saved-eos-review.json). This reruns a source-audited saved-trace checker, not live restore. Named-profile67,427,311-byte restore, real disconnect recovery and1536 generated tokens across four responses remain historical bounded evidence, not newly executed model tests.
 
@@ -125,7 +127,7 @@ Independently summed first128 phase records in both saved same-binary/input logs
 
 Model page residency, filesystem cache, pressure, CPU/GPU competition and recorded Memory Cleaner auto-cleaning are plausible confounds; none is isolated causally. Only the previously recorded environment observation was reviewed; no current preferences/apps were queried or changed. Low launch GPU readings are admission observations, not proof that an entire hour-long run was uncontended.
 
-**C-05 recommendation:** missing scalar warm is not a universal correctness blocker. The Architect could explicitly permit a separately authorized, bounded native-only canary with accepted latency, enforced capacity/resource policy and rollback readiness. That would be a documented waiver/limited decision, not closure of the full32K comparison or authorization by this audit. General performance suitability remains unresolved.
+**C11-05 recommendation:** missing scalar warm is not a universal correctness blocker. The Architect could explicitly permit a separately authorized, bounded native-only canary with accepted latency, enforced capacity/resource policy and rollback readiness. That would be a documented waiver/limited decision, not closure of the full32K comparison or authorization by this audit. General performance suitability remains unresolved.
 
 ## 8. Work B compatibility
 
@@ -137,7 +139,7 @@ The shipped generator sends full canonical history without guessed conversation 
 
 53 actual-source native thinking-resolution cases were extracted/compiled against candidate A and pass expected characterization. `enable_thinking` and efforts none/low/medium/high are ignored; `off` and native budget/alias/clamp semantics differ from generic OpenAI expectations. Budget0 is not an off synonym. Same-completion answer text after native tools is rejected/recovered, not transparently preserved. Applications must translate supported controls and accept the documented tool contract, or those features need repair before support claims.
 
-**C-03:** B's600s total timer is incompatible with unbounded long-prefill support even while keepalives arrive. A fetch-only100ms scaled test reproduces the distinction from idle timeout. The conservative byte-based input cap restricts reachable requests but does not prove their latency. **C-04:** actual MCP Gateway identity/registration, all-page catalog merging/cycle handling and correct endpoint dispatch remain NOT RUN. Fixture behavior alone cannot establish Gateway behavior. No Gateway implementation is presumed to exist in this repository. Current B GUI and live model tools are unqualified. PR2's older Oct26 GUI observations are retained as historical evidence only. Either exclude these features or qualify an isolated combined revision before claiming them.
+**C11-03:** B's600s total timer is incompatible with unbounded long-prefill support even while keepalives arrive. A fetch-only100ms scaled test reproduces the distinction from idle timeout. The conservative byte-based input cap restricts reachable requests but does not prove their latency. **C11-04:** actual MCP Gateway identity/registration, all-page catalog merging/cycle handling and correct endpoint dispatch remain NOT RUN. Fixture behavior alone cannot establish Gateway behavior. No Gateway implementation is presumed to exist in this repository. Current B GUI and live model tools are unqualified. PR2's older Oct26 GUI observations are retained as historical evidence only. Either exclude these features or qualify an isolated combined revision before claiming them.
 
 ## 9. Context/resource admission
 
@@ -146,7 +148,7 @@ The shipped generator sends full canonical history without guessed conversation 
 | Native request allocation bound |Actual `context_preflight`, widened sum, default65536; before active session mutation/restore |
 | Generation request bound |HTTP clamps1..32768; this is output bound, not total context bound |
 | GPU window |Backend selection bounds32768; CPU fallback above, not request rejection |
-| Proposed total context<=32768 |Operator/client policy only in current serving build (**C-01**) |
+| Proposed total context<=32768 |Operator/client policy only in current serving build (**C11-01**) |
 | Qualification capacity override |`FLASH_QUAL_CONTEXT`, only under qualification compile guard |
 | Dynamic-prefix RAM |Five slots;8192 cap;768MiB dynamic budget, pinned entry excluded |
 | Disk/source limits |Bounded cleanup with protected-file exceptions; not hard universal quota |
@@ -172,15 +174,15 @@ Full ten-field records, static proofs, owners and scope conditions: [findings JS
 
 | ID | Severity | Finding | Owner |
 |---|---|---|---|
-|C-01|P1|Qualified32K/resource admission is not enforced by serving policy|Work A / Architect|
-|C-02|P1|Deployment ownership and complete rollback provenance unresolved|Architect / operator|
-|C-03|P1, combined long-prefill scope|B total deadline expires despite healthy keepalives|Work B / Architect|
-|C-04|P1, claimed client scope|Actual combined Gateway/GUI/live-tool qualification missing|Work B / Architect|
-|C-05|P1|Incomplete/confounded performance gate needs explicit disposition|Architect / Work A|
-|C-06|P2|Python optimization removes release-gate assertions|Work A|
-|C-07|P2|Checkpoint directory-sync errors ignored after rename|Work A / future engineering|
+|C11-01|P1|Qualified32K/resource admission is not enforced by serving policy|Work A / Architect|
+|C11-02|P1|Deployment ownership and complete rollback provenance unresolved|Architect / operator|
+|C11-03|P1, combined long-prefill scope|B total deadline expires despite healthy keepalives|Work B / Architect|
+|C11-04|P1, claimed client scope|Actual combined Gateway/GUI/live-tool qualification missing|Work B / Architect|
+|C11-05|P1|Incomplete/confounded performance gate needs explicit disposition|Architect / Work A|
+|C11-06|P2|Python optimization removes release-gate assertions|Work A|
+|C11-07|P2|Checkpoint directory-sync errors ignored after rename|Work A / future engineering|
 
-No P0 confirmed. C-03/C-04 can be resolved by a clearly restricted native-only supported scope; they cannot be silently promoted to PASS. Speculation, GDN replay, cold-expert CPU routing, broad performance tuning and other platforms are P3/deferred research, not release repairs established by this audit.
+No P0 confirmed. C11-03/C11-04 can be resolved by a clearly restricted native-only supported scope; they cannot be silently promoted to PASS. Speculation, GDN replay, cold-expert CPU routing, broad performance tuning and other platforms are P3/deferred research, not release repairs established by this audit.
 
 ## 12. Required remediation owners
 
@@ -214,7 +216,7 @@ Remaining model tests, if a future combined feature scope requires them, should 
 
 ## 14. Supported versus unsupported configurations
 
-Evidence supports the pinned experimental candidate on baseM4/24GiB, stated tiered Q2/Q4 model,40 layers/256 experts/K8, N128 M4-8row gate-up bitsplit/M4-2row down, explicit mask63, default GPU-linear/resident-MoE/oproj/tiny/chains/prefetch, lazy32K attention, exact effective-token histories and bounded sequential resident/static-prefix behavior. This is a qualified numerical envelope, subject to C-01/C-02/C-05 before release authorization.
+Evidence supports the pinned experimental candidate on baseM4/24GiB, stated tiered Q2/Q4 model,40 layers/256 experts/K8, N128 M4-8row gate-up bitsplit/M4-2row down, explicit mask63, default GPU-linear/resident-MoE/oproj/tiny/chains/prefetch, lazy32K attention, exact effective-token histories and bounded sequential resident/static-prefix behavior. This is a qualified numerical envelope, subject to C11-01/C11-02/C11-05 before release authorization.
 
 Excluded: default ordinary-N128 as a correctness alternative,64K supported serving, arbitrary mode cross-products, iOS/other hardware/weights, multi-model resource arbitration, complete current GUI/Gateway claims, Responses API, arbitrary JSON-schema interoperability, universally correct model instructions, actual hardware-OOM/device-reset robustness and uncontended production speed claims. Matching scalar's wrong literal is parity evidence, not successful instruction following.
 
@@ -226,6 +228,6 @@ Preserve the candidate and its scalar reference. Resolve mandatory P1 prerequisi
 
 Reports and model-free audit tools are committed only to [`audit/mask63-preproduction-readiness-20261110`](https://github.com/KingdomDesignsConsulting/Flash-iOS/tree/audit/mask63-preproduction-readiness-20261110). The publication commit is the Git commit containing this report; its exact SHA is supplied in the delivery message and `git log -1` on that branch. Candidate [21a0731](https://github.com/KingdomDesignsConsulting/Flash-iOS/commit/21a073174fb1feb828f2d28762293d1803e66a9a) and B [01ae997](https://github.com/KingdomDesignsConsulting/Flash-iOS/commit/01ae9976f541c384dd83905fc006da196971bdb2) remain separate and unmodified.
 
-Proposed ledger delta, **not applied**: “November11 Workstream C: candidate21a0731 audited; repaired32K evidence independently authenticated; no confirmedP0; C-01..C-05 release prerequisites and C-06/C-07 hardening recorded in audit branch. Actual combined Gateway/GUI support and performance disposition remain bounded/unresolved. Production excluded, drafts retained, no deployment authorized.”
+Proposed ledger delta, **not applied**: “November11 Workstream C: candidate21a0731 audited; repaired32K evidence independently authenticated; no confirmedP0; C11-01..C11-05 release prerequisites and C11-06/C11-07 hardening recorded in audit branch. Actual combined Gateway/GUI support and performance disposition remain bounded/unresolved. Production excluded, drafts retained, no deployment authorized.”
 
 **AUDIT CONDITIONAL PASS — SPECIFIC REMEDIATIONS REQUIRED**

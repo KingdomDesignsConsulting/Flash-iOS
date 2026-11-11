@@ -10,7 +10,7 @@
   "confirmed_P0": 0,
   "findings": [
     {
-      "id": "C-01",
+      "id": "C11-01",
       "severity": "P1",
       "title": "Qualified context and host-resource envelope is not enforced by the serving admission path",
       "status": "CONFIRMED release-readiness gap; not a demonstrated allocation overflow",
@@ -34,7 +34,7 @@
       "work_b_commit": null
     },
     {
-      "id": "C-02",
+      "id": "C11-02",
       "severity": "P1",
       "title": "Deployment ownership and complete rollback provenance remain unverified",
       "status": "CONFIRMED prerequisite gap; production intentionally not inspected",
@@ -55,7 +55,7 @@
       "work_b_commit": null
     },
     {
-      "id": "C-03",
+      "id": "C11-03",
       "severity": "P1",
       "title": "Work B fixed ten-minute total deadline conflicts with long-prefill support",
       "status": "CONFIRMED source and bounded mock reproduction; live A+B not executed",
@@ -78,7 +78,7 @@
       "work_b_commit": "01ae9976f541c384dd83905fc006da196971bdb2"
     },
     {
-      "id": "C-04",
+      "id": "C11-04",
       "severity": "P1",
       "title": "Combined agent, actual Gateway and current GUI feature claims lack end-to-end qualification",
       "status": "CONFIRMED evidence gap, not a demonstrated Gateway defect",
@@ -102,7 +102,7 @@
       "work_b_commit": "01ae9976f541c384dd83905fc006da196971bdb2"
     },
     {
-      "id": "C-05",
+      "id": "C11-05",
       "severity": "P1",
       "title": "Intended-capacity performance acceptance remains undecided and partially evidenced",
       "status": "CONFIRMED acceptance/evidence gap; numerical result not withdrawn",
@@ -124,7 +124,7 @@
       "work_b_commit": null
     },
     {
-      "id": "C-06",
+      "id": "C11-06",
       "severity": "P2",
       "title": "Evidence gates rely on Python assertions that optimization removes",
       "status": "CONFIRMED bounded reproduction; recorded normal-mode PASS remains valid",
@@ -145,7 +145,7 @@
       "work_b_commit": null
     },
     {
-      "id": "C-07",
+      "id": "C11-07",
       "severity": "P2",
       "title": "Directory durability errors are ignored after checkpoint rename",
       "status": "CONFIRMED static control-flow finding; no power-loss experiment",
@@ -165,5 +165,8 @@
       "candidate_commit": "21a073174fb1feb828f2d28762293d1803e66a9a",
       "work_b_commit": null
     }
-  ]
+  ],
+  "prior_audit_commit": "e5aa43e7edee8bc5e8316130f68ecccfa3163e55",
+  "finding_namespace": "C11-xx, November11 follow-up; original C-xx preserved in history/2026-11-10",
+  "prior_raw_authentication_gap": "RESOLVED by independent saved executable, 45 source files, manifest and256-row/raw routing verification"
 }
