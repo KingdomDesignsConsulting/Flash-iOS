@@ -471,19 +471,19 @@ static int context_preflight(const char *where, int current_pos,
 	if (where && strcmp(where, "HTTP request") == 0) {
 		int mode = flash_serve_policy_mode(getenv("FLASH_SERVE_QUALIFIED_GPU_ONLY"));
 		if (mode < 0) {
-			fprintf(stderr, "ERROR: invalid FLASH_SERVE_QUALIFIED_GPU_ONLY (expected 1 or unset)\\n");
+			fprintf(stderr, "ERROR: invalid FLASH_SERVE_QUALIFIED_GPU_ONLY (expected 1 or unset)\n");
 			return 0;
 		}
 		if (mode == 1) {
 			if (!flash_serve_context_admitted(current_pos, input_tokens,
 					requested_generation, g_kv_seq_len, GPU_KV_SEQ)) {
-				fprintf(stderr, "ERROR: request exceeds qualified GPU-only serving window\\n");
+				fprintf(stderr, "ERROR: request exceeds qualified GPU-only serving window\n");
 				return 0;
 			}
 			uint64_t available = 0;
 			if (!flash_serve_host_available_bytes(&available) ||
 				!flash_serve_host_reserve_admitted(available)) {
-				fprintf(stderr, "ERROR: insufficient/unavailable host memory for qualified serving\\n");
+				fprintf(stderr, "ERROR: insufficient/unavailable host memory for qualified serving\n");
 				return 0;
 			}
 		}
