@@ -53,6 +53,7 @@
 #include <sys/resource.h>
 #include <time.h>
 #include <mach/mach_time.h>
+#include "flash_serve_admission.h"
 #include <math.h>
 #include <getopt.h>
 #include <pthread.h>
@@ -465,6 +466,28 @@ static int context_preflight(const char *where, int current_pos,
 	long long required = (long long)current_pos +
 						 (long long)input_tokens +
 						 (long long)requested_generation;
+	// Explicitly enabled GPU-only serving envelope, enforced before resident
+	// state invalidation/restoration. Ordinary serving and CLI remain unchanged.
+	if (where && strcmp(where, "HTTP request") == 0) {
+		int mode = flash_serve_policy_mode(getenv("FLASH_SERVE_QUALIFIED_GPU_ONLY"));
+		if (mode < 0) {
+			fprintf(stderr, "ERROR: invalid FLASH_SERVE_QUALIFIED_GPU_ONLY (expected 1 or unset)\\n");
+			return 0;
+		}
+		if (mode == 1) {
+			if (!flash_serve_context_admitted(current_pos, input_tokens,
+					requested_generation, g_kv_seq_len, GPU_KV_SEQ)) {
+				fprintf(stderr, "ERROR: request exceeds qualified GPU-only serving window\\n");
+				return 0;
+			}
+			uint64_t available = 0;
+			if (!flash_serve_host_available_bytes(&available) ||
+				!flash_serve_host_reserve_admitted(available)) {
+				fprintf(stderr, "ERROR: insufficient/unavailable host memory for qualified serving\\n");
+				return 0;
+			}
+		}
+	}
 	if (required > (long long)g_kv_seq_len) {
 		fprintf(stderr,
 				"ERROR: context request exceeds engine KV capacity in %s: "
@@ -21209,7 +21232,7 @@ printf("[serve] Tool API revision 9.4 — bounded cache + malformed-tool recover
 					"HTTP/1.1 400 Bad Request\r\n"
 					"Content-Type: application/json\r\n"
 					"Connection: close\r\n\r\n"
-					"{\"error\":\"context length exceeds engine KV capacity\"}\n");
+					"{\"error\":\"request exceeds serving context or host resource admission policy\"}\n");
 				free(pt->ids);
 				free(pt);
 				free(reqbuf);
