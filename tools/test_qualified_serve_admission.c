@@ -23,6 +23,6 @@ int main(void) {
     assert(flash_serve_context_admitted(8192, 0, 0, 65536, 8192));
     assert(flash_serve_host_reserve_admitted(FLASH_SERVE_MIN_HOST_AVAILABLE_BYTES));
     assert(!flash_serve_host_reserve_admitted(FLASH_SERVE_MIN_HOST_AVAILABLE_BYTES - 1));
-    puts("qualified serve admission: 17 model-free cases PASS");
+    puts("qualified serve admission: 19 model-free cases PASS");
     return 0;
 }
