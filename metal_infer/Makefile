@@ -76,7 +76,7 @@ $(SHADER_LIB): $(SHADER_AIR)
 
 # Build the inference engine. Keep direct source includes as prerequisites so
 # incremental builds cannot silently retain stale validation/runtime code.
-INFER_DEPS = gguf_iq_shared.h tensor_layout_validation.inc tokenizer.h warm_state_cache.inc \
+INFER_DEPS = gguf_iq_shared.h flash_serve_admission.h tensor_layout_validation.inc tokenizer.h warm_state_cache.inc \
 	target_verify_bench.inc target_verify_batch.inc target_verify_grouped.inc \
 	prefill_nrow_grouped_async.inc prefill_nrow_control.inc \
 	prefill_probe/chunk_kernels.metal
