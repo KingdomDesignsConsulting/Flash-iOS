@@ -84,3 +84,16 @@ The manifest MUST remain unauthorized and therefore fail until a separate, expli
 - Work A tests C11-01 admission; the eventual deployment operator resolves C11-02 only after separate authorization.
 - P1 C11-02 remains **OPEN** until actual deployment provenance and rollback testing exist.
 - No merge, deployment or canary authorization is implied.
+
+
+## November 11 verification follow-up — V-01/V-02 fixes
+
+Verification source: [independent Work test report](https://github.com/KingdomDesignsConsulting/Flash-iOS/blob/2e7105ddaf82cf845de4816dcac0660bb7b87b36/docs/audits/c11-01-c11-02-verification-2026-11-11.md).
+
+- **V-01 resolved in source:** `metal_infer/Makefile` now includes `flash_serve_admission.h` in shared `INFER_DEPS`, which is a prerequisite for normal `$(INFER_TARGET)` and the existing experimental targets that reference it. A header-only timestamp change must now rebuild the normal inference target. Verify this with a dry-run incremental-dependency test.
+- **V-02 resolved in source:** `flash_serve_policy_mode(NULL)==0` (unset retains legacy behavior), `flash_serve_policy_mode("1")==1`, and *all explicitly supplied values other than literal "1", including empty string,* are rejected with -1. Unit tests now cover empty and whitespace.
+- **Existing verification evidence:** native build/self-tests PASS, 40 extracted-source model-free integration cases PASS, 12 synthetic provenance tests PASS at original remediation commit `337b5a1`. These results precede the V-01/V-02 fixes and **do not qualify the updated commit**. Re-run the existing tests and dependency regression on the updated branch.
+- **C11-01 remains PARTIAL**: opt-in request-time host reserve does not provide continuous post-admission memory protection or real live-session qualification. Do not represent source-level corrections as complete serving-resource admission acceptance.
+- **C11-02 remains OPEN**: offline provenance tool cannot establish actual deployment launcher, executable mapping, verified full backups or rollback; these require a separately authorized operator. The verification report also notes its role-binding limitation. Do not claim that passing synthetic manifests closes C11-02.
+
+No runtime arithmetic, checkpoint version, production default, installed service or cache was changed. Keep PRs draft. All release-specific follow-on tests must use a new authenticated source/binary manifest.
