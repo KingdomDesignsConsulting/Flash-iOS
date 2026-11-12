@@ -19,7 +19,7 @@
 
 /* 0 = disabled, 1 = enabled, -1 = invalid explicit configuration. */
 static inline int flash_serve_policy_mode(const char *value) {
-    if (!value || !*value) return 0;
+    if (value == NULL) return 0;
     if (strcmp(value, "1") == 0) return 1;
     return -1;
 }
