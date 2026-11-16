@@ -1,0 +1,6 @@
+{
+  "status": "PASS",
+  "checks": 18,
+  "scope": "actual source error/cleanup paths with deterministic model stubs",
+  "extracted_sha256": "875742ca6fdc9ad4498775378f5b38e56455ad0c38d1a854efe1b3d8f02b6a6b"
+}

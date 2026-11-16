@@ -62,4 +62,50 @@ static inline int flash_serve_host_available_bytes(uint64_t *out) {
     return 0;
 #endif
 }
+
+/* System availability and process RSS are distinct, overlapping measurements. */
+#define FLASH_SERVE_MAX_PROCESS_RSS_BYTES (UINT64_C(16) << 30)
+#define FLASH_SERVE_RESOURCE_POLL_MS 250.0
+static inline int flash_serve_process_rss_bytes(uint64_t *out) {
+    if (!out) return 0;
+    *out = 0;
+#if defined(__APPLE__)
+    mach_task_basic_info_data_t info;
+    mach_msg_type_number_t count = MACH_TASK_BASIC_INFO_COUNT;
+    if (task_info(mach_task_self(), MACH_TASK_BASIC_INFO,
+                  (task_info_t)&info, &count) != KERN_SUCCESS) return 0;
+    *out = info.resident_size;
+    return 1;
+#else
+    return 0;
+#endif
+}
+
+typedef struct {
+    int active;
+    int failure; /* 1 telemetry, 2 host reserve, 3 process RSS */
+    double next_sample_ms;
+} FlashServeResourceGuard;
+
+static inline int flash_serve_guard_due(const FlashServeResourceGuard *g, double now) {
+    return g->active && !g->failure && now >= g->next_sample_ms;
+}
+static inline void flash_serve_guard_begin(FlashServeResourceGuard *g, int enabled) {
+    g->active = enabled;
+    g->failure = 0;
+    g->next_sample_ms = 0;
+}
+/* Latch failure until request replacement; never make a partial state reusable. */
+static inline int flash_serve_guard_sample(FlashServeResourceGuard *g, double now,
+                                          int host_ok, uint64_t available,
+                                          int rss_ok, uint64_t rss) {
+    if (!g->active) return 1;
+    if (g->failure) return 0;
+    if (!flash_serve_guard_due(g, now)) return 1;
+    g->next_sample_ms = now + FLASH_SERVE_RESOURCE_POLL_MS;
+    if (!host_ok || !rss_ok) g->failure = 1;
+    else if (!flash_serve_host_reserve_admitted(available)) g->failure = 2;
+    else if (rss >= FLASH_SERVE_MAX_PROCESS_RSS_BYTES) g->failure = 3;
+    return !g->failure;
+}
 #endif

@@ -1,0 +1,67 @@
+{
+  "status": "PASS",
+  "cases": [
+    {
+      "case": "complete synthetic listed artifact",
+      "exit": 0,
+      "expected_accept": true
+    },
+    {
+      "case": "unauthorized",
+      "exit": 1,
+      "expected_accept": false
+    },
+    {
+      "case": "missing owner",
+      "exit": 1,
+      "expected_accept": false
+    },
+    {
+      "case": "no files",
+      "exit": 1,
+      "expected_accept": false
+    },
+    {
+      "case": "wrong digest",
+      "exit": 1,
+      "expected_accept": false
+    },
+    {
+      "case": "missing artifact",
+      "exit": 1,
+      "expected_accept": false
+    },
+    {
+      "case": "relative artifact",
+      "exit": 1,
+      "expected_accept": false
+    },
+    {
+      "case": "invalid digest",
+      "exit": 1,
+      "expected_accept": false
+    },
+    {
+      "case": "one backup root",
+      "exit": 1,
+      "expected_accept": false
+    },
+    {
+      "case": "invalid argv type",
+      "exit": 1,
+      "expected_accept": false
+    },
+    {
+      "case": "invalid environment type",
+      "exit": 1,
+      "expected_accept": false
+    },
+    {
+      "case": "same source unexplained",
+      "exit": 1,
+      "expected_accept": false
+    }
+  ],
+  "scope": "Synthetic manifest CLI validation only. True authorization flag belongs solely to fictional positive fixtures; no real inventory claim.",
+  "limitation": "Validator hashes only files[]. It does not establish existence/hash-role binding for installed_executable, dependencies or backup roots, validate actual launcher mapping, create archives or test rollback. C11-02 remains OPEN."
+}
