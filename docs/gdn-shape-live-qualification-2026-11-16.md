@@ -66,7 +66,7 @@ The driver now uses a normal profile-style basename. The diagnostic oracle valid
 
 ## Provenance, artifacts and reproduction
 
-Sanitized results: `docs/results/gdn-shape-live-2026-11-16.json`, `gdn-shape-native-builds-2026-11-16.json`, `gdn-disk-path-validation-2026-11-16.json`. Raw input IDs, route scores, state fingerprints, engine logs and reports are private under project-root `benchmark-logs/gdn-shape-20261116/`, archived in Drive Testing. New checkpoint files stay under `/Users/knagel/Flash-iOS-Work-A/2026-11-16-c11-gdn/`; existing checkpoints are untouched.
+Sanitized results: `docs/results/gdn-shape-live-2026-11-16.json`, `gdn-shape-native-builds-2026-11-16.json`, `gdn-disk-path-validation-2026-11-16.json`. Raw input IDs, route scores, state fingerprints, engine logs and reports are private under project-root `benchmark-logs/gdn-shape-20261116/`, archived in `/Users/knagel/My Drive/Flash-iOS/Testing/2026-11-16-c11-gdn-work/live-followup/gdn-all-attempts/`. The own-process crash report and binaries are preserved in that live-followup archive. New checkpoint files stay under `/Users/knagel/Flash-iOS-Work-A/2026-11-16-c11-gdn/`; existing checkpoints are untouched.
 
 Read-only aggregation is reproducible:
 
