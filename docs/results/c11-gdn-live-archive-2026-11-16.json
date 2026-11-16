@@ -1,0 +1,16 @@
+{
+  "admission_commit": "4f8a4fd13d8cd05037866c650f41dfca40328f32",
+  "gdn_commit": "59adb9b5d2cefa96c5fee31fb9155f0c4ea0b24b",
+  "new_checkpoint_root": "/Users/knagel/Flash-iOS-Work-A/2026-11-16-c11-gdn/new-gdn-disk2",
+  "contains_production_artifacts": false,
+  "models_running": false,
+  "binary_sha256": {
+    "infer-gdn-shape-64": "81a7815825b00198c1f67caab97b12e49cf388c45399cf8dc8700acb2122913b",
+    "infer-gdn-shape-128": "d03a715a30a81064841ac54987c2e8e07fdcd65bfaf7e2f1f851b3b4f018a875",
+    "infer-gdn-disk-guarded": "448d1e8d7846d0dfc2e248e56a5aee7152e844010b0d865b944daf015e8aafa2",
+    "infer-c11-live-resource-fault": "4db5d613f61e04c0ac1854ed9c1ec894f44e38491007ec011c41b1f79b67f7b7",
+    "infer-gdn-shape-32": "ef1286a19869150171622859425ee9aad2e92b3088f098aa69e906b33e3a1d7a",
+    "infer-c11-live-test": "10c880d684514c352a5bebaeecf9ef56dc10057b21aea4a0bf46299b32d8326b"
+  },
+  "private_archive": "/Users/knagel/My Drive/Flash-iOS/Testing/2026-11-16-c11-gdn-work/live-followup"
+}
