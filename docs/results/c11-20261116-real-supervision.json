@@ -1,0 +1,21 @@
+{
+  "status": "EXITED",
+  "model_started": true,
+  "command": [
+    "/Applications/Xcode.app/Contents/Developer/usr/bin/python3",
+    "-c",
+    "import time;time.sleep(0.3)"
+  ],
+  "started": 1794869613.4149508,
+  "samples": 6,
+  "prelaunch": {
+    "host_available_bytes": 6456868864,
+    "rss_bytes": 0,
+    "physical_bytes": 0,
+    "start_abstime": 0
+  },
+  "pid": 88660,
+  "exit": 0,
+  "ended": 1794869613.772435,
+  "scope": "Actual macOS probe and owned tiny Python child, not a model or production process"
+}
