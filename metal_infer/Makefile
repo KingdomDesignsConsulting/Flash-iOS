@@ -418,3 +418,8 @@ release-qualification: $(INFER_SRC) $(INFER_DEPS) release_render_diag.inc releas
 	$(CC) $(INFER_CFLAGS) -DFLASH_FE027_NUMERICS -DFLASH_SESSION_STATE_DIAGNOSTICS -DFLASH_EXPERIMENTAL_LAZY_SHARED_GPU_KV_32K $(RELEASE_QUAL_EXTRA_CFLAGS) $(FRAMEWORKS) $(LDFLAGS) $(INFER_SRC) -o $(RELEASE_QUAL_BINARY)
 release-legacy-qualification: $(INFER_SRC) $(INFER_DEPS) release_render_diag.inc release_memory_diag.inc release_render_diag.inc session_state_diag.inc session_nrow_oracle.inc session_disk_oracle.inc fe027_alignment.inc fe027_attention_reference.inc fe027_combine_reference.inc fe027_combine_diag.inc fe027_combine_trace.metal fe027_full_attention_diag.inc fe027_q4.inc
 	$(CC) $(INFER_CFLAGS) -DFLASH_FE027_NUMERICS -DFLASH_SESSION_STATE_DIAGNOSTICS $(FRAMEWORKS) $(LDFLAGS) $(INFER_SRC) -o infer-release-legacy-qualification
+
+# Separate model-free sampler for the opt-in owned-process release supervisor.
+.PHONY: serve-resource-probe
+serve-resource-probe: flash_serve_admission.h ../tools/serve_resource_probe.c
+	$(CC) $(CFLAGS) -I. ../tools/serve_resource_probe.c -o flash-serve-resource-probe

@@ -1,0 +1,27 @@
+{
+  "status": "PASS",
+  "scope": "Actual extracted preflight/rejection branch, synthetic resident KV/GDN/conv sentinels; no actual model KV advancement or HTTP socket",
+  "source_sha256": "1b86c4a744e7f049a9bc0a582aa03c60b253045ccd788a86fd51ca5384cacbda",
+  "tested_source_sha256": "691ff27d880baee6b8671c1ebfc8562fd633e8b5fe870ddc9cff0f11510bd8b6",
+  "results": [
+    {
+      "gpu_cap": 8192,
+      "cases": 20,
+      "failures": 0,
+      "resident_pos": 8190,
+      "turn_count": 7,
+      "all_kv_lengths": 8190,
+      "state_preserved": true
+    },
+    {
+      "gpu_cap": 32768,
+      "cases": 20,
+      "failures": 0,
+      "resident_pos": 32766,
+      "turn_count": 7,
+      "all_kv_lengths": 32766,
+      "state_preserved": true
+    }
+  ],
+  "empty_environment": "Explicit empty value now rejects as specified."
+}

@@ -480,9 +480,11 @@ static int context_preflight(const char *where, int current_pos,
 				fprintf(stderr, "ERROR: request exceeds qualified GPU-only serving window\n");
 				return 0;
 			}
-			uint64_t available = 0;
+			uint64_t available = 0, rss = 0;
 			if (!flash_serve_host_available_bytes(&available) ||
-				!flash_serve_host_reserve_admitted(available)) {
+				!flash_serve_host_reserve_admitted(available) ||
+                !flash_serve_process_rss_bytes(&rss) ||
+                rss >= FLASH_SERVE_MAX_PROCESS_RSS_BYTES) {
 				fprintf(stderr, "ERROR: insufficient/unavailable host memory for qualified serving\n");
 				return 0;
 			}
@@ -499,6 +501,30 @@ static int context_preflight(const char *where, int current_pos,
 	}
 	return 1;
 }
+// Active only for an admitted opt-in HTTP request. No inference math changes.
+static FlashServeResourceGuard g_qualified_resource_guard;
+static int flash_qualified_resource_poll(void) {
+    FlashServeResourceGuard *g = &g_qualified_resource_guard;
+    if (!g->active) return 1;
+    if (g->failure) return 0;
+    double tick = mach_absolute_time();
+    static mach_timebase_info_data_t tb;
+    if (!tb.denom && (mach_timebase_info(&tb) != KERN_SUCCESS || !tb.denom)) {
+        g->failure = 1; return 0;
+    }
+    tick = tick * (double)tb.numer / (double)tb.denom / 1e6;
+    if (!flash_serve_guard_due(g, tick)) return 1;
+    uint64_t available = 0, rss = 0;
+    int host_ok = flash_serve_host_available_bytes(&available);
+    int rss_ok = flash_serve_process_rss_bytes(&rss);
+    if (!flash_serve_guard_sample(g, tick, host_ok, available, rss_ok, rss)) {
+        fprintf(stderr, "[serve-resource] request aborted reason=%d host_available=%llu rss=%llu; session invalidated\n",
+                g->failure, (unsigned long long)available, (unsigned long long)rss);
+        return 0;
+    }
+    return 1;
+}
+
 static float *s_cpu_attn_scores = NULL;
 static size_t s_cpu_attn_scores_capacity = 0;
 
@@ -15983,6 +16009,11 @@ static int run_all_layers_checked(
 ) {
 	g_forward_error = 0;
 	for (int layer = 0; layer < NUM_LAYERS; layer++) {
+        if (!flash_qualified_resource_poll()) {
+            discard_deferred_experts();
+            g_forward_error = 1;
+            return 0;
+        }
 		int is_full = ((layer + 1) % FULL_ATTN_INTERVAL == 0);
 #ifdef FLASH_GPU_KV_PERFORMANCE
         double kv_layer_start=(kv_perf_active&&is_full)?now_ms():0.0;
@@ -18682,6 +18713,7 @@ typedef struct {
 static int serve_nrow_poll(void *opaque) {
     ServeNRowPollContext *ctx = (ServeNRowPollContext *)opaque;
     if (!ctx) return 1;
+    if (!flash_qualified_resource_poll()) return 0;
 #ifdef FLASH_SESSION_STATE_DIAGNOSTICS
     sd_progress("prefill_nrow_poll",-1);
 #endif
@@ -20311,6 +20343,7 @@ printf("[serve] Tool API revision 9.4 — bounded cache + malformed-tool recover
 	fprintf(stderr, "[serve] Listening on http://127.0.0.1:%d\n[serve] Ready\n", port);
 
 	for (;;) {
+        g_qualified_resource_guard.active = 0;
 		struct sockaddr_in client_addr;
 		socklen_t client_len = sizeof(client_addr);
 		int client_fd = accept(server_fd, (struct sockaddr *)&client_addr, &client_len);
@@ -21240,6 +21273,9 @@ printf("[serve] Tool API revision 9.4 — bounded cache + malformed-tool recover
 				continue;
 			}
 
+            flash_serve_guard_begin(&g_qualified_resource_guard,
+                flash_serve_policy_mode(getenv("FLASH_SERVE_QUALIFIED_GPU_ONLY")) == 1);
+
             // Decode-only prediction state must not leak into a subsequent
             // request's prefill, especially N128 attention-only capture. Drain
             // old scratch writes before restoring/recycling model buffers.
@@ -21993,6 +22029,10 @@ printf("[serve] Tool API revision 9.4 — bounded cache + malformed-tool recover
 				}
 
 			}
+            if (!flash_qualified_resource_poll()) {
+                request_state_failed = 1;
+                session_reusable = 0;
+            }
 			double decode_ms = now_ms() - t_gen;
 			g_cmd1_profile_decode_active = 0;
             free(exact_read_tokens);
