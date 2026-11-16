@@ -1,11 +1,12 @@
 import type { Chat, GeneratorController } from '@lmstudio/sdk';
 import {configSchematics,globalConfigSchematics} from './config';
-import {completionEvents} from './transport';
+import {completionEvents,requestDeadlines} from './transport';
 import {ResidentProtocol} from './resident';
 import {Validator} from 'jsonschema';
 const protocol=new ResidentProtocol();
 export async function generate(ctl:GeneratorController, chat:Chat) {
  const settings=ctl.getPluginConfig(configSchematics),global=ctl.getGlobalPluginConfig(globalConfigSchematics);
+ const deadlines=requestDeadlines(global.get('totalDeadlineSeconds'),global.get('idleDeadlineSeconds'));
  const messages:any[]=[];
  for(const message of chat) {
   const role:string=message.getRole();
@@ -30,7 +31,7 @@ export async function generate(ctl:GeneratorController, chat:Chat) {
   // generation/regeneration. Full canonical messages remain authoritative.
   await protocol.execute(undefined,messages,{model:settings.get('model'),stream:true,stream_options:{include_usage:true},temperature:settings.get('temperature'),max_tokens:maxOutputTokens,...(tools.length?{tools}:{})},async body=>{
    let content='',finishReason='';const calls=new Map<number,{id:string;name:string;args:string}>();
-   for await(const part of completionEvents(global.get('baseUrl'),global.get('apiKey'),body,abort.signal)) {
+   for await(const part of completionEvents(global.get('baseUrl'),global.get('apiKey'),body,abort.signal,deadlines.idleMs,deadlines.totalMs)) {
     if(part.choices?.[0]?.finish_reason)finishReason=part.choices[0].finish_reason;
     const delta=part.choices?.[0]?.delta;
     if(!delta)continue;
@@ -63,7 +64,14 @@ export async function generate(ctl:GeneratorController, chat:Chat) {
     if(!result.valid)throw new Error('Tool arguments violate advertised schema');
     return {...c,arguments:args};
    });
-   for(const c of complete){ctl.toolCallGenerationStarted({toolCallId:c.id});ctl.toolCallGenerationNameReceived(c.name);ctl.toolCallGenerationArgumentFragmentGenerated(c.args);ctl.toolCallGenerationEnded({id:c.id,name:c.name,type:'function',arguments:c.arguments});}
+   const checkCancelled=()=>{if(abort.signal.aborted)throw new Error('Generation cancelled');};
+   for(const c of complete){
+    checkCancelled();ctl.toolCallGenerationStarted({toolCallId:c.id});
+    checkCancelled();ctl.toolCallGenerationNameReceived(c.name);
+    checkCancelled();ctl.toolCallGenerationArgumentFragmentGenerated(c.args);
+    checkCancelled();ctl.toolCallGenerationEnded({id:c.id,name:c.name,type:'function',arguments:c.arguments});
+   }
+   checkCancelled();
    return {role:'assistant',content,...(complete.length?{tool_calls:complete.map(c=>({id:c.id,type:'function',function:{name:c.name,arguments:c.args}}))}:{})};
   });
  } catch(error) {

@@ -21,7 +21,13 @@ The plugin was built against LM Studio SDK 1.4.0. It uses the SDK document parse
 
 The generator assumes Flash-iOS's qualified 32K context. It reserves the configured output tokens plus 2,048 tokens for chat framing and rejects a request if serialized messages and tool definitions exceed the remaining budget **in UTF-8 bytes**. This deliberately overestimates prompt tokens. It does not silently truncate a document. This is a safety bound, not exact Qwen token accounting.
 
-LM Studio's cancel action aborts the upstream HTTP stream. The request has a ten-minute total deadline, a two-minute stream-idle deadline, and explicit response/event limits. Engine SSE keepalives reset the idle timer. No implicit transport retries occur.
+LM Studio's cancel action aborts the upstream HTTP stream. Global settings expose **Total request deadline (seconds)** (`totalDeadlineSeconds`) and **Stream idle deadline (seconds)** (`idleDeadlineSeconds`). Defaults remain 600 seconds total and 120 seconds idle. Each must be a whole number from 1 to 86,400 seconds; invalid values fail before connecting. For a workload whose expected prefill exceeds ten minutes, explicitly choose a larger bounded total, for example 7,200 seconds with a 120-second idle limit. This example is a timeout allowance, not model-capacity or latency qualification.
+
+Both clocks begin before fetch, covering connection/header wait as well as body receipt. Before headers, errors identify phase `headers`; after headers, phase `body`. A distinct prefill phase cannot be inferred reliably from these SSE events, so there is no separate prefill timer. Any received bytes, including SSE comments/keepalives, refresh idle activity; they never extend total duration. Byte/event limits still apply. `DeadlineError.deadline` identifies `total` or `idle`, and its message includes the phase. Caller cancellation preserves its AbortSignal reason.
+
+Timers/listeners and the stream reader are cleaned up on success or failure. A timeout does not assert that the server rolled back its work: the optional resident helper discards its acknowledgement, does not retry, and sends full history under a new identifier on the next request. No implicit transport retries occur. Tool publication requires full finish/DONE and validation, with cancellation checks between SDK callbacks. A call already published before cancellation cannot be recalled; subsequent calls are suppressed.
+
+The adapter consumes streaming Chat Completions only. Native HTTP also supports buffered Chat Completions, but this generator explicitly rejects a buffered JSON response. Responses API is unsupported. Late system/developer messages are forwarded with their roles and order intact; the native parser rejects them after conversation start. Keep trusted instructions in the supported leading instruction block; do not demote trusted reminders to user messages for cache efficiency.
 
 ## Version 0.2.0 — experimental qualification
 
