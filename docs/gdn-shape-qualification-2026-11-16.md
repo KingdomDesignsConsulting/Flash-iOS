@@ -1,5 +1,7 @@
 # GDN shape-sensitivity component qualification — November16,2026
 
+**Later live follow-up:** [Bounded actual-model qualification](gdn-shape-live-qualification-2026-11-16.md) now passes. This document preserves the earlier component-stage scope and historical NOT RUN entries. The follow-up also records a diagnostic input-validation repair; arithmetic and serialization remain unchanged.
+
 ## Isolation, source and verdict
 
 Separate branch: `experiment/gdn-shape-qualification-20261116`, created from the numerically qualified candidate **21a073174fb1feb828f2d28762293d1803e66a9a**. No admission-branch code, production, Work B, PR2/3, model weights, checkpoint identities or existing tolerance changed. Native runtime files are unchanged; only a standalone probe/driver and research evidence/docs are added.

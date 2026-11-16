@@ -1,0 +1,158 @@
+{
+  "status": "PASS_BOUNDED",
+  "model_cases": [
+    {
+      "width": 32,
+      "tokens": 33,
+      "engine_args": [],
+      "endpoints": 2,
+      "max_errors": {
+        "state": 0,
+        "hidden": 2.384185791015625e-07,
+        "logits": 1.9073486328125e-06
+      },
+      "persistent_exact": true,
+      "binary_sha256": "ef1286a19869150171622859425ee9aad2e92b3088f098aa69e906b33e3a1d7a",
+      "native_artifact_sha256": "37ca6f5e4848de483caf52a3bf150e1d6768b68c9455ffba0a9553cc277d3727"
+    },
+    {
+      "width": 64,
+      "tokens": 65,
+      "engine_args": [],
+      "endpoints": 2,
+      "max_errors": {
+        "state": 0,
+        "hidden": 2.384185791015625e-07,
+        "logits": 2.86102294921875e-06
+      },
+      "persistent_exact": true,
+      "binary_sha256": "81a7815825b00198c1f67caab97b12e49cf388c45399cf8dc8700acb2122913b",
+      "native_artifact_sha256": "854e46aeda4bdcb26aa0a3202e856c4c4a4039edbfa22639eecdf5b0b5c256fd"
+    },
+    {
+      "width": 128,
+      "tokens": 128,
+      "engine_args": [],
+      "endpoints": 1,
+      "max_errors": {
+        "state": 0,
+        "hidden": 1.1920928955078125e-07,
+        "logits": 1.9073486328125e-06
+      },
+      "persistent_exact": true,
+      "binary_sha256": "d03a715a30a81064841ac54987c2e8e07fdcd65bfaf7e2f1f851b3b4f018a875",
+      "native_artifact_sha256": "457aebe03ca8c7b238f78559835577fedba011e7ccfa32e0ac89c962afa2f8d2"
+    },
+    {
+      "width": 128,
+      "tokens": 129,
+      "engine_args": [],
+      "endpoints": 2,
+      "max_errors": {
+        "state": 0,
+        "hidden": 1.1920928955078125e-07,
+        "logits": 1.9073486328125e-06
+      },
+      "persistent_exact": true,
+      "binary_sha256": "d03a715a30a81064841ac54987c2e8e07fdcd65bfaf7e2f1f851b3b4f018a875",
+      "native_artifact_sha256": "a4b64ffad8dde7723ef5bc1b65966425b39af5e303131855208c068bab0d4386"
+    },
+    {
+      "width": 32,
+      "tokens": 129,
+      "engine_args": [],
+      "endpoints": 5,
+      "max_errors": {
+        "state": 0,
+        "hidden": 2.384185791015625e-07,
+        "logits": 2.86102294921875e-06
+      },
+      "persistent_exact": true,
+      "binary_sha256": "ef1286a19869150171622859425ee9aad2e92b3088f098aa69e906b33e3a1d7a",
+      "native_artifact_sha256": "15f5d78c2ff8d3643fb33a91d32804ab88b2b5c7c65644c3ba3a1f98b881944f"
+    },
+    {
+      "width": 64,
+      "tokens": 129,
+      "engine_args": [],
+      "endpoints": 3,
+      "max_errors": {
+        "state": 0,
+        "hidden": 2.384185791015625e-07,
+        "logits": 2.86102294921875e-06
+      },
+      "persistent_exact": true,
+      "binary_sha256": "81a7815825b00198c1f67caab97b12e49cf388c45399cf8dc8700acb2122913b",
+      "native_artifact_sha256": "d5656936d37bc2f42561860a6a8fee8a8e207de5d5aa40b283c11d05df335f5c"
+    },
+    {
+      "width": 128,
+      "tokens": 257,
+      "engine_args": [],
+      "endpoints": 3,
+      "max_errors": {
+        "state": 0,
+        "hidden": 1.1920928955078125e-07,
+        "logits": 1.9073486328125e-06
+      },
+      "persistent_exact": true,
+      "binary_sha256": "d03a715a30a81064841ac54987c2e8e07fdcd65bfaf7e2f1f851b3b4f018a875",
+      "native_artifact_sha256": "884e3df2935484ba822f634e33dbe20cdd46cb45ab771de31223ff62898c3f13"
+    },
+    {
+      "width": 128,
+      "tokens": 129,
+      "engine_args": [
+        "--no-cmd12-chain",
+        "--no-cmd12-full-chain"
+      ],
+      "endpoints": 2,
+      "max_errors": {
+        "state": 0,
+        "hidden": 1.1920928955078125e-07,
+        "logits": 1.9073486328125e-06
+      },
+      "persistent_exact": true,
+      "binary_sha256": "d03a715a30a81064841ac54987c2e8e07fdcd65bfaf7e2f1f851b3b4f018a875",
+      "native_artifact_sha256": "840b722151551a04d7226993746ca10445bf18cade1834c2cb2484f4818b058f"
+    }
+  ],
+  "observed_endpoints": 20,
+  "max_errors": {
+    "state": 0.0,
+    "hidden": 2.384185791015625e-07,
+    "logits": 2.86102294921875e-06
+  },
+  "routing": {
+    "decisions": 5120,
+    "expert_ids_order_exact": true,
+    "router_score_max_abs": 0.0,
+    "weight_max_abs": 0.0,
+    "minimum_top8_top9_margin": 1.3828277587890625e-05,
+    "hidden_mid_hash_differences": 0,
+    "hidden_post_hash_differences": 0
+  },
+  "disk": {
+    "status": "PASS",
+    "positions": 130,
+    "checkpoint_bytes": 66902082,
+    "checkpoint_sha256": "cb266cb231034b6e43a0864b111ad4b06b1a685b7065289a76ae4c4f026d9cda",
+    "compatibility": "5823bd807a6318d9",
+    "prefix_signature": "7142768065e4961c",
+    "independent_oracle_shared_positions": {
+      "128": true,
+      "129": true,
+      "256": true,
+      "257": true
+    }
+  },
+  "source_baseline": "21a073174fb1feb828f2d28762293d1803e66a9a",
+  "limitations": [
+    "Not long-context qualification",
+    "No full-model raw gate projection capture",
+    "No claim of unobservable per-token batch state",
+    "N8/N16 only component-level, not new serving modes",
+    "No actual decoded text in disk oracle"
+  ],
+  "preserved_failure": "disk-suffix1: SIGABRT caused by an undersized driver basename and missing diagnostic path validation; fixed without serializer/math changes"
+}
