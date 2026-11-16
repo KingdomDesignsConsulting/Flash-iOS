@@ -1,0 +1,258 @@
+{
+  "starting_head": "01ae9976f541c384dd83905fc006da196971bdb2",
+  "branch": "work/agent-prefix-deadline-20261116",
+  "dispositions": {
+    "PREFIX-CACHE REGRESSION": "PASS (bounded negative finding; model-free)",
+    "C11-03 DEADLINE": "RESOLVED (explicit configuration required for long prefills)",
+    "C11-04 CLIENT INTEGRATION": "NOT RUN"
+  },
+  "baseline_adapter_tests": {
+    "passed": 44,
+    "failed": 0
+  },
+  "final_adapter_tests": {
+    "passed": 70,
+    "failed": 0
+  },
+  "new_deadline_tests": 16,
+  "new_authority_tests": 10,
+  "cancellation_before_fix": {
+    "passed": 12,
+    "failed": 2,
+    "total": 14
+  },
+  "native_prefix": {
+    "status": "PASS",
+    "binary_sha256": "1c074b5cad20b4c91ede952cbe9b79d4037fc660fa2d61f1fab880245dca21dd",
+    "tokenizer_sha256": "3344eb92f6d00c3cc5f0b494134adc914f0de7cc711a297aa557f9aa70ed8fa0",
+    "config_sha256": "c0cf317cba802cfb1d2984d4b4afc98ceb3d86450ed757e028383bfb03643964",
+    "scope": "Bounded negative finding: late trusted roles reject before cache processing, no relocation. Model-free parse/render only.",
+    "source_sha256": "e3c896eb9a40d119af8e937dbfe88b100a728687d96231035de6be6ce401910a",
+    "fixture_sha256": "d9e952563e6c2adb76e4b5bcba39a0314dc1153e14b587880f56bcd35d20443b",
+    "cases": [
+      {
+        "name": "first",
+        "status": "ACCEPTED",
+        "tokens": 396,
+        "system_tools_prefix_tokens": 372,
+        "metadata_cache_lookup": 0,
+        "budget_pair_lookup": -2,
+        "prompt_bytes": 1884,
+        "prompt_sha256": "ec88c7c583cb6c82c41aa44e3a97da515bfbfa50911aaf8be8621b66b852570d",
+        "token_ids_sha256": "859b0cdd8917eb93fe410867e21e957edf425c0d7caf996e66cf62eee9346bcc"
+      },
+      {
+        "name": "same",
+        "status": "ACCEPTED",
+        "tokens": 396,
+        "system_tools_prefix_tokens": 372,
+        "metadata_cache_lookup": 0,
+        "budget_pair_lookup": -2,
+        "prompt_bytes": 1884,
+        "prompt_sha256": "ec88c7c583cb6c82c41aa44e3a97da515bfbfa50911aaf8be8621b66b852570d",
+        "token_ids_sha256": "859b0cdd8917eb93fe410867e21e957edf425c0d7caf996e66cf62eee9346bcc"
+      },
+      {
+        "name": "tool-result",
+        "status": "ACCEPTED",
+        "tokens": 463,
+        "system_tools_prefix_tokens": 372,
+        "metadata_cache_lookup": 0,
+        "budget_pair_lookup": -2,
+        "prompt_bytes": 2164,
+        "prompt_sha256": "1681a1159bd3985c3b7b11fc51757ff84cd1d57012c079c42647eb9b0f071e56",
+        "token_ids_sha256": "26fed781bcc2df7c377445769558fe3bee7991197c6c8947d64f6dd931472d57"
+      },
+      {
+        "name": "late-system-same",
+        "status": "REJECTED_INVALID_MESSAGES",
+        "tokens": null,
+        "system_tools_prefix_tokens": null,
+        "metadata_cache_lookup": null,
+        "budget_pair_lookup": null,
+        "prompt_bytes": null,
+        "prompt_sha256": null,
+        "token_ids_sha256": null
+      },
+      {
+        "name": "late-system-changed",
+        "status": "REJECTED_INVALID_MESSAGES",
+        "tokens": null,
+        "system_tools_prefix_tokens": null,
+        "metadata_cache_lookup": null,
+        "budget_pair_lookup": null,
+        "prompt_bytes": null,
+        "prompt_sha256": null,
+        "token_ids_sha256": null
+      },
+      {
+        "name": "late-developer-same",
+        "status": "REJECTED_INVALID_MESSAGES",
+        "tokens": null,
+        "system_tools_prefix_tokens": null,
+        "metadata_cache_lookup": null,
+        "budget_pair_lookup": null,
+        "prompt_bytes": null,
+        "prompt_sha256": null,
+        "token_ids_sha256": null
+      },
+      {
+        "name": "late-developer-changed",
+        "status": "REJECTED_INVALID_MESSAGES",
+        "tokens": null,
+        "system_tools_prefix_tokens": null,
+        "metadata_cache_lookup": null,
+        "budget_pair_lookup": null,
+        "prompt_bytes": null,
+        "prompt_sha256": null,
+        "token_ids_sha256": null
+      },
+      {
+        "name": "user-reminder-same",
+        "status": "ACCEPTED",
+        "tokens": 478,
+        "system_tools_prefix_tokens": 372,
+        "metadata_cache_lookup": 0,
+        "budget_pair_lookup": -2,
+        "prompt_bytes": 2222,
+        "prompt_sha256": "b2afffbb7af1004095e825faaa64be6329af6400def8f48dfb0cfc0e8483fafc",
+        "token_ids_sha256": "40b25c86055308812ed5f84bb99f0aa8ecb02a3f815f0fdfb35d6b62e2b43616"
+      },
+      {
+        "name": "user-reminder-changed",
+        "status": "ACCEPTED",
+        "tokens": 478,
+        "system_tools_prefix_tokens": 372,
+        "metadata_cache_lookup": 0,
+        "budget_pair_lookup": -2,
+        "prompt_bytes": 2222,
+        "prompt_sha256": "b3e7e6a761e95471f4be3e30b9cebc85e30ebf04cc1bc383d8d8f5ab63d96c91",
+        "token_ids_sha256": "0768c5010e36eb0396ae7739a3211424c77d23e1df5257e1c201784743059235"
+      },
+      {
+        "name": "leading-system-changed",
+        "status": "ACCEPTED",
+        "tokens": 472,
+        "system_tools_prefix_tokens": 381,
+        "metadata_cache_lookup": -1,
+        "budget_pair_lookup": -2,
+        "prompt_bytes": 2188,
+        "prompt_sha256": "08bc3ddcb66a9e40a27c1dc9ffd1c790ddcf57296d99aa8ae7fb054f61faded1",
+        "token_ids_sha256": "e7eee4db0363431627b0a95a0a7f4bacc1e1253c5934b0c326037acb80e6f4b7"
+      },
+      {
+        "name": "leading-developer",
+        "status": "ACCEPTED",
+        "tokens": 405,
+        "system_tools_prefix_tokens": 381,
+        "metadata_cache_lookup": -1,
+        "budget_pair_lookup": -2,
+        "prompt_bytes": 1935,
+        "prompt_sha256": "98ddc5a9c161435976abba3d25742a5114b8d5826fbd7df58f191f9214a5dec0",
+        "token_ids_sha256": "43f384d4c0db7538919683fb625745ac8b5bcc69e3408c45b90ba83420b72ae4"
+      },
+      {
+        "name": "leading-budget-12000",
+        "status": "ACCEPTED",
+        "tokens": 472,
+        "system_tools_prefix_tokens": 381,
+        "metadata_cache_lookup": -1,
+        "budget_pair_lookup": 0,
+        "prompt_bytes": 2188,
+        "prompt_sha256": "ca46f7c63c92b07e5cfa8bacb1b8486c1c2b07f5e09f4cfeabfef6cfed3c22cd",
+        "token_ids_sha256": "c410c6e038b003fdc192157d2adf4e55e10fe11bf9576e5ed2950ebcd51cae66"
+      },
+      {
+        "name": "leading-budget-11900",
+        "status": "ACCEPTED",
+        "tokens": 472,
+        "system_tools_prefix_tokens": 381,
+        "metadata_cache_lookup": -1,
+        "budget_pair_lookup": -1,
+        "prompt_bytes": 2188,
+        "prompt_sha256": "08bc3ddcb66a9e40a27c1dc9ffd1c790ddcf57296d99aa8ae7fb054f61faded1",
+        "token_ids_sha256": "e7eee4db0363431627b0a95a0a7f4bacc1e1253c5934b0c326037acb80e6f4b7"
+      }
+    ],
+    "comparisons": [
+      {
+        "left": "first",
+        "right": "same",
+        "left_tokens": 396,
+        "right_tokens": 396,
+        "stable_prefix_tokens": 396,
+        "first_differing_token_index": null,
+        "stable_prefix_bytes": 1884
+      },
+      {
+        "left": "first",
+        "right": "tool-result",
+        "left_tokens": 396,
+        "right_tokens": 463,
+        "stable_prefix_tokens": 396,
+        "first_differing_token_index": 396,
+        "stable_prefix_bytes": 1884
+      },
+      {
+        "left": "tool-result",
+        "right": "user-reminder-same",
+        "left_tokens": 463,
+        "right_tokens": 478,
+        "stable_prefix_tokens": 392,
+        "first_differing_token_index": 392,
+        "stable_prefix_bytes": 1867
+      },
+      {
+        "left": "user-reminder-same",
+        "right": "user-reminder-changed",
+        "left_tokens": 478,
+        "right_tokens": 478,
+        "stable_prefix_tokens": 464,
+        "first_differing_token_index": 464,
+        "stable_prefix_bytes": 2165
+      },
+      {
+        "left": "tool-result",
+        "right": "leading-system-changed",
+        "left_tokens": 463,
+        "right_tokens": 472,
+        "stable_prefix_tokens": 370,
+        "first_differing_token_index": 370,
+        "stable_prefix_bytes": 1753
+      },
+      {
+        "left": "leading-budget-12000",
+        "right": "leading-budget-11900",
+        "left_tokens": 472,
+        "right_tokens": 472,
+        "stable_prefix_tokens": 374,
+        "first_differing_token_index": 374,
+        "stable_prefix_bytes": 1772
+      }
+    ],
+    "reused_or_restored_tokens": null,
+    "prompt_cache_hits": null,
+    "ttft_ms": null,
+    "generated_content": null,
+    "generated_tool_validity": "NOT RUN",
+    "responses": "NOT APPLICABLE"
+  },
+  "deadlines": {
+    "total_default_seconds": 600,
+    "idle_default_seconds": 120,
+    "min_seconds": 1,
+    "max_seconds": 86400,
+    "configuration": "global SDK settings",
+    "prefill_phase": "not reliably identifiable"
+  },
+  "GUI": "NOT RUN: no running app or source-bound isolated model endpoint",
+  "gateway": "NOT RUN: actual registry/discovery/dispatcher implementation absent",
+  "live_cache_hits": null,
+  "TTFT": null,
+  "live_generated_output": null,
+  "Responses": "NOT APPLICABLE",
+  "model_inference": false,
+  "native_runtime_modified": false,
+  "production_contacted": false,
+  "adapter_fix_commit": "3bfc22970457a57a3247f546bb7108ad8efa4388"
+}
