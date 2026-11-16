@@ -31,9 +31,12 @@ Neither sampled guard reserves memory nor provides a zero-latency OOM guarantee.
 -20 pure resource-guard checks PASS: below/equal/above reserve, failed host/RSS samples, RSS ceiling, sampling interval, sticky abort and explicit new-request recovery; disabled policy bypass preserved.
 -18 actual-source checked-forward/error/cleanup checks PASS with model and transport stubs: resource abort after five layer stubs, deferred cleanup, prefill/decode invalidation, client disconnect, HTTP500/SSE error+DONE and clean fresh-request recovery.
 -11 supervisor process tests PASS, using only tiny Python sleep/no-op children: prelaunch rejection, running telemetry failure, low host, RSS, cancellation, lifetime, changed birth identity, cooperating lock and inherited-lock lifetime. An unrelated fixture child survives; no real application is targeted.
+-An actual macOS probe plus owned tiny Python child completed normally with six telemetry samples; no model or production process was used.
 -12 synthetic offline provenance CLI cases PASS. These do not authenticate a real service, dependency role, backup archive or rollback.
 -Native release target/probe builds PASS; tools/API/warm-state self-tests PASS. The isolated synthetic checkpoint test exercises ordinary checked writes/fsync/rename/unlink, not a live cache.
 -Header-only `make -n -W flash_serve_admission.h` triggers a normal inference rebuild (PASS).
+
+Preserved binary/synthetic artifacts: `/Users/knagel/My Drive/Flash-iOS/Testing/2026-11-16-c11-gdn-work/` (archive receipt binds admission code commitb8b3f16 and separate GDN commitda6a823).
 
 Logs: project-root `benchmark-logs/c11-20261116/`; sanitized JSON in `docs/results/c11-20261116-*.json`. Compiler logs and native source/build hashes are retained. The46-file source freeze includes the new header. An initial extraction harness accidentally included the following newly added resource wrapper; its end marker was corrected without modifying the tested preflight. Another extractor initially selected a forward declaration; it now selects the actual error function definition. A Python bytecode-cache sandbox denial was resolved by putting pycache under/private/tmp. These are test-infrastructure corrections, not relaxed product assertions.
 
