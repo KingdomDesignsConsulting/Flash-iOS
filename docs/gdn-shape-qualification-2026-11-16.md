@@ -67,6 +67,8 @@ python3 tools/run_gdn_shape_micro.py \
 
 Requires native Apple Metal access (outside the restricted execution sandbox) and enforces three GPU readings<30%. Each probe has a90-second timeout, stdin=DEVNULL and explicit exit status. It compiles only the standalone probe, never production infer. `build.json` records baseline, kernel/input-source hashes, harness hash, binary hash and prelaunch readings. Generated Metal source and binaries/logs remain in the evidence output. The harness was new/uncommitted while measured; its exact source hash is recorded and the publication commit retains that source. No claim of an already-clean baseline-only executable is made.
 
+Durable synthetic artifact archive: `/Users/knagel/My Drive/Flash-iOS/Testing/2026-11-16-c11-gdn-work/gdn-logs/`. Original passing and failed-before-GPU attempts are retained.
+
 Sanitized evidence: `docs/results/gdn-shape-micro-2026-11-16.json`. Raw/reproducible synthetic artifacts and build logs: `benchmark-logs/gdn-shape-20261116/`. First compile failed before GPU use because helper `pipe` collided with POSIX pipe; it was renamed without changing kernels. The initial passing component probe and final extra prefix/conv checks are preserved as separate attempts. Source/binary hashes distinguish them.
 
 Future confirmed-exclusive short full-model command (NOT RUN):
