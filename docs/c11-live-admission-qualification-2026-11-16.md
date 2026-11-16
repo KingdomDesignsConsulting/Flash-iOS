@@ -48,6 +48,8 @@ python3 tools/qualify_c11_live.py \
 
 Diagnostic hooks do not constitute production fault-injection support. A separately approved diagnostic-free release build still needs its own source/binary fingerprint and bounded deployment smoke checks; no deployment occurred here.
 
+Private live logs and tested binaries: `/Users/knagel/My Drive/Flash-iOS/Testing/2026-11-16-c11-gdn-work/live-followup/`. [Archive receipt](results/c11-gdn-live-archive-2026-11-16.json) binds both engineering branches; no production artifacts are included.
+
 ## Disposition
 
 **C11-01: PARTIAL — implementation, model-free tests and focused live verification PASS.** The remaining decision is the Lead Architect's acceptance of the documented supported launch envelope: supervised/cooperating single-model launch, sampled rather than reserved memory, sticky request invalidation, and hard-stop/restart behavior for stalls or monitor failure. Work does not invent that final release-policy acceptance. Engineering evidence is ready for that decision; no additional broad benchmark is proposed.
