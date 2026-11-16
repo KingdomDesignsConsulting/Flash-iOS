@@ -1,7 +1,7 @@
 {
   "status": "PASS",
   "scope": "Actual extracted preflight/rejection branch, synthetic resident KV/GDN/conv sentinels; no actual model KV advancement or HTTP socket",
-  "source_sha256": "1b86c4a744e7f049a9bc0a582aa03c60b253045ccd788a86fd51ca5384cacbda",
+  "source_sha256": "d7a2573d649c7f56fde3f1c3c425972498d492b78c2676553e2a90efa7ddfe56",
   "tested_source_sha256": "691ff27d880baee6b8671c1ebfc8562fd633e8b5fe870ddc9cff0f11510bd8b6",
   "results": [
     {
