@@ -1,5 +1,7 @@
 # C11-01 release admission and resource policy — November16,2026
 
+**Live follow-up:** [Focused actual-server qualification](c11-live-admission-qualification-2026-11-16.md) now passes. The model-free phase and its original NOT RUN entries below are historical; final policy acceptance remains with the Architect.
+
 Base reviewed Architect revision: `a50294f2909d5270a173c8c3acda026c113e1e16`; numerically qualified inference lineage21a0731. This opt-in engineering branch is `work/c11-resource-closure-20261116`. No production/Work B/PR2/PR3 change or promotion is authorized. C11-02 remains OPEN.
 
 ## Contract and mechanism

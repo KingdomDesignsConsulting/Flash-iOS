@@ -517,6 +517,16 @@ static int flash_qualified_resource_poll(void) {
     uint64_t available = 0, rss = 0;
     int host_ok = flash_serve_host_available_bytes(&available);
     int rss_ok = flash_serve_process_rss_bytes(&rss);
+#ifdef FLASH_SESSION_STATE_DIAGNOSTICS
+    // One-shot controlled telemetry failure, armed only in an isolated test.
+    static int resource_fault_consumed;
+    const char *resource_arm = getenv("FLASH_SESSION_TEST_RESOURCE_ARM");
+    if (resource_arm && access(resource_arm, F_OK) == 0 &&
+        __sync_bool_compare_and_swap(&resource_fault_consumed, 0, 1)) {
+        host_ok = 0;
+        fprintf(stderr, "[session-inject] simulated resource telemetry failure\n");
+    }
+#endif
     if (!flash_serve_guard_sample(g, tick, host_ok, available, rss_ok, rss)) {
         fprintf(stderr, "[serve-resource] request aborted reason=%d host_available=%llu rss=%llu; session invalidated\n",
                 g->failure, (unsigned long long)available, (unsigned long long)rss);
@@ -19270,6 +19280,11 @@ static PromptTokens *tokenize_rendered_messages(NSArray<NSDictionary *> *message
 // Load custom system prompt from ~/.flash-moe/system.md, or use default
 static char *load_system_prompt(void) {
 	static const size_t MAX_SYSTEM_PROMPT = 1024 * 1024;
+#ifdef FLASH_SESSION_STATE_DIAGNOSTICS
+    // Explicit test input isolates startup from installed user configuration.
+    const char *test_text = getenv("FLASH_SESSION_TEST_SYSTEM_TEXT");
+    if (test_text) return strlen(test_text) <= MAX_SYSTEM_PROMPT ? strdup(test_text) : NULL;
+#endif
 	const char *home = getenv("HOME");
 	if (home) {
 		char path[1024];
