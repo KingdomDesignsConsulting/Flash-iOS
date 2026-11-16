@@ -1,0 +1,6 @@
+{
+  "status": "PASS",
+  "cases": 3,
+  "invalid_short_path_rejected": true,
+  "original_failure": "SIGABRT from nil checkpoint path in diagnostic report; driver supplied a basename shorter than24characters"
+}

@@ -12,7 +12,11 @@ static int sn_disk(WeightFile *wf,KVCache **kv,void **states,void **maps,int *fd
     uint64_t profile=warm_hash_string(UINT64_C(14695981039346656037),"diagnostic/n128-restoration");
     if(!warm_state_compatibility(weights,manifest,vocab,wf,fds,K,&compat))return 2;
     ToolPrefixCacheEntry expected={.token_count=prefix,.token_sig=sig,.tool_sig=profile},entry={0};
-    NSString *mode=in[@"mode"],*path=in[@"checkpoint"];g_warm_state_zstd_enabled=1;
+    NSString *mode=in[@"mode"],*path=in[@"checkpoint"];
+    // Reject unsupported checkpoint names before state advancement or reporting.
+    // A nil derived path cannot be inserted in the final NSDictionary.
+    if (!warm_state_identity_path(path) || !warm_state_zstd_path(warm_state_identity_path(path))) return 2;
+    g_warm_state_zstd_enabled=1;
     NSMutableArray *rows=[NSMutableArray array];int ok=1;double transfer_ms=0;
     reset_delta_net_state();g_forward_error=0;
     if([mode isEqual:@"save"]) {
