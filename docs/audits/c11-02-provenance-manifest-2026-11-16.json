@@ -1,0 +1,258 @@
+{
+  "schema": "c11-02-inventory-v1",
+  "completed_date": "2026-11-16",
+  "timezone": "America/Los_Angeles",
+  "disposition": "C11-02 PARTIAL \u2014 SPECIFIC PROVENANCE OR RECOVERY GAPS REMAIN",
+  "scope": "Authorized read-only production inspection and isolated model-free copied-artifact rehearsal. NOT deployment authorization.",
+  "audit_branch": "audit/c11-02-deployment-provenance-20261116",
+  "audit_base": "2cb51d98661068b69bf9819b98ea2ae612a0dace",
+  "remote_refs_at_start": {
+    "flash-moe-production": "8312a1d0fbf4fa09a14621a51cfe676be98c29b3",
+    "work/release-mask63-final-qualification": "21a073174fb1feb828f2d28762293d1803e66a9a",
+    "fix/audit-c11-01-c11-02-preproduction": "a50294f2909d5270a173c8c3acda026c113e1e16",
+    "work/c11-resource-closure-20261116": "2cb51d98661068b69bf9819b98ea2ae612a0dace",
+    "work/agent-prefix-deadline-20261116": "d2d383e6127e774d80bada9057aeaa6f5a6ff74c"
+  },
+  "production_checkout": {
+    "path": "/Users/Shared/Main Hard Drive/AI Storage/Apps/Flash-iOS",
+    "branch": "flash-moe-production",
+    "head": "5c26430f2790b84516b7384915eb0500abc5392f",
+    "tracked_clean": true,
+    "untracked_experimental_binaries_present": true,
+    "source_of_installed_executable": "UNPROVEN"
+  },
+  "deployment": {
+    "process": "NOT OBSERVED in named executable scan",
+    "listener_11241": "NOT OBSERVED by lsof; no connection made",
+    "launcher": "UNVERIFIED",
+    "owner": "UNVERIFIED; artifact owner uid501 is not process-owner proof",
+    "argv": null,
+    "working_directory": null,
+    "environment": null,
+    "automatic_restart": null,
+    "multiple_launcher_exclusion": false
+  },
+  "artifacts": [
+    {
+      "source": "/Users/Shared/Main Hard Drive/AI Storage/Apps/Flash-iOS/metal_infer/infer",
+      "resolved_source": "/Users/Shared/Main Hard Drive/AI Storage/Apps/Flash-iOS/metal_infer/infer",
+      "copy": "/Users/knagel/Flash-iOS-Work-D/2026-11-16-c11-02/copied-artifacts/0-infer",
+      "sha256": "7ae16f0a22ca9e871406bb0a9566e366432df6074027c7feeb246a239203bfbb",
+      "bytes": 884104,
+      "mode": "0o755",
+      "uid": 501,
+      "gid": 0,
+      "device": 16777243,
+      "inode": 66802942,
+      "mtime_ns": 1791351534379730228
+    },
+    {
+      "source": "/Users/Shared/Main Hard Drive/AI Storage/Apps/Flash-iOS/metal_infer/shaders.metal",
+      "resolved_source": "/Users/Shared/Main Hard Drive/AI Storage/Apps/Flash-iOS/metal_infer/shaders.metal",
+      "copy": "/Users/knagel/Flash-iOS-Work-D/2026-11-16-c11-02/copied-artifacts/1-shaders.metal",
+      "sha256": "7067f44056fa947f54ab7095d7461f10c30d507f11c90ca484c09ad5e15aac6b",
+      "bytes": 69853,
+      "mode": "0o644",
+      "uid": 501,
+      "gid": 0,
+      "device": 16777243,
+      "inode": 66063621,
+      "mtime_ns": 1789794575515510914
+    },
+    {
+      "source": "/Users/Shared/Main Hard Drive/AI Storage/Apps/Flash-iOS/metal_infer/gguf_iq_shared.h",
+      "resolved_source": "/Users/Shared/Main Hard Drive/AI Storage/Apps/Flash-iOS/metal_infer/gguf_iq_shared.h",
+      "copy": "/Users/knagel/Flash-iOS-Work-D/2026-11-16-c11-02/copied-artifacts/2-gguf_iq_shared.h",
+      "sha256": "ae46879550de5e3833a2269f65fcc6797603651fe91f75aa42acf56789112f17",
+      "bytes": 5828,
+      "mode": "0o644",
+      "uid": 501,
+      "gid": 0,
+      "device": 16777243,
+      "inode": 66063645,
+      "mtime_ns": 1789590160921749444
+    },
+    {
+      "source": "/opt/homebrew/opt/zstd/lib/libzstd.1.dylib",
+      "resolved_source": "/opt/homebrew/Cellar/zstd/1.5.7_1/lib/libzstd.1.5.7.dylib",
+      "copy": "/Users/knagel/Flash-iOS-Work-D/2026-11-16-c11-02/copied-artifacts/3-libzstd.1.dylib",
+      "sha256": "602d50cbe6fad0f0da6d1b73284ae3f75316015aea482ebd55614b6df2406b43",
+      "bytes": 635328,
+      "mode": "0o444",
+      "uid": 501,
+      "gid": 80,
+      "device": 16777243,
+      "inode": 43813045,
+      "mtime_ns": 1785487258684405595
+    },
+    {
+      "source": "/Users/Shared/Main Hard Drive/AI Storage/Apps/Flash-iOS/metal_infer/infer-candidate-lazy32k",
+      "resolved_source": "/Users/Shared/Main Hard Drive/AI Storage/Apps/Flash-iOS/metal_infer/infer-candidate-lazy32k",
+      "copy": "/Users/knagel/Flash-iOS-Work-D/2026-11-16-c11-02/copied-artifacts/4-infer-candidate-lazy32k",
+      "sha256": "497ccfb734e17a7fa7f3369265b739dedf51e8b2cde55fed07e8a77d50db1909",
+      "bytes": 900952,
+      "mode": "0o755",
+      "uid": 501,
+      "gid": 0,
+      "device": 16777243,
+      "inode": 70505932,
+      "mtime_ns": 1792742506668500469
+    }
+  ],
+  "mach_o": {
+    "architecture": "arm64",
+    "uuid": "B2B3CE9B-9866-328A-922F-CEC1E7B770D6",
+    "signature": "ad-hoc linker signature; no TeamIdentifier or sealed resources",
+    "minimum_macos": "26.0",
+    "sdk": "27.0",
+    "linker": "27037.1",
+    "compiler_flags": null,
+    "source_commit": null
+  },
+  "candidate_model_metadata": {
+    "status": "Present location only; NOT proven deployed model",
+    "directory": "/Users/Shared/Main Hard Drive/AI Storage/AI Models/Reasoning/alexintosh/Qwen3.5-35B-A3B-Q4-Tiered-FlashMoE",
+    "config_sha256": "c0cf317cba802cfb1d2984d4b4afc98ceb3d86450ed757e028383bfb03643964",
+    "config_bytes": 3809,
+    "weights_hashed": false
+  },
+  "cache_metadata": {
+    "scope": "candidate project-relative roots; actual launcher binding unverified; payloads not read",
+    "warm-state": {
+      "files": 5,
+      "bytes": 1114319038,
+      "full_backup_verified": false
+    },
+    "warm-tools-cache": {
+      "entries": 12,
+      "bytes": 95176,
+      "full_backup_verified": false
+    },
+    "external_home_state": "~/.flash-moe exists; sessions/history not established as active server dependencies"
+  },
+  "offline_rehearsal": {
+    "scope": "PARTIAL real copied artifacts, NOT a complete service recovery package",
+    "artifact_count": 4,
+    "artifact_bytes": 1595113,
+    "archive_bytes": 1607680,
+    "archive_sha256": "375bb7a8e60f77ca3469802c473a29fca8b9224ce6a9af80ff55652d5fb31510",
+    "restore": "PASS: hashes and modes of four copied artifacts",
+    "complete_gate": {
+      "accepted": false,
+      "reason": "missing rollback dependency role"
+    },
+    "existing_validator_exit": 1,
+    "existing_validator_output": "FAIL: missing/empty source_commit\nFAIL: missing/empty release_commit\nFAIL: missing/empty launcher_owner\nFAIL: missing/empty launcher_definition\nFAIL: missing/empty startup_argv\nFAIL: missing/empty startup_environment\nFAIL: missing/empty model_identity\nFAIL: missing/empty cache_backups\nFAIL: missing/empty rollback_argv\nFAIL: missing/empty rollback_environment\nFAIL: exactly two cache backup roots must be identified\nFAIL: release/source identical without explicit explanation\n",
+    "model_executed": false,
+    "production_modified": false,
+    "adversarial_cases": 25,
+    "adversarial_result": "PASS",
+    "completed": "2026-11-16T17:30:23.208053-08:00"
+  },
+  "complete_recovery_verified": false,
+  "production_operations_executed": [],
+  "host": {
+    "macos": "26.7.1",
+    "build": "25G241",
+    "architecture": "arm64"
+  },
+  "disk_observation": {
+    "total_bytes": 4000577273856,
+    "free_bytes": 640627056640,
+    "scope": "point-in-time same filesystem for inspected project, home and /private/tmp; not an admission guarantee"
+  },
+  "unresolved": [
+    "actual launcher and restart ownership",
+    "argv, working directory and effective environment",
+    "source/build provenance or Architect-accepted opaque-artifact recovery policy",
+    "deployed model binding and full dependency inventory",
+    "complete quiescent cache/configuration snapshot",
+    "full isolated recovery including ownership/ACL/xattrs and service validation"
+  ],
+  "historical_manual_launch": {
+    "evidence": "User confirmed documented October23 launch; not latest launch confirmation",
+    "cwd": "/Users/Shared/Main Hard Drive/AI Storage/Apps/Flash-iOS/metal_infer",
+    "argv": [
+      "./infer-candidate-lazy32k",
+      "--model",
+      "/Users/Shared/Main Hard Drive/AI Storage/AI Models/Reasoning/alexintosh/Qwen3.5-35B-A3B-Q4-Tiered-FlashMoE",
+      "--tiered",
+      "--serve",
+      "11241",
+      "--prefill-nrow",
+      "--timing"
+    ],
+    "endpoint": "http://127.0.0.1:11241/v1",
+    "automatic_supervisor": "UNVERIFIED",
+    "environment": "UNRECORDED",
+    "binary_sha256": "497ccfb734e17a7fa7f3369265b739dedf51e8b2cde55fed07e8a77d50db1909",
+    "uuid": "E0459911-B6FE-3DFB-AE94-A4F85A76F114",
+    "signature": "arm64 ad-hoc linker signature",
+    "historical_source_association": "3a87663a72c6c88922dbd7fd9f82842e588a5dc6",
+    "source_association_strength": "Saved clean-tree integration runner report binds HEAD and candidate hash; actual current bytes match. Not an independent reproducible build proof.",
+    "historical_report_sha256": "5d769b3bbac5d26f05ef32595ced214f01ec2aae8da494c1ba8581452b97b08b",
+    "build_log_sha256": "d2d02ca29749b3aab6ed6f9b3991ca26612c551209c838c6599e66d3e6a8cb89"
+  },
+  "offline_rehearsal_v2": {
+    "scope": "PARTIAL five-artifact set including historically launched candidate; NOT complete recovery",
+    "artifact_count": 5,
+    "artifact_bytes": 2496065,
+    "archive_bytes": 2508800,
+    "archive_sha256": "d155f2bb7b8b066e605988fa321cabd1fce702d6b167373d91d26c2269cff9db",
+    "restore": "PASS bytes and modes",
+    "complete_gate": {
+      "accepted": false,
+      "reason": "missing rollback dependency role"
+    }
+  },
+  "inspected_documents": [
+    {
+      "path": "docs/audits/mask63-preproduction-audit-2026-11-10.md",
+      "commit": "af92482791d9d4dbae10b593001fa313fccea3d7",
+      "sha256": "10b7146c4ae4c5aa47b9e5a9f6f79d27e996665face71c9d2758aca49c3681c9"
+    },
+    {
+      "path": "docs/audits/mask63-audit-findings-2026-11-10.json",
+      "commit": "af92482791d9d4dbae10b593001fa313fccea3d7",
+      "sha256": "2766889325f4530a8276173891a33215266e89045ff182edfece2b2927e5b863"
+    },
+    {
+      "path": "docs/audits/mask63-release-gate-matrix-2026-11-10.md",
+      "commit": "af92482791d9d4dbae10b593001fa313fccea3d7",
+      "sha256": "aefccff53288dc8627d663d7b7fb73e2b9608e13cfd35de6d51a3e9034c712d5"
+    },
+    {
+      "path": "docs/work-a-mask63-release-procedure-2026-11-06.md",
+      "commit": "2cb51d98661068b69bf9819b98ea2ae612a0dace",
+      "sha256": "6b56de95a8081fda5dcae8dc6cd67998087913d0fa78da42f3bcdc8c1480eed8"
+    },
+    {
+      "path": "docs/work-a-mask63-release-closure-2026-11-04.md",
+      "commit": "2cb51d98661068b69bf9819b98ea2ae612a0dace",
+      "sha256": "7caccec3289cf5e69174b8c6bf8630529a3f1ecb440d6c775f08adefa9a20043"
+    },
+    {
+      "path": "docs/audits/c11-01-c11-02-remediation-handoff.md",
+      "commit": "2cb51d98661068b69bf9819b98ea2ae612a0dace",
+      "sha256": "271df22d1e4a4485ea72a708f52dc3fe3ffbea27c43af8e4844f6b4b500562da"
+    },
+    {
+      "path": "docs/c11-release-resource-policy-2026-11-16.md",
+      "commit": "2cb51d98661068b69bf9819b98ea2ae612a0dace",
+      "sha256": "458feb1f21d4c7f45cb33f80904f61a5f30f397347929655efcdc4351a8904b2"
+    },
+    {
+      "path": "docs/c11-live-admission-qualification-2026-11-16.md",
+      "commit": "2cb51d98661068b69bf9819b98ea2ae612a0dace",
+      "sha256": "6502d497e32388fbe5d0f0b803ef2b029f7db87d0cda47fb876de1eb8a0867a7"
+    }
+  ],
+  "remote_refs_at_completion": {
+    "flash-moe-production": "8312a1d0fbf4fa09a14621a51cfe676be98c29b3",
+    "work/release-mask63-final-qualification": "21a073174fb1feb828f2d28762293d1803e66a9a",
+    "fix/audit-c11-01-c11-02-preproduction": "a50294f2909d5270a173c8c3acda026c113e1e16",
+    "work/c11-resource-closure-20261116": "2cb51d98661068b69bf9819b98ea2ae612a0dace",
+    "work/agent-prefix-deadline-20261116": "d2d383e6127e774d80bada9057aeaa6f5a6ff74c"
+  },
+  "completion_observed_at": "2026-11-16T17:42:17.888589-08:00"
+}
