@@ -18,23 +18,16 @@ Candidate source `e58cc0d95ad9f49d87fe8a5c553e7575e63fbd83`, binary `9f6ffea0ea7
 | Original32768numerical evidence revalidation |256endpoints PASS under normal and-O | Historical; no expensive rerun or threshold changes |
 | Separate checkout static review |PASS bounded checks |47source hashes, admission/durability ordering; same reviewer |
 | Full local archive restoration |PASS stored package |1.15GB/85entries; original-owner/provenance limitations explicitly open |
-| Final live canary |BLOCKED_RESOURCE |Real startup only, no readiness or inference |
+| Initial canary01 (historical) |BLOCKED_RESOURCE |Startup-only guard stop |
+| Canary02 + missing-live01 follow-up |PARTIAL PASS; later native reserve block |See canary-followup and hashed live evidence; no repeat of passed cases |
 
 ## Canary attempt and cleanup
 
 GPU preflight[0,0,0] and host available8,166,588,416bytes passed; supervisor sampled7,909,523,456bytes immediately before launch. Owned PID38125 started **2026-11-17T01:45:17.567748-08:00**; stopped **01:45:20.865319-08:00**, exit-15 after seven samples. Host minimum6,397,526,016bytes was below required6,442,450,944; own RSS peak980,156,416bytes. Stop reason `host_reserve`. Process was reaped by its supervisor; no automatic retry or unrelated app termination. This demonstrates the external startup guard, not live native request-failure behavior.
 
-Cold health, streamed/buffered completion, scalar-vs-mask63short comparison, resident continuation, named-profile capture/restart, EOS/follow-up, stale-session rejection, exact32768request admission,32769request rejection with real resident preservation, decode cancellation, injected resource interruption, finish/DONE/usage ordering, reset/restart, live complete tool emission and short/moderate performance are **NOT RUN on this final binary**. Earlier qualified source results remain separately labeled historical; no similar test was substituted for a final live PASS.
+At the initial canary01 stop, all request cases were NOT RUN. **This historical status is superseded by the canary02/follow-up matrix in mask63-canary-followup-2026-11-17.md**: health, buffered/streamed usage, resident continuation, exact budgets, EOS, profile restore and276token N128 now have bounded live PASS evidence. Complete tools, partial output, active long-decode cancellation, controlled external decode interruption and scalar-output comparison remain pending after a real native reserve abort.
 
-Remaining live command, only after capacity recovers and an exclusive window is reconfirmed:
-
-```bash
-cd '/Users/knagel/Flash-iOS-Release/2026-11-17/candidate-source'
-PYTHONPYCACHEPREFIX=/private/tmp/mask63-pycache python3 tools/qualify_mask63_final.py \
- --out '/Users/knagel/Flash-iOS-Release/2026-11-17/canary-02' --operator-exclusive-model
-```
-
-The runner rechecks threeGPU<30readings, source/binary identity,6GiBreserve and16GiBRSS supervisor. It has a600sowned lifetime, strict timeouts and cleanup, no production port. Do not run blindly after failure. Do not lower thresholds; additional startup headroom is required. The current runner covers a bounded subset (health, usage, resident rejection/continuation, exact-budget decode cancellation/stale/fresh recovery). Passing that subset will still require the remaining profile/restart/EOS/tool/numerical checks above before complete canary closure.
+Current missing-only resumption command and exact scope are in [the follow-up report](mask63-canary-followup-2026-11-17.md). Do not rerun canary02 or passed profile/EOS/N128 cases. No automatic model retry after the native resource stop. No raw-tensor comparison is claimed for the diagnostic-free API.
 
 ## Exact model-free reproduction
 

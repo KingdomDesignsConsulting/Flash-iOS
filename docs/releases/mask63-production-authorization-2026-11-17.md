@@ -13,10 +13,10 @@
 | Previous launcher/env |October23manual command recorded, latest inherited env/automatic owner unproved; explicit manual policy proposal requires acceptance |
 | Recovery |Private recovery-03 archive1,151,814,144bytes SHAf584e449610caa4d091209dc67e60ebb80bba698651e33e96de262bb09779563;85entry stored-package restore PASS |
 | Recovery caveats |Original group/provenance metadata not fully reproduced; local same disk; weights external with49content hashes13.42GB; privileged/original metadata/independent model restore NOT RUN |
-| Final canary |BLOCKED_RESOURCE at startup; host6,397,526,016<6,442,450,944bytes. No requests/readiness. No retry |
+| Final canary |Canary02 bounded cases PASS; follow-up EOS/profile/exact32769/N128 PASS. Tool prefill then hit native reserve6,244,499,456<6,442,450,944; pending tool/decode/scalar cases. No retry |
 | Capacity/ownership immediately before cutover |MANDATORY NEW OBSERVATION; no stale PID accepted |
 | Planned commands |Runbook has guarded candidate command and historical recovery proposal; current stop/swap commands unresolved pending approved owner/location/policy |
-| Operational installation |Persistent matched checkout candidate-source at private release root, checkoutc643779;47source hashes and binary/probe copies verified; native self-tests0/0/0. Live startup revalidation still required |
+| Operational installation |Persistent matched checkout candidate-source at private release root, checkoutc643779;47source hashes and binary/probe copies verified; native self-tests0/0/0. Isolated live startup/profile restoration now PASS; remaining full canary cases still required |
 | Performance |Proposed long-running supervised32K only; interactive suitability/remaining scalar comparison conditional, Architect decision pending |
 | User-visible changes |Opt-in mask63 arithmetic, fail-closed32K/resource policy; failed sessions need full history, new isolated profile/cache namespaces; no GUI/Gateway promise |
 | Expected risks |Sampled rather than hard resources, cooperative exclusivity, finite6hlifetime, long prefills, known scalar/candidate instruction-following limitation, native thinking/post-tool limitations |
@@ -28,3 +28,5 @@ Before requesting final cutover approval: secure enough host startup headroom an
 No production process requires cleanup. The attempted isolated PID38125 was terminated/reaped by its owner, exit-15. Test-model processes are not left running. Large/private logs, archives, checkpoints and model identities are retained under `/Users/knagel/Flash-iOS-Release/2026-11-17/`; public docs contain sanitized hashes only. Earlier failed backup evidence is retained.
 
 **CONDITIONAL RELEASE — SPECIFIC BLOCKERS REMAIN**
+
+Latest evidence: [canary follow-up](mask63-canary-followup-2026-11-17.md); startup-only blocker is historical. Missing-only resumption retains all passed cases. No final production authorization is requested while live/recovery gates remain open.

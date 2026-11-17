@@ -34,7 +34,7 @@
     "/v1/chat/completions"
   ],
   "responses_api": false,
-  "stream_usage": "include_usage final usage before DONE; exact integrated live check NOT RUN due startup resource stop",
+  "stream_usage": "PASS bounded canary02: streamed usage before DONE; cached resident prompt46=cached29+prefill17. Raw SSE not retained in that run.",
   "tools": "Native validated complete calls only; no side-effecting external tools executed in qualification. Partial/malformed streams fail, never actionable. Live integrated tool emission NOT RUN.",
   "reasoning": "Existing native semantics retained: enable_thinking/reasoning_effort compatibility limitations and same-completion post-tool answer behavior remain; no GUI translation claim",
   "clients": "Native-only; Work B excluded. Optional Chat Completions adapter requires separate A+B acceptance; LM Studio GUI and actual MCP Gateway registry/dispatch/pagination excluded",

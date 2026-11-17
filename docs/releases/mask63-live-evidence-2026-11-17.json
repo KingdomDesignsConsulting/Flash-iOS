@@ -1,0 +1,153 @@
+{
+  "canary_02": {
+    "status": "PASS_BOUNDED_CASES",
+    "source_sha": "e58cc0d95ad9f49d87fe8a5c553e7575e63fbd83",
+    "binary_sha256": "9f6ffea0ea70de6409e51978381968d57df9c2ee158a42bef3a35c063ce08da4",
+    "started": "2026-11-17T07:12:00.753469-08:00",
+    "ready": "2026-11-17T07:12:04.886181-08:00",
+    "ended": "2026-11-17T07:12:12.239861-08:00",
+    "gpu_before": [
+      21,
+      22,
+      17
+    ],
+    "telemetry_samples": 22,
+    "minimum_host_available_bytes": 8322695168,
+    "maximum_rss_bytes": 1895809024,
+    "cases": [
+      {
+        "case": "cold_start_health",
+        "status": "PASS",
+        "usage": null,
+        "timings": null
+      },
+      {
+        "case": "buffered_usage",
+        "status": "PASS",
+        "usage": {
+          "total_tokens": 29,
+          "completion_tokens": 2,
+          "prompt_tokens": 27
+        },
+        "timings": {
+          "generated_tokens": 2,
+          "decode_tokens_per_second": 6.701110198579286,
+          "cached_prefix_tokens": 0,
+          "prefill_ms": 2913.828857421875,
+          "decode_ms": 298.4580078125,
+          "context_tokens": 27,
+          "prefill_tokens": 27,
+          "prefill_tokens_per_second": 9.266158488075828,
+          "session_reused": 0,
+          "warm_prefix_reused": false
+        }
+      },
+      {
+        "case": "resident_after_rejection_stream_usage_before_DONE",
+        "status": "PASS",
+        "usage": {
+          "prompt_tokens": 46,
+          "completion_tokens": 2,
+          "total_tokens": 48
+        },
+        "timings": {
+          "generated_tokens": 2,
+          "decode_tokens_per_second": 13.795379760264861,
+          "cached_prefix_tokens": 29,
+          "prefill_ms": 1653.58203125,
+          "decode_ms": 144.97607421875,
+          "context_tokens": 46,
+          "prefill_tokens": 17,
+          "prefill_tokens_per_second": 10.28071161800731,
+          "session_reused": 1,
+          "warm_prefix_reused": false
+        }
+      },
+      {
+        "case": "exact32768_budget_decode_cancel_stale409_fresh_recovery",
+        "status": "PASS",
+        "usage": {
+          "total_tokens": 29,
+          "completion_tokens": 2,
+          "prompt_tokens": 27
+        },
+        "timings": null
+      }
+    ],
+    "evidence_sha256": {
+      "result.json": "a0458978efedcdb0805c6d110d93a746732c0192bce7002b98cf59833d2a8677",
+      "server/result.json": "4c138ef9fa98148743810e13bc4e920e88477f67a58a04154bf3fac63b20fe47",
+      "server/child.log": "3f6dbb953bc147d054d267413324787bde8c665c4d63240a23cdb1f34122fd57",
+      "server/telemetry.jsonl": "703b3616b3c2dd3ab9848faab72517d5084fdd9ccf68559692c923b066610b21"
+    },
+    "scope_notes": [
+      "Usage-before-DONE is verified by the executed runner; raw SSE bytes were not preserved in canary02.",
+      "Original oversize request was clamped to32768 generation with46logical input: oversize rejection, not exact32769total.",
+      "27input+32741reserved generation proves exact32768budget admission, not full32768prefill.",
+      "Fast READY cancellation reached final SSE delivery; active long-decode cancellation remains unqualified.",
+      "No raw KV/GDN fingerprints exposed by production binary; continuation is operational evidence."
+    ]
+  },
+  "missing_live_01": {
+    "status": "BLOCKED_NATIVE_RESOURCE",
+    "original_runner_status": "FAIL",
+    "original_runner_error": "complete tool call missing",
+    "source_sha": "e58cc0d95ad9f49d87fe8a5c553e7575e63fbd83",
+    "binary_sha256": "9f6ffea0ea70de6409e51978381968d57df9c2ee158a42bef3a35c063ce08da4",
+    "started": "2026-11-17T07:21:43.672513-08:00",
+    "ended": "2026-11-17T07:22:05.377088-08:00",
+    "cases_passed": [
+      {
+        "case": "persistent_restore_EOS_followup_exact32769_reject",
+        "status": "PASS"
+      },
+      {
+        "case": "bounded_N128_prefill",
+        "status": "PASS"
+      }
+    ],
+    "observations": {
+      "profile_valid_snapshot_tokens": 11,
+      "profile_uncompressed_bytes": 196567040,
+      "profile_load_ms": 324,
+      "exact_rejected_total": 32769,
+      "logical_input_tokens": 27,
+      "reserved_generation": 32742,
+      "EOS_first_content": "READY",
+      "EOS_followup_content": "OK",
+      "EOS_first_completion_tokens": 2,
+      "N128_context_tokens": 276,
+      "N128_cached_tokens": 11,
+      "N128_prefill_tokens": 265,
+      "N128_chunks": 2,
+      "N128_prefill_ms": 11444.2939453125,
+      "N128_output": "READY",
+      "native_resource_reason": 2,
+      "host_available_bytes_at_abort": 6244499456,
+      "required_host_reserve_bytes": 6442450944,
+      "rss_bytes_at_abort": 8114176000,
+      "aborted_prefill_progress": "33/390"
+    },
+    "cleanup": {
+      "exit": -15,
+      "stop_reason": "operator_cancel",
+      "model_reaped": true
+    },
+    "evidence_sha256": {
+      "result.json": "3eb19e35801d6f2f072e6d28f8eb63d2589e92f40085e5feb52bc02cee7d3910",
+      "n128/result.json": "a4410e8660300d054e47d3263085fade590ce2f6cfbafcda92a1ba077883296c",
+      "n128/child.log": "ca499b1a138c2f77d92673ced9a4d815f179c27db25bafd000664126263c302f",
+      "n128/telemetry.jsonl": "257ddaef01347d3a5ea4df8bf369627094d3620b495be854cfec2cec50ac976b"
+    },
+    "limitations": [
+      "Original runner treated the unexpected non-tool result as FAIL; assessment classifies the logged native reserve breach without changing raw failed evidence.",
+      "Failed tool HTTP response was not retained; no claim about its exact status/error fields.",
+      "Resource interruption observed in native prefill, not the still-pending controlled external decode test.",
+      "Exact launch GPU readings were enforced but not saved by this original runner; future runner persists them.",
+      "No scalar comparison, complete tool call, truncated tool output test or long-decode cancellation completed in this run."
+    ],
+    "executed_driver_sha256": "02664aa07499ef79f5610109f352fb289ffdb937964aed949c9c8bbb01ab09fd",
+    "future_runner_sha256": "6c9f64284a847dd8772fea3e53920d0686cfe4c30574b5649747bfc9e7261e35"
+  },
+  "updated": "2026-11-17T07:26:32.421102-08:00"
+}
