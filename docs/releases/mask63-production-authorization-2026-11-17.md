@@ -16,14 +16,14 @@
 | Final canary |BLOCKED_RESOURCE at startup; host6,397,526,016<6,442,450,944bytes. No requests/readiness. No retry |
 | Capacity/ownership immediately before cutover |MANDATORY NEW OBSERVATION; no stale PID accepted |
 | Planned commands |Runbook has guarded candidate command and historical recovery proposal; current stop/swap commands unresolved pending approved owner/location/policy |
-| Operational installation |Current source root is/private/tmp, not an approved durable deployment path. Durable matched checkout staging/startup revalidation required |
+| Operational installation |Persistent matched checkout candidate-source at private release root, checkoutc643779;47source hashes and binary/probe copies verified; native self-tests0/0/0. Live startup revalidation still required |
 | Performance |Proposed long-running supervised32K only; interactive suitability/remaining scalar comparison conditional, Architect decision pending |
 | User-visible changes |Opt-in mask63 arithmetic, fail-closed32K/resource policy; failed sessions need full history, new isolated profile/cache namespaces; no GUI/Gateway promise |
 | Expected risks |Sampled rather than hard resources, cooperative exclusivity, finite6hlifetime, long prefills, known scalar/candidate instruction-following limitation, native thinking/post-tool limitations |
 | Production authorization |NOT GIVEN |
 | Deployment performed |NO |
 
-Before requesting final cutover approval: secure enough host startup headroom and pass the complete bounded canary; approve/complete recovery metadata/launcher/model/disaster policy; choose and qualify durable candidate install location; accept restricted performance/client scope; pin exact final supervisor/source/binary/configuration and backup identities. Then present exact verified stop/start/rollback commands and current process/resource state to the user. No checkbox or synthetic authorization file substitutes for that explicit approval.
+Before requesting final cutover approval: secure enough host startup headroom and pass the complete bounded canary; approve/complete recovery metadata/launcher/model/disaster policy; approve and live-qualify the staged durable candidate location; accept restricted performance/client scope; pin exact final supervisor/source/binary/configuration and backup identities. Then present exact verified stop/start/rollback commands and current process/resource state to the user. No checkbox or synthetic authorization file substitutes for that explicit approval.
 
 No production process requires cleanup. The attempted isolated PID38125 was terminated/reaped by its owner, exit-15. Test-model processes are not left running. Large/private logs, archives, checkpoints and model identities are retained under `/Users/knagel/Flash-iOS-Release/2026-11-17/`; public docs contain sanitized hashes only. Earlier failed backup evidence is retained.
 

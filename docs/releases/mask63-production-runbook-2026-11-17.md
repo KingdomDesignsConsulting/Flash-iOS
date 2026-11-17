@@ -46,7 +46,7 @@ This template fails validation deliberately. Values may be filled/accepted only 
 Future candidate launch, **NOT EXECUTED**, after every gate and authorization:
 
 ```bash
-cd '/private/tmp/flash-mask63-release-20261117'
+cd '/Users/knagel/Flash-iOS-Release/2026-11-17/candidate-source'
 python3 tools/supervise_qualified_serve.py \
  --binary "$PWD/metal_infer/infer-mask63-supervised-20261117" \
  --probe "$PWD/metal_infer/flash-serve-resource-probe" \
@@ -57,7 +57,7 @@ python3 tools/supervise_qualified_serve.py \
  -- --flash-profile release-approved-main-agent
 ```
 
-Profile name/settings are a proposed isolated candidate namespace pending actual client contract approval, not an automatic copy of prior prefixes. Runtime root must remain persistent for deployment; `/private/tmp` is the current development path and is **not approved durable service installation**. Before cutover, stage the entire matching dependency checkout in an approved durable location, rebind/hash/requalify startup from it (paths may affect cache/model resolution), and update the plan. Never move just the executable or overwrite installed infer. This durability/path gate is explicit, not hidden in the command template.
+Profile name/settings are a proposed isolated candidate namespace pending actual client contract approval, not an automatic copy of prior prefixes. A persistent matched checkout is now staged at `/Users/knagel/Flash-iOS-Release/2026-11-17/candidate-source` (checkout c643779, runtime47inputs identical to e58cc0d). Binary/probe copies are authenticated; tools/API/synthetic-warm self-tests pass there. **Live startup from this location remains NOT RUN**, so it is not an approved production installation. Requalify the bounded canary there after resource capacity recovers, then update the approval plan. Never move just the executable or overwrite installed infer.
 
 ## Stop/switch sequence — not executed
 

@@ -29,7 +29,7 @@ Cold health, streamed/buffered completion, scalar-vs-mask63short comparison, res
 Remaining live command, only after capacity recovers and an exclusive window is reconfirmed:
 
 ```bash
-cd '/private/tmp/flash-mask63-release-20261117'
+cd '/Users/knagel/Flash-iOS-Release/2026-11-17/candidate-source'
 PYTHONPYCACHEPREFIX=/private/tmp/mask63-pycache python3 tools/qualify_mask63_final.py \
  --out '/Users/knagel/Flash-iOS-Release/2026-11-17/canary-02' --operator-exclusive-model
 ```
@@ -39,7 +39,7 @@ The runner rechecks threeGPU<30readings, source/binary identity,6GiBreserve and1
 ## Exact model-free reproduction
 
 ```bash
-cd '/private/tmp/flash-mask63-release-20261117'
+cd '/Users/knagel/Flash-iOS-Release/2026-11-17/candidate-source'
 PYTHONPATH=tools PYTHONPYCACHEPREFIX=/private/tmp/mask63-pycache python3 -m unittest test_work_a_gate test_work_a_missing_validation test_macho_rebuild test_work_a_summary test_release_binding test_recovery_tree test_production_plan test_c11_supervisor
 PYTHONPATH=tools PYTHONPYCACHEPREFIX=/private/tmp/mask63-pycache python3 -O -m unittest test_work_a_gate test_work_a_missing_validation test_macho_rebuild test_work_a_summary test_release_binding test_recovery_tree test_production_plan test_c11_supervisor
 clang -std=c11 -Wall -Wextra -Werror -I metal_infer tools/test_checkpoint_durability.c -o /private/tmp/mask63-directory-test

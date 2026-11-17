@@ -295,5 +295,18 @@
     "zstd_sha256": "602d50cbe6fad0f0da6d1b73284ae3f75316015aea482ebd55614b6df2406b43"
   },
   "production_cutover_authorized": false,
-  "production_deployment_performed": false
+  "production_deployment_performed": false,
+  "release_tooling_commit": "1294e5834eb83d06591769654b22deec49f07cb8",
+  "persistent_stage": {
+    "path": "/Users/knagel/Flash-iOS-Release/2026-11-17/candidate-source",
+    "checkout": "c643779a6326b475d2b9d89160fe93cc6e6d3d9a",
+    "runtime_sources_match": 47,
+    "binary_and_probe_match": true,
+    "native_self_test_exits": [
+      0,
+      0,
+      0
+    ],
+    "live_startup": "NOT RUN"
+  }
 }
