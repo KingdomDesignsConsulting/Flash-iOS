@@ -1,0 +1,59 @@
+{
+  "schema": 1,
+  "status": "PROPOSED_RESTRICTED_NATIVE_RELEASE_NOT_AUTHORIZED",
+  "hardware": "Apple M4 24GiB",
+  "macos": "26.7.1 build25G241; other OS versions not newly qualified",
+  "model": "Qwen3.5-35B-A3B tiered Q2/Q4,40layers,256experts,top8",
+  "mask": 63,
+  "prefill": "N128 M4-8row bitsplit gate/up M4-2row down; repaired ownership epochv2",
+  "gpu_kv_capacity": 32768,
+  "maximum_logical_context": 32768,
+  "context_formula": "existing_position+incoming_tokens+maximum_generation <= min(32768, GPU capacity, engine allocation), before resident mutation",
+  "cpu_fallback": "Not supported by the supervised HTTP release; legacy CPU allocation remains65536, not a64K GPU qualification",
+  "resident_conversations": "One evolving resident conversation at a time; no conversation snapshot pool",
+  "prefix_cache": {
+    "slots": 5,
+    "pinned_warm_entry": true,
+    "max_prefix_tokens": 8192,
+    "dynamic_bytes": 805306368
+  },
+  "exclusivity": "One operator-confirmed cooperating heavyweight model; per-user launcher lock, not host-global policing",
+  "host_reserve_bytes": 6442450944,
+  "rss_limit_exclusive_bytes": 17179869184,
+  "resource_poll_ms": 250,
+  "external_sample_seconds": 0.5,
+  "supervisor_max_seconds": 21600,
+  "guarantee_limits": [
+    "Sampled protections, no memory reservation or instantaneous OOM guarantee",
+    "Checked-boundary polling may wait for GPU/I/O; external owned-process termination bounds stalls",
+    "Forced process exit destroys resident state; full-history/new-session restart required"
+  ],
+  "native_endpoints": [
+    "/health",
+    "/v1/models",
+    "/v1/chat/completions"
+  ],
+  "responses_api": false,
+  "stream_usage": "include_usage final usage before DONE; exact integrated live check NOT RUN due startup resource stop",
+  "tools": "Native validated complete calls only; no side-effecting external tools executed in qualification. Partial/malformed streams fail, never actionable. Live integrated tool emission NOT RUN.",
+  "reasoning": "Existing native semantics retained: enable_thinking/reasoning_effort compatibility limitations and same-completion post-tool answer behavior remain; no GUI translation claim",
+  "clients": "Native-only; Work B excluded. Optional Chat Completions adapter requires separate A+B acceptance; LM Studio GUI and actual MCP Gateway registry/dispatch/pagination excluded",
+  "performance": {
+    "observations_seconds": {
+      "mask63_16k_warm": 1180.462,
+      "mask63_32k_warm": 5084.331
+    },
+    "quality": "Exploratory n1, differing staging/cache/environment, not causal ordinary-N128 overhead",
+    "proposal": "32K only for explicit long-running supervised jobs; not an ordinary interactive latency promise",
+    "architect_acceptance": "PENDING",
+    "scalar32k_warm": "Incomplete, not silently waived"
+  },
+  "unsupported": [
+    "ordinary numerically disqualified N128 as release alternative",
+    "64K GPU serving",
+    "iOS/otherdevices/models",
+    "unmanaged competing heavyweight models",
+    "unqualified GUI/MCP integrations",
+    "speculative decoding/GDN arithmetic changes"
+  ]
+}
