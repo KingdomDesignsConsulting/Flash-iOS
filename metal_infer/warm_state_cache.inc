@@ -1,3 +1,4 @@
+#include "warm_checkpoint_durability.h"
 // Raw, process-independent persistence for a single fully-prefilled prefix.
 // Included after ServeStateSnapshot capture/restore so the same state layout
 // is used for runtime and disk caches.
@@ -842,9 +843,12 @@ static int warm_state_save(NSString *path, const ToolPrefixCacheEntry *entry,
         ok = rename(temporary, path.fileSystemRepresentation) == 0;
     }
     if (ok) {
-        int dir_fd = open(directory.fileSystemRepresentation, O_RDONLY);
-        if (dir_fd >= 0) { fsync(dir_fd); close(dir_fd); }
-        fprintf(stderr, "[warm-state] saved atomically: format=%s bytes=%llu stored=%llu elapsed=%.0fms path=%s\n",
+        if (!warm_checkpoint_sync_directory(directory.fileSystemRepresentation)) {
+            fprintf(stderr, "[warm-state] WARNING: checkpoint visible after rename but directory durability unconfirmed: %s; retaining older checkpoints\n", strerror(errno));
+            free(temporary);
+            return 0; // Do not claim rollback of rename; do not prune recovery files.
+        }
+        fprintf(stderr, "[warm-state] saved atomically and directory synced: format=%s bytes=%llu stored=%llu elapsed=%.0fms path=%s\n",
                 head.version == WARM_STATE_ZSTD_VERSION ? "zstd1" : "raw",
                 (unsigned long long)head.payload_bytes,
                 (unsigned long long)(head.version == WARM_STATE_ZSTD_VERSION

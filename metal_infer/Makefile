@@ -76,7 +76,7 @@ $(SHADER_LIB): $(SHADER_AIR)
 
 # Build the inference engine. Keep direct source includes as prerequisites so
 # incremental builds cannot silently retain stale validation/runtime code.
-INFER_DEPS = gguf_iq_shared.h flash_serve_admission.h tensor_layout_validation.inc tokenizer.h warm_state_cache.inc \
+INFER_DEPS = warm_checkpoint_durability.h gguf_iq_shared.h flash_serve_admission.h tensor_layout_validation.inc tokenizer.h warm_state_cache.inc \
 	target_verify_bench.inc target_verify_batch.inc target_verify_grouped.inc \
 	prefill_nrow_grouped_async.inc prefill_nrow_control.inc \
 	prefill_probe/chunk_kernels.metal
@@ -423,3 +423,10 @@ release-legacy-qualification: $(INFER_SRC) $(INFER_DEPS) release_render_diag.inc
 .PHONY: serve-resource-probe
 serve-resource-probe: flash_serve_admission.h ../tools/serve_resource_probe.c
 	$(CC) $(CFLAGS) -I. ../tools/serve_resource_probe.c -o flash-serve-resource-probe
+
+# Frozen diagnostic-free supervised mask63 candidate; never replaces any binary.
+MASK63_RELEASE_BINARY ?= infer-mask63-supervised-20261117
+.PHONY: mask63-supervised-release
+mask63-supervised-release: $(INFER_SRC) $(INFER_DEPS) fe027_alignment.inc fe027_attention_reference.inc fe027_combine_reference.inc fe027_q4.inc
+	@test "$(MASK63_RELEASE_BINARY)" != infer && test ! -e "$(MASK63_RELEASE_BINARY)"
+	$(CC) $(INFER_CFLAGS) -DFLASH_FE027_NUMERICS -DFLASH_EXPERIMENTAL_LAZY_SHARED_GPU_KV_32K $(FRAMEWORKS) $(LDFLAGS) $(INFER_SRC) -o $(MASK63_RELEASE_BINARY)
