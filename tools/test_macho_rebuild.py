@@ -12,5 +12,5 @@ class Rebuild(unittest.TestCase):
  def test_bad_signature_extent(self):
   with tempfile.TemporaryDirectory() as folder:
    r=pathlib.Path(folder);p=self.image(r,'a');p.write_bytes(p.read_bytes()[:-1])
-   with self.assertRaises(AssertionError):describe(p)
+   with self.assertRaises(ValueError):describe(p)
 if __name__=='__main__':unittest.main()

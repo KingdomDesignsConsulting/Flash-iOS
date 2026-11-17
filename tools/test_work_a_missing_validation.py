@@ -11,22 +11,22 @@ class MissingValidation(unittest.TestCase):
  def test_complete_evidence_accepts_without_claiming_variance(self):self.assertFalse(self.run_check()['variance_measured'])
  def test_running_cannot_pass(self):
   self.r['status']='RUNNING'
-  with self.assertRaises(AssertionError):self.run_check()
+  with self.assertRaises(ValueError):self.run_check()
  def test_missing_warm_cannot_pass(self):
   self.r['rows'][0]['cases'].pop()
-  with self.assertRaises(AssertionError):self.run_check()
+  with self.assertRaises(ValueError):self.run_check()
  def test_missing_layer_cannot_pass(self):
   self.r['rows'][0]['boundary_routes'].pop()
-  with self.assertRaises(AssertionError):self.run_check()
+  with self.assertRaises(ValueError):self.run_check()
  def test_watchdog_event_cannot_pass(self):
   self.r['rows'][0]['budget']['stop_reason']='HOST_MEMORY'
-  with self.assertRaises(AssertionError):self.run_check()
+  with self.assertRaises(ValueError):self.run_check()
  def test_wrong_context_or_binary_cannot_pass(self):
   self.r['rows'][0]['binary_sha256']='foreign'
-  with self.assertRaises(AssertionError):self.run_check()
+  with self.assertRaises(ValueError):self.run_check()
  def test_nonfinite_timing_cannot_pass(self):
   self.r['rows'][0]['cases'][0]['timings']['prefill_ms']=float('nan')
-  with self.assertRaises(AssertionError):self.run_check()
+  with self.assertRaises(ValueError):self.run_check()
  def split_reports(self):
   mask = copy.deepcopy(self.r)
   mask.update(status='STOPPED', rows=mask['rows'][:1], runner_sha256='same')
@@ -41,11 +41,11 @@ class MissingValidation(unittest.TestCase):
  def test_split_incomplete_scalar_rejects(self):
   mask, scalar = self.split_reports()
   scalar['rows'][0]['cases'].pop()
-  with self.assertRaises(AssertionError):
+  with self.assertRaises(ValueError):
    validate_split(mask, scalar, 'm', {'mask63':'mask63','scalar':'scalar'}, 'i', 'r')
  def test_split_foreign_fixture_rejects(self):
   mask, scalar = self.split_reports()
   scalar['input_sha256'] = 'foreign'
-  with self.assertRaises(AssertionError):
+  with self.assertRaises(ValueError):
    validate_split(mask, scalar, 'm', {'mask63':'mask63','scalar':'scalar'}, 'i', 'r')
 if __name__=='__main__':unittest.main()

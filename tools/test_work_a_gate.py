@@ -14,14 +14,14 @@ class Gate(unittest.TestCase):
  def test_complete(self):self.assertEqual(self.check()['endpoints'],256)
  def test_large_state(self):
   self.native['rows'][0]['state_max_abs']=1e-3
-  with self.assertRaises(AssertionError):self.check()
+  with self.assertRaises(ValueError):self.check()
  def test_duplicate_position(self):
   self.native['rows'][-1]['position']=128
-  with self.assertRaises(AssertionError):self.check()
+  with self.assertRaises(ValueError):self.check()
  def test_missing_actual_candidate_route(self):
   self.routes=self.routes.replace('seq=32768 layer=39','seq=32767 layer=39')
-  with self.assertRaises(AssertionError):self.check()
+  with self.assertRaises(ValueError):self.check()
  def test_missing_fingerprint(self):
   self.native['rows'][0]['candidate_digest']='';self.native['rows'][0]['reference_digest']=''
-  with self.assertRaises(AssertionError):self.check()
+  with self.assertRaises(ValueError):self.check()
 if __name__=='__main__':unittest.main()
