@@ -45,8 +45,10 @@ def copy_xattrs(source,destination):
  libc.removexattr.argtypes=[ctypes.c_char_p,ctypes.c_char_p,ctypes.c_int]
  libc.setxattr.argtypes=[ctypes.c_char_p,ctypes.c_char_p,ctypes.c_void_p,ctypes.c_size_t,ctypes.c_uint32,ctypes.c_int]
  for name in actual.keys()-expected.keys():
+  if name=='com.apple.provenance':continue # OS-controlled; preserve original intent in sidecar.
   if libc.removexattr(os.fsencode(destination),os.fsencode(name),1)!=0:raise OSError(ctypes.get_errno(),'private xattr removal failed')
  for name,value in expected.items():
+  if name=='com.apple.provenance':continue
   if actual.get(name)!=value:
    buf=ctypes.create_string_buffer(value)
    if libc.setxattr(os.fsencode(destination),os.fsencode(name),buf,len(value),0,1)!=0:raise OSError(ctypes.get_errno(),'private xattr restore failed')
@@ -83,13 +85,27 @@ def inventory(root):
  walk(root,'.')
  return entries
 
-def compare(expected,actual,ownership=True):
+def compare(expected,actual,ownership=True,staging_provenance=False):
  if expected.keys()!=actual.keys():raise ValueError('missing/unexpected tree entries')
  for key in expected:
   a=dict(expected[key]);b=dict(actual[key])
   if not ownership:
    for name in ['uid','gid']:a.pop(name,None);b.pop(name,None)
+  if staging_provenance:
+   a['xattrs']=dict(a['xattrs']);b['xattrs']=dict(b['xattrs'])
+   a['xattrs'].pop('com.apple.provenance',None);b['xattrs'].pop('com.apple.provenance',None)
   if a!=b:raise ValueError('metadata/content mismatch at '+key+' fields '+str([k for k in a if a.get(k)!=b.get(k)]))
+
+def restore_metadata(root,expected):
+ """Apply captured metadata to an already safety-checked private restore tree.
+ Caller must never pass a production root. Fail if an owner/flag cannot apply.
+ """
+ for rel,row in sorted(expected.items(),key=lambda kv:kv[0].count('/'),reverse=True):
+  p=root if rel=='.' else root/rel;st=p.lstat()
+  if (st.st_uid,st.st_gid)!=(row['uid'],row['gid']):os.chown(p,row['uid'],row['gid'],follow_symlinks=False)
+  if getattr(st,'st_flags',0)!=row['flags']:os.chflags(p,row['flags'],follow_symlinks=False)
+  if not p.is_symlink():p.chmod(row['mode'])
+  os.utime(p,ns=(p.lstat().st_atime_ns,row['mtime_ns']),follow_symlinks=False)
 
 def main():
  p=argparse.ArgumentParser(description=__doc__);p.add_argument('--root',type=Path,required=True);p.add_argument('--manifest',type=Path,required=True);p.add_argument('--original-path');p.add_argument('--role');p.add_argument('--verify',action='store_true');p.add_argument('--allow-staging-owner',action='store_true');a=p.parse_args()

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Opt-in candidate-only supervisor. Never inventories/kills unrelated processes."""
-import argparse,fcntl,json,math,os,pathlib,signal,stat,subprocess,threading,time
+import argparse,fcntl,hashlib,json,math,os,pathlib,re,signal,stat,subprocess,threading,time
 GIB=1024**3
 HOST_MIN=6*GIB
 RSS_MAX=16*GIB
@@ -73,18 +73,54 @@ def supervise(command,env,out,sample,*,interval=0.5,max_seconds=21600,lock_path=
         if lockfd is not None:os.close(lockfd)
     return report
 
+def validate_production_plan(path,binary,model,root,now=None):
+    """Explicit operator authorization record, not independent release qualification.
+    Preparation never creates an authorized record. No process/endpoint access.
+    """
+    path=pathlib.Path(path);now=time.time() if now is None else now
+    info=path.lstat()
+    if path.is_symlink() or not stat.S_ISREG(info.st_mode) or info.st_uid!=os.getuid() or info.st_mode&0o022:
+        raise ValueError('unsafe production authorization file')
+    data=json.loads(path.read_text())
+    required=['production_cutover_authorized','recovery_policy_accepted','complete_backup_verified','canary_accepted']
+    if not all(data.get(k) is True for k in required):raise ValueError('unaccepted production gate')
+    if data.get('port')!=11241 or data.get('operator_uid')!=os.getuid():raise ValueError('production ownership/port')
+    expires=data.get('expires_unix')
+    if type(expires) not in [int,float] or not math.isfinite(expires) or not now<expires<=now+21600:raise ValueError('expired/unbounded authorization')
+    if not re.fullmatch('[0-9a-f]{40}',str(data.get('candidate_source_sha',''))):raise ValueError('source identity missing')
+    if data.get('model_path')!=str(pathlib.Path(model).resolve()):raise ValueError('model mismatch')
+    digest=lambda p:hashlib.sha256(pathlib.Path(p).read_bytes()).hexdigest()
+    if data.get('candidate_binary_sha256')!=digest(binary):raise ValueError('binary mismatch')
+    for role in ['candidate_manifest','recovery_manifest']:
+        record=data.get(role,{})
+        if not pathlib.Path(record.get('path','')).is_absolute() or digest(record['path'])!=record.get('sha256'):raise ValueError('manifest binding '+role)
+    manifest=json.loads(pathlib.Path(data['candidate_manifest']['path']).read_text())
+    if manifest.get('candidate_source_sha')!=data['candidate_source_sha'] or manifest.get('binary_sha256')!=data['candidate_binary_sha256']:raise ValueError('candidate binding')
+    sources=manifest.get('source_sha256')
+    if not isinstance(sources,dict) or not sources:raise ValueError('no runtime source binding')
+    for name,expected in sources.items():
+        p=pathlib.Path(name)
+        if p.is_absolute() or '..' in p.parts or (root/p).resolve().is_relative_to(root.resolve()) is False:raise ValueError('source traversal')
+        if digest(root/p)!=expected:raise ValueError('runtime source changed')
+    return data
+
 def main():
     p=argparse.ArgumentParser(description=__doc__)
     p.add_argument('--binary',type=pathlib.Path,required=True);p.add_argument('--model',required=True)
     p.add_argument('--probe',type=pathlib.Path,required=True);p.add_argument('--out',type=pathlib.Path,required=True)
     p.add_argument('--port',type=int,default=11248);p.add_argument('--max-seconds',type=float,default=21600)
-    p.add_argument('--operator-exclusive-model',action='store_true');p.add_argument('engine_args',nargs=argparse.REMAINDER)
+    p.add_argument('--operator-exclusive-model',action='store_true');p.add_argument('--production-plan',type=pathlib.Path);p.add_argument('--authorize-production-cutover',action='store_true');p.add_argument('engine_args',nargs=argparse.REMAINDER)
     a=p.parse_args();root=pathlib.Path(__file__).resolve().parents[1]
     if not a.operator_exclusive_model:p.error('operator must confirm no other heavyweight model; no process inventory is performed')
-    if not 1024<=a.port<=65535 or a.port==11241:p.error('isolated non-production port required')
+    if not 1024<=a.port<=65535:p.error('valid server port required')
+    if a.port==11241 and (not a.authorize_production_cutover or not a.production_plan):p.error('production port requires explicit cutover authorization and bound plan')
+    if a.port!=11241 and (a.authorize_production_cutover or a.production_plan):p.error('production authorization applies only to production port')
     binary=a.binary.resolve();probe=a.probe.resolve()
     if binary.parent!=(root/'metal_infer').resolve() or binary.name=='infer':p.error('separately named candidate binary in this isolated checkout required')
     if not binary.is_file() or not probe.is_file():p.error('build candidate and probe first')
+    if a.port==11241:
+        try:validate_production_plan(a.production_plan,binary,a.model,root)
+        except Exception as e:p.error('production authorization rejected: '+str(e))
     args=a.engine_args[1:] if a.engine_args[:1]==['--'] else a.engine_args
     if any(x.startswith('--serve') or x.startswith('-s') for x in args):p.error('server port is owned by supervisor')
     env=os.environ.copy();env['FLASH_SERVE_QUALIFIED_GPU_ONLY']='1';env['FLASH_FE027_NUMERICS']='63'

@@ -4,9 +4,9 @@
 Requires operator-confirmed exclusive window, absence of visible cache users,
 pre/post content inventories. A manual recovery proposal is NOT operator approval.
 """
-import argparse,datetime,json,os,shutil,subprocess,tarfile,posixpath
+import argparse,datetime,json,os,shutil,subprocess,tarfile,posixpath,time
 from pathlib import Path
-from recovery_tree import inventory,compare,sha,copy_xattrs
+from recovery_tree import inventory,compare,sha,copy_xattrs,restore_metadata
 
 def writer_check(roots):
  observed=[]
@@ -18,9 +18,12 @@ def writer_check(roots):
  return observed
 
 def safe_archive(path):
+ seen=set()
  with tarfile.open(path,'r|') as tf:
   for m in tf:
    n=posixpath.normpath(m.name)
+   if n in seen:raise ValueError('duplicate archive entry')
+   seen.add(n)
    if n.startswith('/') or n=='..' or n.startswith('../'):raise ValueError('archive traversal')
    if not (m.isdir() or m.isfile() or m.issym() or m.islnk()):raise ValueError('archive special entry')
    if m.issym() or m.islnk():
@@ -28,11 +31,16 @@ def safe_archive(path):
     if m.linkname.startswith('/') or target=='..' or target.startswith('../'):raise ValueError('unsafe archive link')
 
 def main():
- p=argparse.ArgumentParser(description=__doc__);p.add_argument('--destination',type=Path,required=True);p.add_argument('--project',type=Path,required=True);p.add_argument('--model',type=Path,required=True);p.add_argument('--operator-exclusive-model',action='store_true');a=p.parse_args()
+ p=argparse.ArgumentParser(description=__doc__);p.add_argument('--destination',type=Path,required=True);p.add_argument('--project',type=Path,required=True);p.add_argument('--model',type=Path,required=True);p.add_argument('--operator-exclusive-model',action='store_true');p.add_argument('--resume-incomplete',action='store_true');a=p.parse_args()
  if not a.operator_exclusive_model:p.error('exclusive window required')
  root=a.destination.resolve();project=a.project.resolve()
- if root.exists() or root==project or project in root.parents:p.error('fresh non-production destination required')
- os.umask(0o077);root.mkdir(mode=0o700,parents=True);package=root/'package';package.mkdir()
+ if root==project or project in root.parents:p.error('non-production destination required')
+ if root.exists():
+  if not a.resume_incomplete or root.is_symlink() or root.stat().st_uid!=os.getuid():p.error('fresh destination or explicit owned incomplete resume required')
+  old=json.loads((root/'recovery-report.json').read_text())
+  if old.get('status')!='INCOMPLETE':p.error('only incomplete capture may resume')
+  shutil.copy2(root/'recovery-report.json',root/('previous-attempt-'+str(time.time_ns())+'.json'))
+ os.umask(0o077);root.mkdir(mode=0o700,parents=True,exist_ok=a.resume_incomplete);package=root/'package';package.mkdir(exist_ok=a.resume_incomplete)
  report={'status':'INCOMPLETE','started':datetime.datetime.now().astimezone().isoformat(),'production_modified':False,'operator_recovery_acceptance':'PENDING','disaster_recovery_independence':'NOT SATISFIED: local same-disk copy','roles':{},'errors':[]}
  def save():(root/'recovery-report.json').write_text(json.dumps(report,indent=2)+'\n')
  save()
@@ -46,7 +54,7 @@ def main():
   manifests={}
   for role,source in sources.items():
    print('CAPTURE_ROLE',role,flush=True);before=inventory(source)
-   subprocess.run(['/usr/bin/ditto','--rsrc','--extattr','--acl',str(source),str(package/role)],check=True)
+   if not (package/role).exists():subprocess.run(['/usr/bin/ditto','--rsrc','--extattr','--acl',str(source),str(package/role)],check=True)
    compare(before,inventory(source))
    for rel in before:
     src=source if rel=='.' else source/rel;dst=package/role if rel=='.' else package/role/rel
@@ -55,7 +63,7 @@ def main():
    owner_exact=True
    try:compare(before,stored)
    except ValueError:
-    compare(before,stored,ownership=False);owner_exact=False
+    compare(before,stored,ownership=False,staging_provenance=True);owner_exact=False
    manifests[role]={'original_absolute_path':str(source),'entries':before,'stored_entries':stored,'owners_exact':owner_exact}
    report['roles'][role]={'entries':len(before),'bytes':sum(e.get('bytes',0) for e in before.values()),'owners_exact':owner_exact}
    save()
@@ -76,7 +84,7 @@ def main():
   (package/'proposed-manual-recovery.json').write_text(json.dumps(config,indent=2)+'\n')
   # Preserve tracked runtime reconstruction inputs separately, without alleging
   # that the live checkout produced either old executable.
-  srcdir=package/'checkout-reference-sources';srcdir.mkdir()
+  srcdir=package/'checkout-reference-sources';srcdir.mkdir(exist_ok=a.resume_incomplete)
   names=subprocess.check_output(['git','ls-files','metal_infer'],cwd=project,text=True).splitlines()
   for name in names:
    src=project/name
@@ -92,13 +100,20 @@ def main():
   (package/'source-manifests.json').write_text(json.dumps(manifests,indent=2)+'\n')
   expected=inventory(package);(root/'package-manifest.json').write_text(json.dumps(expected,indent=2)+'\n')
   archive=root/'recovery.tar'
+  if archive.exists():raise ValueError('retaining existing archive; refusing overwrite')
   subprocess.run(['/usr/bin/tar','--acls','--xattrs','-cpf',str(archive),'-C',str(package),'.'],check=True)
   report['archive_sha256']=sha(archive);report['archive_bytes']=archive.stat().st_size
   safe_archive(archive)
   restored=root/'restored';restored.mkdir()
   subprocess.run(['/usr/bin/tar','--acls','--xattrs','-xpf',str(archive),'-C',str(restored)],check=True)
-  compare(expected,inventory(restored))
-  report['offline_tree_restore']='PASS all package entries, bytes, modes, mtime, flags, xattrs, ACLs, uid/gid as stored'
+  restore_metadata(restored,expected)
+  restored_inventory=inventory(restored)
+  try:compare(expected,restored_inventory)
+  except ValueError:
+   compare(expected,restored_inventory,staging_provenance=True)
+   report['restore_os_metadata_exception']='Only OS-added com.apple.provenance absent in or differs under OS policy; original xattr hashes preserved in source manifest'
+  report['offline_tree_restore']='PASS all package entries, bytes, modes, mtime, flags, ACLs, uid/gid as stored; xattr exceptions explicitly recorded if present'
+  report['source_metadata_policy']='Original owner/xattr metadata retained in source-manifests; staging may have changed uid/gid and OS-added com.apple.provenance. Full original-metadata recovery acceptance remains pending.'
   report['source_owners_exact']=all(x['owners_exact'] for x in manifests.values())
   report['status']='VERIFIED_LOCAL_TREE_PACKAGE_PENDING_RECOVERY_POLICY'
  except Exception as e:

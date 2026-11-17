@@ -19,4 +19,10 @@ class Trees(unittest.TestCase):
   self.assertEqual(self.snapshot()['large']['bytes'],65*1024*1024+1)
  def test_owners(self):
   a=self.snapshot();b=self.snapshot();b['file']['uid']+=1;self.assertRaises(ValueError,r.compare,a,b);r.compare(a,b,ownership=False)
+ def test_provenance_exception_is_explicit(self):
+  a=self.snapshot();b=self.snapshot();b['file']['xattrs']['com.apple.provenance']='os-added'
+  self.assertRaises(ValueError,r.compare,a,b);r.compare(a,b,staging_provenance=True)
+ def test_other_xattrs_not_ignored(self):
+  a=self.snapshot();b=self.snapshot();b['file']['xattrs']['user.changed']='wrong'
+  self.assertRaises(ValueError,r.compare,a,b,staging_provenance=True)
 if __name__=='__main__':unittest.main()
