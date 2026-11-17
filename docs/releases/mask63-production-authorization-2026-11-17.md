@@ -13,7 +13,7 @@
 | Previous launcher/env |October23manual command recorded, latest inherited env/automatic owner unproved; explicit manual policy proposal requires acceptance |
 | Recovery |Private recovery-03 archive1,151,814,144bytes SHAf584e449610caa4d091209dc67e60ebb80bba698651e33e96de262bb09779563;85entry stored-package restore PASS |
 | Recovery caveats |Original group/provenance metadata not fully reproduced; local same disk; weights external with49content hashes13.42GB; privileged/original metadata/independent model restore NOT RUN |
-| Final canary |Canary02 bounded cases PASS; follow-up EOS/profile/exact32769/N128 PASS. Tool prefill then hit native reserve6,244,499,456<6,442,450,944; pending tool/decode/scalar cases. No retry |
+| Final canary |Canary02 + EOS/profile/budgets/N128 + resumed tools/partial/decode interruption cases PASS. Scalar-only run stopped at host6,171,131,904<6,442,450,944; no comparison result. No automatic retry |
 | Capacity/ownership immediately before cutover |MANDATORY NEW OBSERVATION; no stale PID accepted |
 | Planned commands |Runbook has guarded candidate command and historical recovery proposal; current stop/swap commands unresolved pending approved owner/location/policy |
 | Operational installation |Persistent matched checkout candidate-source at private release root, checkoutc643779;47source hashes and binary/probe copies verified; native self-tests0/0/0. Isolated live startup/profile restoration now PASS; remaining full canary cases still required |

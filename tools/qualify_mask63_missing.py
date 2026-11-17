@@ -17,13 +17,19 @@ def body(messages,sid=None,**kw):
  d=dict(model='qwen3.5',messages=messages,max_tokens=32,temperature=0,reasoning_effort='off')
  if sid:d.update(session_id=sid,flash_session_create=True)
  d.update(kw);return d
+def wait_gpu(read_gpu=gpu,pause=time.sleep,limit=60):
+ readings=[]
+ for _ in range(limit):
+  readings.append(read_gpu())
+  if len(readings)>=3 and all(x is not None and 0<=x<30 for x in readings[-3:]):return readings
+  pause(1)
+ raise RuntimeError('GPU admission '+str(readings))
+
 class Arm:
  def __init__(self,out,scalar=False,profile=None):
   self.out=out;self.scalar=scalar;self.profile=profile;self.stop=threading.Event();self.fault=threading.Event();self.result={};self.port=11249;self.thread=None
  def __enter__(self):
-  readings=[]
-  for _ in range(3):readings.append(gpu());time.sleep(1)
-  require(all(x is not None and 0<=x<30 for x in readings),'GPU admission '+str(readings))
+  readings=wait_gpu()
   self.readings=readings;(self.out.parent/(self.out.name+'-gpu-preflight.json')).write_text(json.dumps({'at':stamp(),'readings':readings})+'\n');env=os.environ.copy()
   for k in list(env):
    if k.startswith('FLASH_SESSION_TEST_') or k.startswith('FLASH_HTTP_QUALIFICATION'):env.pop(k)

@@ -149,5 +149,92 @@
     "executed_driver_sha256": "02664aa07499ef79f5610109f352fb289ffdb937964aed949c9c8bbb01ab09fd",
     "future_runner_sha256": "6c9f64284a847dd8772fea3e53920d0686cfe4c30574b5649747bfc9e7261e35"
   },
-  "updated": "2026-11-17T07:26:32.421102-08:00"
+  "updated": "2026-11-17T08:53:07.533072-08:00",
+  "missing_live_02": {
+    "assessment": "FOUR_PENDING_CASES_PASS_SCALAR_NOT_STARTED_BY_GPU_GATE",
+    "raw_status": "FAIL",
+    "raw_error": "GPU admission [67, 15, 17]",
+    "started": "2026-11-17T08:42:10.143263-08:00",
+    "ended": "2026-11-17T08:43:08.577750-08:00",
+    "source_sha": "e58cc0d95ad9f49d87fe8a5c553e7575e63fbd83",
+    "binary_sha256": "9f6ffea0ea70de6409e51978381968d57df9c2ee158a42bef3a35c063ce08da4",
+    "cases_passed": [
+      "complete_tool_and_resident_result_followup",
+      "partial_tool_not_executable_and_session_invalidated",
+      "long_decode_disconnect_prompt_health_and_stale409",
+      "external_controlled_telemetry_loss_during_decode"
+    ],
+    "observations": {
+      "complete_tool": "echo",
+      "validated_arguments": {
+        "payload": "alpha"
+      },
+      "tool_result_finish": "stop",
+      "tool_result_session_reused": 1,
+      "partial_tool_calls_published": false,
+      "partial_session_invalidated": true,
+      "partial_resend_full_history": true,
+      "cancel_health_and_stale_seconds": 0.06398512500000209,
+      "controlled_external_elapsed_after_delta_seconds": 0.5280066249999962,
+      "controlled_external_done_seen": false,
+      "minimum_host_bytes": 6703333376,
+      "maximum_rss_bytes": 2064531456
+    },
+    "evidence_sha256": {
+      "result.json": "c43305b4c0f533fa77e99e3f13a723312e3fe08a41efa1d2e26429aa4eed5060",
+      "n128/result.json": "83d846b4d49f4629b0cb4772314d7d48188fb93fdf30eef74d1fd17ecc35b4ac",
+      "n128/child.log": "63c25b4c7e43adc4ee16bc91796c69cc521b5f2822dd75455b1ab43b696ef01e",
+      "n128/telemetry.jsonl": "2530210d0165648e6ecfd14bdf65f35bd797a97012c710e9e83c62a54344a40a",
+      "n128/responses.jsonl": "a8fb90b923aa08e62bd1129ef8ff60694e28160f5a19f63d9c64286ca722333c"
+    },
+    "scope": "No external tools executed; no hidden/logit/KV tensor comparison; scalar arm never started in this runner."
+  },
+  "scalar_live_02": {
+    "assessment": "BLOCKED_RESOURCE_NOT_NUMERICAL_MISMATCH",
+    "raw_status": "FAIL",
+    "raw_error": "Remote end closed connection without response",
+    "started": "2026-11-17T08:46:52.170142-08:00",
+    "ended": "2026-11-17T08:46:59.895180-08:00",
+    "gpu_before": [
+      17,
+      26,
+      21
+    ],
+    "host_prelaunch": 9061318656,
+    "host_minimum": 6171131904,
+    "rss_peak": 1362690048,
+    "supervisor_exit": -15,
+    "supervisor_stop_reason": "host_reserve",
+    "comparison_produced": false,
+    "evidence_sha256": {
+      "result.json": "065db94a51dbc0f42699da7ad5d746c8abcb7ce96a58279b86f269919167a5a2",
+      "scalar/result.json": "1db2fe34fba06e83e3270399dc76ed4bccc687298df290ca99d3007816c8c67c",
+      "scalar/child.log": "33a9834988dc7da76f915a11a44edcac763a415a86bdfd6425c5bf026d6bba7f",
+      "scalar/telemetry.jsonl": "71d82a2a9d07909d80aa29752d39db1d6017d5ae9e4f0e1c0bda3bb4341e0eb9",
+      "scalar-gpu-preflight.json": "a678309504340987563d1ac5ac42b98f596ad081fb74bf70264e24dd32ed476e"
+    }
+  },
+  "scalar_live_01_gpu_only": {
+    "assessment": "NO_MODEL_LAUNCHED",
+    "readings": [
+      30,
+      24,
+      24
+    ],
+    "result_sha256": "a305e30e58cc06d84f9bd4c5a07c5cb7f83e1dc735d03cfc3681f4ca15dcaa19"
+  },
+  "remaining_bounded_live_scenarios": [
+    "scalar_N128_same_input_visible_agreement"
+  ],
+  "current_scalar_runner_sha256": "48bf15059b53eb3d827aeddbbbde9ea8cd3c122b4460177775f0fc04983b6907",
+  "current_live_runner_sha256": {
+    "qualify_mask63_missing.py": "bf351dedf7ba2b3488418f303478290e2d0672d2e271663c10a8f0ee0c89dc83",
+    "qualify_mask63_scalar_tail.py": "48bf15059b53eb3d827aeddbbbde9ea8cd3c122b4460177775f0fc04983b6907",
+    "test_mask63_gpu_gate.py": "a71fcaa77df1f910087443049817850cb54171dce8fd36fe118ad4bc6d863bea"
+  },
+  "gpu_gate_model_free_tests": {
+    "normal": 7,
+    "optimized": 7,
+    "result": "PASS"
+  }
 }

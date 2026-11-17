@@ -25,7 +25,7 @@ Candidate source `e58cc0d95ad9f49d87fe8a5c553e7575e63fbd83`, binary `9f6ffea0ea7
 
 GPU preflight[0,0,0] and host available8,166,588,416bytes passed; supervisor sampled7,909,523,456bytes immediately before launch. Owned PID38125 started **2026-11-17T01:45:17.567748-08:00**; stopped **01:45:20.865319-08:00**, exit-15 after seven samples. Host minimum6,397,526,016bytes was below required6,442,450,944; own RSS peak980,156,416bytes. Stop reason `host_reserve`. Process was reaped by its supervisor; no automatic retry or unrelated app termination. This demonstrates the external startup guard, not live native request-failure behavior.
 
-At the initial canary01 stop, all request cases were NOT RUN. **This historical status is superseded by the canary02/follow-up matrix in mask63-canary-followup-2026-11-17.md**: health, buffered/streamed usage, resident continuation, exact budgets, EOS, profile restore and276token N128 now have bounded live PASS evidence. Complete tools, partial output, active long-decode cancellation, controlled external decode interruption and scalar-output comparison remain pending after a real native reserve abort.
+At the initial canary01 stop, all request cases were NOT RUN. **This historical status is superseded by the canary02/follow-up matrix in mask63-canary-followup-2026-11-17.md**: health, buffered/streamed usage, resident continuation, exact budgets, EOS, profile restore and276token N128 now have bounded live PASS evidence. The four tool/interruption cases subsequently passed in missing-live02. Only scalar-output comparison remains pending in this bounded set after a real supervisor reserve stop; see the current follow-up matrix.
 
 Current missing-only resumption command and exact scope are in [the follow-up report](mask63-canary-followup-2026-11-17.md). Do not rerun canary02 or passed profile/EOS/N128 cases. No automatic model retry after the native resource stop. No raw-tensor comparison is claimed for the diagnostic-free API.
 
@@ -40,3 +40,7 @@ clang -std=c11 -Wall -Wextra -Werror -I metal_infer tools/test_checkpoint_durabi
 ```
 
 Do not rerun the build into the existing frozen binary name. For a justified new build use a new MASK63_RELEASE_BINARY name and create its own manifest/qualification. Model-free extraction scripts have legacy docs/results output defaults; prior original evidence was restored unchanged, with this run's new extracted results preserved privately. A new binary is not authenticated by a reused filename.
+
+## Resumed live results
+
+Missing-live02: complete validated echo call plus resident tool-result turn PASS; one-token incomplete tool recovery with explicit invalidation PASS; active-decode disconnect and64mshealth/stale check PASS; controlled external telemetry-loss EOF/no-success/DONE PASS. Scalar-live02startedafterthreevalidGPUreadings but host reserve stopped the owned process before its first response. No scalar/N128difference was measured. GPU-only holds before that launch did not start any model and are preserved. Only scalar comparison is now pending; do not rerun other live cases.

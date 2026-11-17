@@ -66,12 +66,15 @@
   "installed_production_modified": false,
   "full_executable_checkpoint_hashing": false,
   "canary": {
-    "status": "PARTIAL_LIVE_PASS_WITH_SUBSEQUENT_NATIVE_RESOURCE_BLOCK",
-    "canary02_result_sha256": "a0458978efedcdb0805c6d110d93a746732c0192bce7002b98cf59833d2a8677",
+    "status": "BOUNDED_PRIMARY_LIVE_PASS_SCALAR_RESOURCE_BLOCKED",
     "canary02_cases": 4,
-    "additional_cases_passed": 2,
-    "latest_native_resource_host_bytes": 6244499456,
-    "latest_attempt": "missing-live-01",
+    "missing_live01_cases": 2,
+    "missing_live02_cases": 4,
+    "remaining": [
+      "scalar_N128_same_input_visible_agreement"
+    ],
+    "latest_resource_stop": "scalar-live-02",
+    "scalar_min_host_bytes": 6171131904,
     "production_access": false
   },
   "recovery": "PENDING",
@@ -279,7 +282,7 @@
   "recovery_archive_sha256": "f584e449610caa4d091209dc67e60ebb80bba698651e33e96de262bb09779563",
   "recovery_archive_bytes": 1151814144,
   "recovery_status": "VERIFIED_LOCAL_TREE_PACKAGE_PENDING_RECOVERY_POLICY",
-  "release_contract_sha256": "0a9e35d6fe0773ad28d6b94bf9907d8c4a4da4de6192cf961be7ac7d08913779",
+  "release_contract_sha256": "77f76e47d613c46f0e5ec9201269001bca100e5e0f08e31cba2f8732854a7ae3",
   "native_self_tests": {
     "tools_exit": 0,
     "api_exit": 0,
@@ -309,5 +312,5 @@
     ],
     "live_startup": "NOT RUN"
   },
-  "live_evidence_sha256": "285ed9323a70d0343f687084558a124be54a52bf364d3230884e1afdf0dc2020"
+  "live_evidence_sha256": "4dd940eb9a225438d5d38a0b6a454509e3bcd8066c8542a3d43fa95e03640a0e"
 }

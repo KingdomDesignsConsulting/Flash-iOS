@@ -35,7 +35,7 @@
   ],
   "responses_api": false,
   "stream_usage": "PASS bounded canary02: streamed usage before DONE; cached resident prompt46=cached29+prefill17. Raw SSE not retained in that run.",
-  "tools": "Native validated complete calls only; no side-effecting external tools executed in qualification. Partial/malformed streams fail, never actionable. Live integrated tool emission NOT RUN.",
+  "tools": "PASS bounded frozen-binary live test: exact echo payload/schema, resident result follow-up, incomplete one-token tool output publishes no executable call and notifies session invalidation. No external tools executed; no new live streamed-tool atomicity claim beyond existing source/self-test evidence.",
   "reasoning": "Existing native semantics retained: enable_thinking/reasoning_effort compatibility limitations and same-completion post-tool answer behavior remain; no GUI translation claim",
   "clients": "Native-only; Work B excluded. Optional Chat Completions adapter requires separate A+B acceptance; LM Studio GUI and actual MCP Gateway registry/dispatch/pagination excluded",
   "performance": {

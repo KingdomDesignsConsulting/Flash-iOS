@@ -18,11 +18,11 @@ Updated November17,2026, America/Los_Angeles. Work A examined the user-run canar
 | Natural EOS + subsequent turn |PASS missing-live01 |READY then OK, each2completion tokens, finish_reason=stop with max32and no stop strings; resident reuse |
 | Exact32769total rejection |PASS missing-live01 |27input+32742requested generation;400before new conversation replaces completed resident; its next turn succeeds. No new byte-exact KV/GDN comparison |
 | Bounded real N128 prefill |PASS missing-live01 |276logical tokens,11cached,265prefilled: two128row chunks plus9tail, output READY,2completion tokens |
-| Complete model tool call + tool-result follow-up |BLOCKED_NATIVE_RESOURCE |Tool request390tokens aborted at33during prefill; no completed tool was returned |
-| Truncated tool output / client invalidation notification |NOT RUN |Stopped before this case |
-| Long active-decode cancellation / prompt health / stale409 |NOT RUN |Distinct from short final-delivery case |
-| Controlled external telemetry loss during decode |NOT RUN |Native pressure interruption observed in prefill is not this test |
-| Scalar versus N128 visible-output comparison |NOT RUN |Scalar arm never started; historical tensor qualification remains separate |
+| Complete model tool call + tool-result follow-up |PASS missing-live02 |Exactly echo({"payload":"alpha"}), finish=tool_calls; synthetic result continues resident session and ends naturally |
+| Truncated tool output / client invalidation notification |PASS missing-live02 |One-token partial call publishes no executable call; both session_invalidated/resend_full_history=true |
+| Long active-decode cancellation / prompt health / stale409 |PASS missing-live02 |Client disconnected inside decode; generation stopped after1token of128budget, health+stale409 completed in64ms |
+| Controlled external telemetry loss during decode |PASS missing-live02 |Owned supervisor stops after visible decode,0.528safter first delta; EOF without successful finish/DONE. No real pressure induced |
+| Scalar versus N128 visible-output comparison |BLOCKED_RESOURCE scalar-live02 |Scalar started but host reserve fell below6GiBbefore response; no comparison result or numerical mismatch |
 
 ## New resource interruption — preserved, not hidden
 
@@ -39,20 +39,23 @@ The initial GPU gate was enforced by the retained executed runner, but that vers
 
 No automatic heavyweight retry occurred. No other application was stopped. Scalar, tool-completion and decode-interruption cases remain pending; the existing numerical256endpoint evidence is not rerun or relabeled as new live state equality. The276token prefill measured11,444ms, but cache/warmup and pressure conditions were not matched to a scalar arm: this is a bounded observation, not a performance comparison or release-latency acceptance.
 
-## Resume only unfinished cases
+## Authorized resumed window and remaining scalar-only gate
 
-After restoring host capacity and reconfirming an exclusive model window, use a fresh output directory. **NOT RUN:**
+After the user confirmed “Memory is ready—resume pending tests,” missing-live02 ran the **four unfinished tool/interruption cases only**, retaining earlier passes. N128 server started08:42:13.271944PST and stopped08:43:05.472732PST, exit-15, controlled external telemetry loss. Its102samples remained at/above6,703,333,376host bytes, peak RSS2,064,531,456. All four cases passed and raw HTTP responses are saved privately. The original report is FAIL only because the next scalar arm's GPU prelaunch gate saw[67,15,17]; no scalar model started in that runner.
+
+A scalar-only prelaunch attempt also held at[30,24,24], with no model launch. The test harness was corrected to **wait up to60seconds for three consecutive readings strictly below30%**, without changing the threshold or retrying a running model. The next scalar arm passed[17,26,21] and started **08:46:54.245514PST**. It reached readiness and received the identical276token input but the supervisor stopped it **08:46:59.895117PST**, exit-15, host_reserve. Prelaunch host9,061,318,656bytes fell to6,171,131,904below6,442,450,944; peak RSS1,362,690,048. Client saw EOF before any completed response. This is **not a scalar/N128 numerical mismatch**. No automatic retry followed this actual resource failure.
+
+Only the scalar visible-output comparison remains in the bounded live set. Fresh memory-ready/exclusive-window confirmation is required before the following **NOT RUN** command:
 
 ```bash
 cd '/Users/knagel/Flash-iOS-Release/2026-11-17/candidate-source'
-PYTHONPYCACHEPREFIX=/private/tmp/mask63-pycache python3 tools/qualify_mask63_missing.py \
- --out '/Users/knagel/Flash-iOS-Release/2026-11-17/missing-live-02' \
- --resume-report '/Users/knagel/Flash-iOS-Release/2026-11-17/missing-live-01/result.json' \
- --operator-exclusive-model
+PYTHONPYCACHEPREFIX=/private/tmp/mask63-pycache python3 tools/qualify_mask63_scalar_tail.py \
+ --out '/Users/knagel/Flash-iOS-Release/2026-11-17/scalar-live-03' \
+ --reference-report '/Users/knagel/Flash-iOS-Release/2026-11-17/missing-live-01/result.json' \
+ --prior-report '/Users/knagel/Flash-iOS-Release/2026-11-17/scalar-live-02/result.json' \
+ --operator-exclusive-model --resource-retry-authorized
 ```
 
-This retains the successful EOS/profile/exact-rejection and276token N128 reference, then runs only unfinished tool, partial-call, long-decode cancellation, controlled external loss and scalar-output comparison cases. Two sequential owned processes, port11249,600slimit each; no production. It verifies binary and47runtime hashes, threeGPU<30readings and native/external6GiB/16GiB safeguards. Real resource failure aborts the sequence. Controlled external telemetry loss, if reached, is explicitly distinguished from real host pressure before the planned scalar process. No native diagnostic fault arm is enabled.
+This does not rerun EOS, profile, tool or interruption tests. It requires explicit renewed resource-window confirmation after the actual stop, threeGPU<30readings, frozen source/binary hashes and unchanged6GiB/16GiBguards. Scalar comparison covers identical input/greedy visible content, finish and usage; production API does not expose hidden/logit/KV tensors. Historical256endpoint tensor evidence remains separately authenticated. No inference arithmetic, tolerances, installed files or production endpoint changed.
 
-Scalar/target comparison is same-input greedy visible content/usage only: it cannot expose hidden/logit/KV tensors in the production binary. Full tensor numerical evidence remains the authenticated historical source-equivalent qualification. Do not change arithmetic/tolerances or rebuild the candidate to force these API scenarios through.
-
-Native-only release remains CONDITIONAL. C11-02 recovery-policy/metadata/disaster-independence gates and C11-05 performance acceptance remain open and were not waived by this follow-up.
+Native-only release remains CONDITIONAL: scalar comparison and pre-existing C11-02 recovery-policy/metadata/disaster-independence decisions plus C11-05 performance acceptance remain open. Raw failed reports and GPU holds are retained, not relabeled as overall PASS.
