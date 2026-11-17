@@ -22,7 +22,7 @@ Updated November17,2026, America/Los_Angeles. Work A examined the user-run canar
 | Truncated tool output / client invalidation notification |PASS missing-live02 |One-token partial call publishes no executable call; both session_invalidated/resend_full_history=true |
 | Long active-decode cancellation / prompt health / stale409 |PASS missing-live02 |Client disconnected inside decode; generation stopped after1token of128budget, health+stale409 completed in64ms |
 | Controlled external telemetry loss during decode |PASS missing-live02 |Owned supervisor stops after visible decode,0.528safter first delta; EOF without successful finish/DONE. No real pressure induced |
-| Scalar versus N128 visible-output comparison |BLOCKED_RESOURCE scalar-live02 |Scalar started but host reserve fell below6GiBbefore response; no comparison result or numerical mismatch |
+| Scalar versus N128 visible-output comparison |PASS scalar-live03 |Same input fixture, READY/stop, prompt276+completion2=278 on both. No new hidden/logit/KV assertion |
 
 ## New resource interruption — preserved, not hidden
 
@@ -37,25 +37,25 @@ Required reserve is6,442,450,944bytes. This demonstrates an actual native prefil
 
 The initial GPU gate was enforced by the retained executed runner, but that version did not save its per-arm values. An earlier independent preflight[17,16,25] is not falsely relabeled as exact launch readings. The future runner now retains per-arm readings, every HTTP request/response privately, and recognizes native as well as supervisor resource stops.
 
-No automatic heavyweight retry occurred. No other application was stopped. Scalar, tool-completion and decode-interruption cases remain pending; the existing numerical256endpoint evidence is not rerun or relabeled as new live state equality. The276token prefill measured11,444ms, but cache/warmup and pressure conditions were not matched to a scalar arm: this is a bounded observation, not a performance comparison or release-latency acceptance.
+No automatic heavyweight retry occurred. No other application was stopped. At that historical stop, scalar, tool-completion and decode-interruption cases remained pending; the existing numerical256endpoint evidence is not rerun or relabeled as new live state equality. The276token prefill measured11,444ms, but cache/warmup and pressure conditions were not matched to a scalar arm: this is a bounded observation, not a performance comparison or release-latency acceptance.
 
-## Authorized resumed window and remaining scalar-only gate
+## Authorized resumed windows and retained failed attempts
 
 After the user confirmed “Memory is ready—resume pending tests,” missing-live02 ran the **four unfinished tool/interruption cases only**, retaining earlier passes. N128 server started08:42:13.271944PST and stopped08:43:05.472732PST, exit-15, controlled external telemetry loss. Its102samples remained at/above6,703,333,376host bytes, peak RSS2,064,531,456. All four cases passed and raw HTTP responses are saved privately. The original report is FAIL only because the next scalar arm's GPU prelaunch gate saw[67,15,17]; no scalar model started in that runner.
 
 A scalar-only prelaunch attempt also held at[30,24,24], with no model launch. The test harness was corrected to **wait up to60seconds for three consecutive readings strictly below30%**, without changing the threshold or retrying a running model. The next scalar arm passed[17,26,21] and started **08:46:54.245514PST**. It reached readiness and received the identical276token input but the supervisor stopped it **08:46:59.895117PST**, exit-15, host_reserve. Prelaunch host9,061,318,656bytes fell to6,171,131,904below6,442,450,944; peak RSS1,362,690,048. Client saw EOF before any completed response. This is **not a scalar/N128 numerical mismatch**. No automatic retry followed this actual resource failure.
 
-Only the scalar visible-output comparison remains in the bounded live set. Fresh memory-ready/exclusive-window confirmation is required before the following **NOT RUN** command:
+## Final scalar-only comparison — PASS
 
-```bash
-cd '/Users/knagel/Flash-iOS-Release/2026-11-17/candidate-source'
-PYTHONPYCACHEPREFIX=/private/tmp/mask63-pycache python3 tools/qualify_mask63_scalar_tail.py \
- --out '/Users/knagel/Flash-iOS-Release/2026-11-17/scalar-live-03' \
- --reference-report '/Users/knagel/Flash-iOS-Release/2026-11-17/missing-live-01/result.json' \
- --prior-report '/Users/knagel/Flash-iOS-Release/2026-11-17/scalar-live-02/result.json' \
- --operator-exclusive-model --resource-retry-authorized
-```
+After the user explicitly confirmed additional memory and requested only the remaining comparison, scalar-live03 started **09:19:22.160505PST** and stopped **09:19:44.585437PST**, owned PID57522, exit-15/operator_cancel. The existing GPU/memory/RSS thresholds were unchanged: GPU[21,21,25], prelaunch host12,230,983,680bytes,44samples, minimum host6,874,906,624bytes (above6,442,450,944), peak RSS1,435,533,312bytes (below16GiB). The supervisor reaped the process. No other live case was rerun.
 
-This does not rerun EOS, profile, tool or interruption tests. It requires explicit renewed resource-window confirmation after the actual stop, threeGPU<30readings, frozen source/binary hashes and unchanged6GiB/16GiBguards. Scalar comparison covers identical input/greedy visible content, finish and usage; production API does not expose hidden/logit/KV tensors. Historical256endpoint tensor evidence remains separately authenticated. No inference arithmetic, tolerances, installed files or production endpoint changed.
+The scalar response and retained N128 response match exactly on the deliberately limited comparison:
 
-Native-only release remains CONDITIONAL: scalar comparison and pre-existing C11-02 recovery-policy/metadata/disaster-independence decisions plus C11-05 performance acceptance remain open. Raw failed reports and GPU holds are retained, not relabeled as overall PASS.
+- Message: role assistant, content READY.
+- Finish reason: stop.
+- Usage:276prompt tokens,2completion tokens,278total.
+- The original and current fixture source assignments are AST-identical; same deterministic request controls. This does not claim separately captured full effective-token-ID arrays.
+
+Scalar log confirms nrow_chunks=0. Its276physical prefill tokens took18,630.737ms; N128 reference had11cached/265physical prefill tokens and two128row chunks plus9tail,11,444.294ms. Cache/warmup, timing window and physical-prefill counts differ, with no repeated matched cohort. **Do not infer a causal performance speedup from these two timings.** This closes the short visible-output comparison only; hidden/logit/KV tensor qualification remains the independently authenticated historical evidence.
+
+All scenarios in this bounded live set now have PASS evidence. No further model run is scheduled. Previous failed raw reports, GPU holds, native/external resource stops and their hashes remain preserved. Release remains CONDITIONAL solely on the pre-existing recovery-policy/metadata/disaster-independence and performance/operational acceptance gates, not on an unfinished bounded scalar comparison. No runtime code, tolerances, limits, candidate binary or production service changed.

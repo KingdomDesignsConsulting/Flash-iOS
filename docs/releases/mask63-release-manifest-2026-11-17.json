@@ -66,16 +66,15 @@
   "installed_production_modified": false,
   "full_executable_checkpoint_hashing": false,
   "canary": {
-    "status": "BOUNDED_PRIMARY_LIVE_PASS_SCALAR_RESOURCE_BLOCKED",
+    "status": "PASS_BOUNDED_LIVE_SET",
     "canary02_cases": 4,
     "missing_live01_cases": 2,
     "missing_live02_cases": 4,
-    "remaining": [
-      "scalar_N128_same_input_visible_agreement"
-    ],
-    "latest_resource_stop": "scalar-live-02",
-    "scalar_min_host_bytes": 6171131904,
-    "production_access": false
+    "scalar_live03_cases": 1,
+    "remaining": [],
+    "historical_failed_attempts_retained": true,
+    "production_access": false,
+    "scope": "Visible API/lifecycle/resource tests; tensor qualification retained historically, not rerun."
   },
   "recovery": "PENDING",
   "model_manifest_sha256": "dfe16862bbb3f53bd379136812ebe056770f17d14b7cee94ba86c86cd19bebf4",
@@ -312,5 +311,5 @@
     ],
     "live_startup": "NOT RUN"
   },
-  "live_evidence_sha256": "4dd940eb9a225438d5d38a0b6a454509e3bcd8066c8542a3d43fa95e03640a0e"
+  "live_evidence_sha256": "6282909f7d14dd7829d6e7d7d44eaefbbc95fef5af40697e02782902092f5756"
 }

@@ -149,7 +149,7 @@
     "executed_driver_sha256": "02664aa07499ef79f5610109f352fb289ffdb937964aed949c9c8bbb01ab09fd",
     "future_runner_sha256": "6c9f64284a847dd8772fea3e53920d0686cfe4c30574b5649747bfc9e7261e35"
   },
-  "updated": "2026-11-17T08:53:07.533072-08:00",
+  "updated": "2026-11-17T09:21:36.456209-08:00",
   "missing_live_02": {
     "assessment": "FOUR_PENDING_CASES_PASS_SCALAR_NOT_STARTED_BY_GPU_GATE",
     "raw_status": "FAIL",
@@ -223,9 +223,7 @@
     ],
     "result_sha256": "a305e30e58cc06d84f9bd4c5a07c5cb7f83e1dc735d03cfc3681f4ca15dcaa19"
   },
-  "remaining_bounded_live_scenarios": [
-    "scalar_N128_same_input_visible_agreement"
-  ],
+  "remaining_bounded_live_scenarios": [],
   "current_scalar_runner_sha256": "48bf15059b53eb3d827aeddbbbde9ea8cd3c122b4460177775f0fc04983b6907",
   "current_live_runner_sha256": {
     "qualify_mask63_missing.py": "bf351dedf7ba2b3488418f303478290e2d0672d2e271663c10a8f0ee0c89dc83",
@@ -236,5 +234,69 @@
     "normal": 7,
     "optimized": 7,
     "result": "PASS"
+  },
+  "scalar_live_03": {
+    "assessment": "PASS_VISIBLE_OUTPUT_AGREEMENT",
+    "source_sha": "e58cc0d95ad9f49d87fe8a5c553e7575e63fbd83",
+    "binary_sha256": "9f6ffea0ea70de6409e51978381968d57df9c2ee158a42bef3a35c063ce08da4",
+    "started": "2026-11-17T09:19:20.058521-08:00",
+    "ended": "2026-11-17T09:19:44.585437-08:00",
+    "gpu_before": [
+      21,
+      21,
+      25
+    ],
+    "host_prelaunch": 12230983680,
+    "minimum_host_available_bytes": 6874906624,
+    "maximum_rss_bytes": 1435533312,
+    "telemetry_samples": 44,
+    "comparison": {
+      "content": "READY",
+      "finish_reason": "stop",
+      "usage": {
+        "total_tokens": 278,
+        "completion_tokens": 2,
+        "prompt_tokens": 276
+      },
+      "fixture_source_AST_equal": true,
+      "scalar_timings": {
+        "generated_tokens": 2,
+        "decode_tokens_per_second": 7.39649912283949,
+        "cached_prefix_tokens": 0,
+        "prefill_ms": 18630.737060546875,
+        "decode_ms": 270.398193359375,
+        "context_tokens": 276,
+        "prefill_tokens": 276,
+        "prefill_tokens_per_second": 14.814228718007492,
+        "session_reused": 0,
+        "warm_prefix_reused": false
+      },
+      "retained_N128_timings": {
+        "generated_tokens": 2,
+        "decode_tokens_per_second": 16.95690602702921,
+        "cached_prefix_tokens": 11,
+        "prefill_ms": 11444.2939453125,
+        "decode_ms": 117.946044921875,
+        "context_tokens": 276,
+        "prefill_tokens": 265,
+        "prefill_tokens_per_second": 23.155644312032205,
+        "session_reused": 0,
+        "warm_prefix_reused": true
+      }
+    },
+    "scope": "Same input fixture/greedy visible message, finish and token counts; no new hidden/logit/KV tensor or sampled-token-ID comparison. Different cache/prefill conditions prevent causal timing inference.",
+    "evidence_sha256": {
+      "result.json": "53c919c180d5c8e571844ed2e8b63af1f9ac9827a1c522616e4ecb3bb76cced1",
+      "scalar/result.json": "ad7b0809529ff2d984bd3536b12c7434b7d36bf44388450efaa87e122e7ade8f",
+      "scalar/child.log": "9d93b64ed0b4ed64a12b2880f97d69a0f04b8e4345e80cc6c820f70108e7b6fc",
+      "scalar/telemetry.jsonl": "09c2e72cf322c93e55d282d566cd71fa2fd4b382d8b425bcd3fa2505d72255b7",
+      "scalar-gpu-preflight.json": "7baf77f88d65d166e3f792a61f3b5b5f7910678bf8797f76ffb8efa72faf8bee",
+      "scalar/responses.jsonl": "5069949fba7485d2faa31c0287b6f2b67cc3e292dd2770ae099db7ec2b182d2c"
+    },
+    "cleanup": {
+      "exit": -15,
+      "stop_reason": "operator_cancel",
+      "model_reaped": true
+    }
   }
 }

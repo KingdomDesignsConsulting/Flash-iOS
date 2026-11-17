@@ -57,7 +57,7 @@ python3 tools/supervise_qualified_serve.py \
  -- --flash-profile release-approved-main-agent
 ```
 
-Profile name/settings are a proposed isolated candidate namespace pending actual client contract approval, not an automatic copy of prior prefixes. A persistent matched checkout is now staged at `/Users/knagel/Flash-iOS-Release/2026-11-17/candidate-source` (checkout c643779, runtime47inputs identical to e58cc0d). Binary/probe copies are authenticated; tools/API/synthetic-warm self-tests pass there. **Isolated live startup and profile restoration now pass from this location** (canary02/follow-up). It is not an approved production installation. Complete only remaining canary cases after capacity recovers, then update the approval plan. Never move just the executable or overwrite installed infer.
+Profile name/settings are a proposed isolated candidate namespace pending actual client contract approval, not an automatic copy of prior prefixes. A persistent matched checkout is now staged at `/Users/knagel/Flash-iOS-Release/2026-11-17/candidate-source` (checkout c643779, runtime47inputs identical to e58cc0d). Binary/probe copies are authenticated; tools/API/synthetic-warm self-tests pass there. **Isolated live startup and profile restoration now pass from this location** (canary02/follow-up). It is not an approved production installation. The bounded live canary is now complete, including scalar-live03. Complete the outstanding recovery/provenance and operational acceptance decisions before updating any approval plan. Never move just the executable or overwrite installed infer.
 
 ## Stop/switch sequence — not executed
 
