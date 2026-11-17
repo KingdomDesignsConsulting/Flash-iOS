@@ -1,5 +1,7 @@
 # Production and rollback runbook — November17,2026
 
+> **November 17 operational recovery update:** [Verified restore, selected historical configuration and exact future commands](mask63-operational-recovery-2026-11-17.md) supersedes earlier unselected/NOT RUN recovery statements below. Checksums, fresh extraction/model/dependency verification and isolated live restore PASS. Production was not switched. Historical native-admission caveat and final authorization remain explicit.
+
 **REVIEW ONLY. NO OPERATIONAL PRODUCTION COMMAND EXECUTED.** Current status CONDITIONAL. Exact frozen source e58cc0d95ad9f49d87fe8a5c553e7575e63fbd83 and binary9f6ffea0ea70de6409e51978381968d57df9c2ee158a42bef3a35c063ce08da4. Production branch/checkout/binaries remain unchanged.
 
 ## Required before approval

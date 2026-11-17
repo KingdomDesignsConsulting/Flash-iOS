@@ -1,0 +1,37 @@
+{
+  "completed": "2026-11-17",
+  "status": "PASS_SHORT_OPERATIONAL_RESTORE",
+  "production_changed": false,
+  "archive_sha256": "f584e449610caa4d091209dc67e60ebb80bba698651e33e96de262bb09779563",
+  "selection_sha256": "73dd74016ef1fbe77506ec758f76ce0a211ed19ddee16850e03d0e97c0ed1d21",
+  "checksum_manifest_sha256": "c6e869f2306dad0589089d1ba0b9a3a8ad14a0ccce7ac59c72df62895df48368",
+  "verification_sha256": "920826fa3b71f1b51a998bfbb53d57747a01a103b7cb4045ed5690e699dcf045",
+  "operational_result_sha256": "db33ae211419ad40a1d621f2a1783d11f41800addddc4d6bb68dc46b43167bc1",
+  "selected_binary_sha256": "497ccfb734e17a7fa7f3369265b739dedf51e8b2cde55fed07e8a77d50db1909",
+  "selected_source_association": "3a87663a72c6c88922dbd7fd9f82842e588a5dc6",
+  "archive_entries": 85,
+  "model_files": 49,
+  "model_bytes": 13423646070,
+  "checksum_check_exit": 0,
+  "health": 200,
+  "content": "READY",
+  "usage": {
+    "total_tokens": 29,
+    "completion_tokens": 2,
+    "prompt_tokens": 27
+  },
+  "start_pst": "2026-11-17 11:30:36",
+  "stop_pst": "2026-11-17 11:30:39",
+  "gpu_before": [
+    17,
+    16,
+    22
+  ],
+  "server_exit": -15,
+  "server_stop_reason": "operator_cancel",
+  "controller_tests": {
+    "normal": 31,
+    "optimized_recovery_plan": 8
+  },
+  "scope": "Same-disk software rollback; not independent disk-failure/model recovery. Stored metadata verified, original group/provenance normalization documented. Historical native context guard differs from new candidate."
+}

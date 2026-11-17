@@ -1,5 +1,7 @@
 # Recovery package — November17,2026
 
+> **November 17 operational recovery update:** [Verified restore, selected historical configuration and exact future commands](mask63-operational-recovery-2026-11-17.md) supersedes earlier unselected/NOT RUN recovery statements below. Checksums, fresh extraction/model/dependency verification and isolated live restore PASS. Production was not switched. Historical native-admission caveat and final authorization remain explicit.
+
 Private root `/Users/knagel/Flash-iOS-Release/2026-11-17/recovery-03`. Source reads only; no installed service/cache modifications. The final archive is **1,151,814,144bytes**, SHA `f584e449610caa4d091209dc67e60ebb80bba698651e33e96de262bb09779563`. It restores85entries into a disposable tree. Source inventories before/after and lsof checks found no visible users of the two cache roots and discovered HOME state. This is a point-in-time coherent-copy check, not host-global exclusion against future writers.
 
 | Role | Entries including directories | Payload bytes |

@@ -1,5 +1,7 @@
 # Final release-gate matrix — November17,2026
 
+> **November 17 operational recovery update:** [Verified restore, selected historical configuration and exact future commands](mask63-operational-recovery-2026-11-17.md) supersedes earlier unselected/NOT RUN recovery statements below. Checksums, fresh extraction/model/dependency verification and isolated live restore PASS. Production was not switched. Historical native-admission caveat and final authorization remain explicit.
+
 Candidate runtime/source **e58cc0d95ad9f49d87fe8a5c553e7575e63fbd83**, binary **9f6ffea0ea70de6409e51978381968d57df9c2ee158a42bef3a35c063ce08da4**. Tooling/report publication commit is separate and supplied in the handoff. Scope native-only. No production cutover authorized/performed.
 
 | Gate / owner | Status | Exact source/evidence | Release impact / waiver / Architect decision |
@@ -9,8 +11,8 @@ Candidate runtime/source **e58cc0d95ad9f49d87fe8a5c553e7575e63fbd83**, binary **
 | C11-01 source/model-free — Work A |PASS bounded |2cb51d98661068b69bf9819b98ea2ae612a0dace integrated into e58cc0d;19/20/40/18checks plus11supervisor tests |Sampled6GiB/16GiB restrictions remain, no hard reservation/global process guarantee |
 | Final C11-01 live canary — Work A/operator |PASS bounded live set |e58cc0d binary; canary02, missing-live01/02, scalar-live03 hashes in live evidence |All scoped API/tool/resource/lifecycle checks and short scalar visible-output comparison pass. Prior failed attempts retained; no stronger memory guarantee claimed |
 | C11-02 discovered cache/runtime backup — Work A/D |PASS stored-tree scope |e58cc0d runtime; recovery-03 archive f584e449…;85entries/1,151,814,144bytes; independent restore |Complete discovered cache trees, not proof of every latest effective dependency |
-| C11-02 launcher/recovery choice — operator/Architect |OPEN |1e68fab historical audit; old infer7ae16f…, candidate497ccf…, historical3a87663… |Choose/accept proposed historical manual recovery or identify latest launcher; source uncertainty not silently closed |
-| C11-02 original metadata / independent recovery — operator/Architect |OPEN |Private source-manifests, exact stored-package restore; original group/provenance differences |Privileged original metadata not rehearsed; same-disk backup, weights external. Explicit acceptance or stronger backup/rehearsal required |
+| C11-02 launcher/recovery choice — operator/Architect |SELECTED / short operational PASS; final authorization pending |1e68fab historical audit; old infer7ae16f…, candidate497ccf…, historical3a87663… |Choose/accept proposed historical manual recovery or identify latest launcher; source uncertainty not silently closed |
+| C11-02 original metadata / independent recovery — operator/Architect |SOFTWARE-ONLY scope selected; original forensic metadata not claimed |Private source-manifests, exact stored-package restore; original group/provenance differences |Privileged original metadata not rehearsed; same-disk backup, weights external. Explicit acceptance or stronger backup/rehearsal required |
 | Model identities — Work A |PASS hashes, backup policy OPEN |49files13,423,646,070bytes content-hashed; supplement binds archive |No weights copied, independent model restoration/reinstall NOT RUN; require policy acceptance |
 | C11-03 deadline — Architect/Work B |EXCLUDED native-only |Work Bd2d383e6127e774d80bada9057aeaa6f5a6ff74c not integrated |Optional adapter has70isolated tests, no combined live qualification. Future long-prefill clients need finite adequate idle/total deadlines; no native keepalive assumption |
 | C11-04 GUI/Gateway — Architect/Work B |EXCLUDED |Same B revision; actual LM Studio GUI/MCP registry/pagination NOT RUN |No unsupported claims or Responses API support; exclusions are proposed scope, Architect confirms |
@@ -29,3 +31,5 @@ Current supplement: [canary02 assessment and missing-only follow-up](mask63-cana
 Resumed window: missing-live02 completed four previously pending cases. Scalar-only process reached readiness then was stopped at08:46:59PSTfor host reserve; no comparison result. C11-02/C11-05decisions unchanged.
 
 Final scalar-live03 PASS:09:19:22–09:19:44PST, GPU21/21/25, host minimum6,874,906,624bytes, RSS peak1,435,533,312bytes, matching READY/stop/usage276+2. No bounded live case remains pending. Historical resource/GPU holds remain unchanged; recovery/performance decisions remain open.
+
+Current evidence: 85 stored entries freshly restored; 49 model files rehashed; selected historical497ccf runtime returned READY on isolated11250 then stopped at11:30:39PST. See operational supplement for exact commands and legacy guard limitation. No new native-runtime or numerical test was needed.

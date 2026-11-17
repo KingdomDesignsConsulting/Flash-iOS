@@ -13,12 +13,12 @@ def telemetry(probe,pid):
     if pid and not data['start_abstime']:raise ValueError('missing process birth identity')
     return data
 
-def supervise(command,env,out,sample,*,interval=0.5,max_seconds=21600,lock_path=LOCK,stop=None):
+def supervise(command,env,out,sample,*,interval=0.5,max_seconds=21600,lock_path=LOCK,stop=None,cwd=None):
     """sample(pid) injection exists for no-model tests, never a CLI bypass."""
     if not math.isfinite(interval) or not 0.05<=interval<=1:raise ValueError('interval must be0.05..1s')
     if not math.isfinite(max_seconds) or not 0<max_seconds<=21600:raise ValueError('invalid lifetime')
     out=pathlib.Path(out);out.mkdir(parents=True,exist_ok=False)
-    report=dict(status='BLOCKED',model_started=False,command=command,started=time.time(),samples=0)
+    report=dict(status='BLOCKED',model_started=False,command=command,started=time.time(),samples=0,cwd=str(pathlib.Path(cwd).resolve()) if cwd else str(pathlib.Path.cwd()))
     child=None;lockfd=None;stop=stop or threading.Event()
     def save():
         (out/'result.json').write_text(json.dumps(report,indent=2)+'\n')
@@ -34,7 +34,7 @@ def supervise(command,env,out,sample,*,interval=0.5,max_seconds=21600,lock_path=
         # while the model is still alive. The supervisor never unlinks the lock.
         with (out/'child.log').open('x') as log,(out/'telemetry.jsonl').open('x') as trace:
             child=subprocess.Popen(command,stdin=subprocess.DEVNULL,stdout=log,stderr=subprocess.STDOUT,
-                                   env=env,start_new_session=True,pass_fds=(lockfd,))
+                                   env=env,start_new_session=True,pass_fds=(lockfd,),cwd=cwd)
             report.update(model_started=True,pid=child.pid,status='RUNNING');save()
             begin=time.monotonic();birth=None
             while child.poll() is None:
