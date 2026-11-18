@@ -1,0 +1,37 @@
+{
+  "status": "PASS_RESTART_RESTORE_AND_READY",
+  "at": "2026-11-17T20:20:44.278937-08:00",
+  "pid": 84895,
+  "binary_sha256": "9f6ffea0ea70de6409e51978381968d57df9c2ee158a42bef3a35c063ce08da4",
+  "restored_tokens": 691,
+  "restore_ms": 425,
+  "usage": {
+    "total_tokens": 715,
+    "completion_tokens": 2,
+    "prompt_tokens": 713
+  },
+  "flash_timings": {
+    "generated_tokens": 2,
+    "decode_tokens_per_second": 14.661796105818363,
+    "cached_prefix_tokens": 691,
+    "prefill_ms": 1651.681884765625,
+    "decode_ms": 136.408935546875,
+    "context_tokens": 713,
+    "prefill_tokens": 22,
+    "prefill_tokens_per_second": 13.319756184842953,
+    "session_reused": 0,
+    "warm_prefix_reused": true
+  },
+  "health": "PASS",
+  "model": "qwen3.5",
+  "external_tools_executed": false,
+  "min_host_available_bytes": 7677280256,
+  "peak_rss_bytes": 2000060416,
+  "supervisor_pid": 84890,
+  "supervisor_start_pst": "2026-11-17 20:20:01",
+  "finite_lifetime_deadline_pst": "2026-11-18 02:20:01",
+  "authorization_expiry_pst": "2026-11-18 01:51:00",
+  "disposition": "PRODUCTION DEPLOYED \u2014 POST-DEPLOYMENT QUALIFICATION PASS",
+  "prior_bounded_acceptance_commit": "e8b21b3",
+  "scope": "Restricted native-only controlled deployment; short operational checks, not another long-context numerical/performance qualification."
+}
