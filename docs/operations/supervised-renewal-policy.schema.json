@@ -1,0 +1,112 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:flash-ios:recurring-operations:v1",
+  "type": "object",
+  "required": [
+    "kind",
+    "approved",
+    "operator_uid",
+    "valid_from",
+    "valid_until",
+    "source_sha",
+    "binary_sha256",
+    "port",
+    "max_launches",
+    "renew_after_seconds",
+    "minimum_cycle_seconds",
+    "max_process_seconds",
+    "host_reserve_bytes",
+    "rss_limit_bytes",
+    "profile",
+    "runtime_root",
+    "binary",
+    "model_root",
+    "candidate_manifest",
+    "candidate_manifest_sha256",
+    "model_manifest",
+    "model_manifest_sha256",
+    "assets"
+  ],
+  "properties": {
+    "kind": {
+      "type": "string",
+      "const": "flash-recurring-operations-v1"
+    },
+    "approved": {
+      "type": "boolean",
+      "description": "Only operator may approve a reviewed policy. Example is false. Never derive from cutover approval."
+    },
+    "operator_uid": {
+      "type": "integer"
+    },
+    "valid_from": {
+      "type": "number"
+    },
+    "valid_until": {
+      "type": "number"
+    },
+    "source_sha": {
+      "type": "string"
+    },
+    "binary_sha256": {
+      "type": "string"
+    },
+    "port": {
+      "type": "integer",
+      "enum": [
+        11241,
+        11251
+      ]
+    },
+    "max_launches": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 4
+    },
+    "renew_after_seconds": {
+      "type": "number"
+    },
+    "minimum_cycle_seconds": {
+      "type": "number"
+    },
+    "max_process_seconds": {
+      "type": "integer",
+      "const": 21600
+    },
+    "host_reserve_bytes": {
+      "type": "integer"
+    },
+    "rss_limit_bytes": {
+      "type": "integer"
+    },
+    "profile": {
+      "type": "string"
+    },
+    "runtime_root": {
+      "type": "string"
+    },
+    "binary": {
+      "type": "string"
+    },
+    "model_root": {
+      "type": "string"
+    },
+    "candidate_manifest": {
+      "type": "string"
+    },
+    "candidate_manifest_sha256": {
+      "type": "string"
+    },
+    "model_manifest": {
+      "type": "string"
+    },
+    "model_manifest_sha256": {
+      "type": "string"
+    },
+    "assets": {
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Executable validator additionally enforces time-window <=24h, mode0600/UID, paths, frozen identities, assets and checksums."
+}

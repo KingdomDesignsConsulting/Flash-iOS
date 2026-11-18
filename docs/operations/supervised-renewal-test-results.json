@@ -1,0 +1,14 @@
+{
+  "status": "CONDITIONAL \u2014 MANUAL RENEWAL REQUIRED (NO RELIABLE DRAIN/IDLE SIGNAL)",
+  "native_processes_started": 0,
+  "production_modified": false,
+  "normal_unit_methods_passed": 55,
+  "optimized_unit_methods_passed": 55,
+  "native_live_two_cycles": "NOT RUN: prerequisite drain barrier absent; current production remains operating",
+  "source_base": "c2a9cf82fecf20d84cf016a547d984090648e8f3",
+  "contract": "281bd342693a2e2cd50774e02958e358d1d73a5b",
+  "script_sha256": {
+    "tools/supervised_renewal.py": "4cb93b4ccc265531e4c9b2258d498261e215aec4255d048b2a90ac010bf422fe",
+    "tools/test_supervised_renewal.py": "b3aefbdb5985847620409d43e17d3885a98e5f30ac37157479070b621beca91e"
+  }
+}

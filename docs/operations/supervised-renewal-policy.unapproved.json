@@ -1,0 +1,46 @@
+{
+  "kind": "flash-recurring-operations-v1",
+  "approved": false,
+  "operator_uid": 501,
+  "valid_from": 0,
+  "valid_until": 0,
+  "source_sha": "e58cc0d95ad9f49d87fe8a5c553e7575e63fbd83",
+  "binary_sha256": "9f6ffea0ea70de6409e51978381968d57df9c2ee158a42bef3a35c063ce08da4",
+  "port": 11251,
+  "max_launches": 3,
+  "renew_after_seconds": 19800,
+  "minimum_cycle_seconds": 60,
+  "max_process_seconds": 21600,
+  "host_reserve_bytes": 6442450944,
+  "rss_limit_bytes": 17179869184,
+  "profile": "main-agent",
+  "runtime_root": "/REVIEW/runtime",
+  "binary": "/REVIEW/runtime/metal_infer/infer-mask63-supervised-20261117",
+  "model_root": "/REVIEW/model",
+  "candidate_manifest": "/REVIEW/candidate.json",
+  "candidate_manifest_sha256": "REQUIRED",
+  "model_manifest": "/REVIEW/model.json",
+  "model_manifest_sha256": "REQUIRED",
+  "assets": {
+    "recovery_archive": {
+      "path": "/REVIEW/recovery_archive",
+      "sha256": "REQUIRED"
+    },
+    "recovery_selection": {
+      "path": "/REVIEW/recovery_selection",
+      "sha256": "REQUIRED"
+    },
+    "profile_source": {
+      "path": "/REVIEW/profile_source",
+      "sha256": "REQUIRED"
+    },
+    "supervisor": {
+      "path": "/REVIEW/supervisor",
+      "sha256": "REQUIRED"
+    },
+    "resource_probe": {
+      "path": "/REVIEW/resource_probe",
+      "sha256": "REQUIRED"
+    }
+  }
+}
