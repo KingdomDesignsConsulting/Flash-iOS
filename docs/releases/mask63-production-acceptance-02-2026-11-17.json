@@ -1,0 +1,57 @@
+{
+  "status": "PASS_BOUNDED_REQUESTS_RESTART_RESTORE_PENDING",
+  "completed": "2026-11-17T20:18:53.879435-08:00",
+  "pid": 83650,
+  "supervisor_pid": 83644,
+  "source": "e58cc0d95ad9f49d87fe8a5c553e7575e63fbd83",
+  "binary_sha256": "9f6ffea0ea70de6409e51978381968d57df9c2ee158a42bef3a35c063ce08da4",
+  "cases": [
+    {
+      "case": "buffered_usage_natural_EOS",
+      "status": "PASS"
+    },
+    {
+      "case": "named_profile_capture",
+      "status": "PASS"
+    },
+    {
+      "case": "exact_32769_budget_rejection",
+      "status": "PASS"
+    },
+    {
+      "case": "resident_preserved_after_rejection_stream_finish_usage_DONE",
+      "status": "PASS"
+    },
+    {
+      "case": "exact_32768_budget_natural_EOS",
+      "status": "PASS"
+    },
+    {
+      "case": "named_profile_exact_match_reuse",
+      "status": "PASS"
+    },
+    {
+      "case": "complete_harmless_tool_envelope",
+      "status": "PASS"
+    },
+    {
+      "case": "tool_result_resident_continuation",
+      "status": "PASS"
+    },
+    {
+      "case": "incomplete_arguments_not_executable",
+      "status": "PASS"
+    },
+    {
+      "case": "final_health",
+      "status": "PASS"
+    }
+  ],
+  "min_host_available_bytes": 7436828672,
+  "peak_rss_bytes": 2169405440,
+  "samples": 451,
+  "restart_restore": "NOT RUN; operator foreground restart required",
+  "production_running": true,
+  "lifetime_deadline_pst": "2026-11-18 02:15:23 PST",
+  "authorization_expiry_pst": "2026-11-18 01:51:00 PST"
+}
